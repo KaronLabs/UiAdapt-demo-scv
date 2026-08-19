@@ -1,0 +1,51 @@
+import type { Product } from "./types";
+
+export const PRODUCTS = Object.freeze([
+  Object.freeze({
+    id: "aurora-one",
+    name: "Aurora One",
+    price: 329000,
+    rating: 4.8,
+    reviews: 284,
+    batteryHours: 40,
+    anc: "Hybrid ANC",
+    weightGrams: 254,
+    shipping: "내일 무료배송",
+    inventory: 18,
+    colors: Object.freeze(["Graphite", "Sand", "Cobalt"]),
+    tagline: "깊은 정숙함, 넓게 열린 사운드.",
+    detail: "정교한 공간감과 장시간 청취를 위한 플래그십 오버이어.",
+  }),
+  Object.freeze({
+    id: "nova-pro",
+    name: "Nova Pro",
+    price: 279000,
+    rating: 4.7,
+    reviews: 198,
+    batteryHours: 36,
+    anc: "Adaptive ANC",
+    weightGrams: 238,
+    shipping: "2일 내 무료배송",
+    inventory: 24,
+    colors: Object.freeze(["Carbon", "Silver"]),
+    tagline: "움직임에 맞춰 조율되는 선명함.",
+    detail: "도시의 소음에 반응하는 경량 퍼포먼스 헤드폰.",
+  }),
+  Object.freeze({
+    id: "halo-air",
+    name: "Halo Air",
+    price: 199000,
+    rating: 4.6,
+    reviews: 352,
+    batteryHours: 30,
+    anc: "Standard ANC",
+    weightGrams: 218,
+    shipping: "오늘 출고",
+    inventory: 31,
+    colors: Object.freeze(["Ivory", "Midnight", "Coral"]),
+    tagline: "가볍게 쓰고, 오래 듣는 리듬.",
+    detail: "매일의 이동을 위한 가볍고 균형 잡힌 무선 헤드폰.",
+  }),
+] satisfies readonly Product[]);
+
+export const PRODUCT_IDS = PRODUCTS.map((product) => product.id);
