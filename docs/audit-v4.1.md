@@ -12,7 +12,18 @@ Packages audited: 241 (npm ci installed 240 packages)
 Run window: 2026-08-20T06:51:53.1528917+09:00–2026-08-20T06:51:54.0757764+09:00
 ```
 
-`--omit=dev` 결과는 production dependency release gate로 사용했습니다. 개발 의존성을 포함한 전체 audit 결과도 같은 명령 실행에서 확인했으며, npm은 알려진 취약점 0건을 보고했습니다. lockfile을 자동 수정하는 `npm audit fix`는 실행하지 않았습니다.
+`--omit=dev` 결과는 production dependency release gate로 사용했습니다. 이 명령은 dev dependency를 제외하므로 전체 dependency audit과 동일한 결과라고 해석하지 않습니다. lockfile을 자동 수정하는 `npm audit fix`는 실행하지 않았습니다.
+
+## 전체 dependency audit
+
+```text
+Command: npm audit
+Exit code: 0
+Output: found 0 vulnerabilities
+Run window: 2026-08-20T06:53:52.1611046+09:00–2026-08-20T06:53:53.1495534+09:00
+```
+
+이 별도 실행은 dev dependency를 포함한 전체 lockfile audit 결과입니다.
 
 ## 해석 및 한계
 

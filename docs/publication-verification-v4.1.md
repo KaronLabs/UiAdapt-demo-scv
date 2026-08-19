@@ -160,7 +160,7 @@ The PNG files are retained as explicit evidence files and have Windows read-only
 
 `.github/workflows/verify.yml` defines an Ubuntu latest / Node 22 job with npm cache, `npm ci`, lint, unit/component tests, production build, Playwright Chromium installation, nested-path E2E, production dependency audit with `pipefail` and `tee`, and an `actions/upload-artifact@v4` step that preserves `test-results/`, `playwright-report/`, `dist/`, and `audit-results.txt` even when an earlier step fails.
 
-The local audit record is [audit-v4.1.md](audit-v4.1.md). No uncontrolled `npm audit fix` was executed.
+The local audit record is [audit-v4.1.md](audit-v4.1.md). It separates the production gate (`npm audit --omit=dev --audit-level=high`) from the full lockfile audit (`npm audit`). No uncontrolled `npm audit fix` was executed.
 
 GitHub Actions has not been executed for this branch because the mission forbids push/merge and no pull request was opened. CI configuration is source-verified only; remote runner success remains unverified until an authorized PR or branch run exists.
 
@@ -176,7 +176,8 @@ These are the fresh command boundaries from the final source close-out. All comm
 | `npm run build` | `2026-08-20T06:51:21.7522955+09:00` | `2026-08-20T06:51:24.1001500+09:00` | Vite production build complete |
 | `npm run test:e2e` | `2026-08-20T06:51:27.9923561+09:00` | `2026-08-20T06:51:48.5227228+09:00` | 36/36 passed; nested preview URL correct |
 | `npm audit --omit=dev --audit-level=high` | `2026-08-20T06:51:53.1528917+09:00` | `2026-08-20T06:51:54.0757764+09:00` | `found 0 vulnerabilities` |
-| `git diff --check` | `2026-08-20T06:51:57.6504531+09:00` | `2026-08-20T06:51:57.6872280+09:00` | clean, RC 0 |
+| `npm audit` | `2026-08-20T06:53:52.1611046+09:00` | `2026-08-20T06:53:53.1495534+09:00` | `found 0 vulnerabilities` |
+| `git diff --check` | `2026-08-20T06:54:13.5389432+09:00` | `2026-08-20T06:54:13.5812554+09:00` | clean, RC 0 |
 
 The E2E process printed Node's `NO_COLOR`/`FORCE_COLOR` warning from the test runner. It did not produce a test failure, browser console error, failed request, or external runtime request.
 
@@ -207,6 +208,7 @@ npm test
 npm run build
 npm run test:e2e
 npm audit --omit=dev --audit-level=high
+npm audit
 git diff --check
 git status --short --branch
 git log -1 --oneline
