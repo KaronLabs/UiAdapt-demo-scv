@@ -42,4 +42,18 @@ jobs:
         run: npm run test:e2e
 
       - name: Production dependency audit
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          set -o pipefail
+          npm audit --omit=dev --audit-level=high 2>&1 | tee audit-results.txt
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uiadapt-v4.1-verification-${{ github.sha }}
+          path: |
+            test-results/
+            playwright-report/
+            dist/
+            audit-results.txt
+          if-no-files-found: ignore
