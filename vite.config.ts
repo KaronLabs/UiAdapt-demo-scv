@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  base: "/uiadapt_demo/",
   server: { host: "127.0.0.1" },
   preview: { host: "127.0.0.1", port: 8766 },
   test: {

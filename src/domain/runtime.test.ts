@@ -60,7 +60,7 @@ describe("deterministic evidence and state policy", () => {
       ["COMPARE", false, { appliedState: "EXPLORE", showComparison: false, focusedProductId: null }],
       ["COMPARE", true, { appliedState: "COMPARE", showComparison: true, focusedProductId: null }],
       ["FOCUS", false, { appliedState: "EXPLORE", showComparison: false, focusedProductId: null }],
-      ["FOCUS", true, { appliedState: "FOCUS", showComparison: true, focusedProductId: "aurora-one" }],
+      ["FOCUS", true, { appliedState: "FOCUS", showComparison: false, focusedProductId: "aurora-one" }],
     ] as const;
     for (const [state, enabled, expected] of cases) {
       expect(derivePolicy(state, enabled, state === "FOCUS" ? "aurora-one" : null)).toEqual(expected);
@@ -121,6 +121,39 @@ describe("deterministic evidence and state policy", () => {
     state = runtimeReducer(state, { type: "RECORD_EVENT", event: REPLAY_EVENTS[2], epoch: 0 });
     expect(state.events).toHaveLength(0);
     expect(state.lastRejectedReason).toBe("STALE_SESSION_EPOCH");
+  });
+
+  it("does not attribute Nova purchase evidence to an Aurora-dominant FOCUS", () => {
+    const events: BehaviorEvent[] = [
+      { id: "negative-01", atMs: 1_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
+      { id: "negative-02", atMs: 2_000, type: "OPEN_DETAILS", productId: "aurora-one", source: "USER" },
+      { id: "negative-03", atMs: 3_000, type: "CHECK_PRICE", productId: "aurora-one", source: "USER" },
+      { id: "negative-04", atMs: 4_000, type: "CHECK_REVIEWS", productId: "aurora-one", source: "USER" },
+      { id: "negative-05", atMs: 5_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
+      { id: "negative-06", atMs: 6_000, type: "OPEN_DETAILS", productId: "aurora-one", source: "USER" },
+      { id: "negative-07", atMs: 7_000, type: "SELECT_COLOR", productId: "nova-pro", source: "USER" },
+      { id: "negative-08", atMs: 8_000, type: "VIEW_PRODUCT", productId: "nova-pro", source: "USER" },
+    ];
+    const features = deriveFeatures(events);
+    const state = play(events);
+    expect(features.dominantProduct).toBe("aurora-one");
+    expect(features.dominantShare).toBe(0.75);
+    expect(features.purchaseSupportSignalsByProduct).toEqual({ "aurora-one": 0, "nova-pro": 1, "halo-air": 0 });
+    expect(state.detectedState).not.toBe("FOCUS");
+  });
+
+  it("allows Aurora-owned purchase evidence to support Aurora FOCUS", () => {
+    const events: BehaviorEvent[] = [
+      { id: "positive-01", atMs: 1_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
+      { id: "positive-02", atMs: 2_000, type: "OPEN_DETAILS", productId: "aurora-one", source: "USER" },
+      { id: "positive-03", atMs: 3_000, type: "CHECK_PRICE", productId: "aurora-one", source: "USER" },
+      { id: "positive-04", atMs: 4_000, type: "CHECK_REVIEWS", productId: "aurora-one", source: "USER" },
+      { id: "positive-05", atMs: 5_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
+      { id: "positive-06", atMs: 6_000, type: "SELECT_COLOR", productId: "aurora-one", source: "USER" },
+      { id: "positive-07", atMs: 7_000, type: "VIEW_PRODUCT", productId: "nova-pro", source: "USER" },
+      { id: "positive-08", atMs: 8_000, type: "VIEW_PRODUCT", productId: "nova-pro", source: "USER" },
+    ];
+    expect(play(events).detectedState).toBe("FOCUS");
   });
 
   it("stops replay before accepting manual takeover", () => {

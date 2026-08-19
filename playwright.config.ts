@@ -17,7 +17,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run build && npm run preview",
-    url: "http://127.0.0.1:8766",
+    url: "http://127.0.0.1:8766/uiadapt_demo/",
     reuseExistingServer: false,
     stdout: "pipe",
     stderr: "pipe",

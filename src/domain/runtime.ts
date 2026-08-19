@@ -22,7 +22,7 @@ export function derivePolicy(
   const appliedState = adaptiveEnabled ? detectedState : "EXPLORE";
   return {
     appliedState,
-    showComparison: appliedState === "COMPARE" || appliedState === "FOCUS",
+    showComparison: appliedState === "COMPARE",
     focusedProductId: appliedState === "FOCUS" ? focusedProductId : null,
   };
 }
@@ -36,6 +36,7 @@ function emptyFeatures(): FeatureSnapshot {
   dominantProduct: null,
   dominantShare: 0,
   purchaseSupportSignals: 0,
+  purchaseSupportSignalsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
   };
 }
 
@@ -66,11 +67,19 @@ export function deriveFeatures(events: readonly BehaviorEvent[]): FeatureSnapsho
   };
   let switchCount = 0;
   let purchaseSupportSignals = 0;
+  const purchaseSupportSignalsByProduct: Record<ProductId, number> = {
+    "aurora-one": 0,
+    "nova-pro": 0,
+    "halo-air": 0,
+  };
 
   window.forEach((event, index) => {
     interactionsByProduct[event.productId] += 1;
     if (index > 0 && window[index - 1].productId !== event.productId) switchCount += 1;
-    if (PURCHASE_SIGNALS.has(event.type)) purchaseSupportSignals += 1;
+    if (PURCHASE_SIGNALS.has(event.type)) {
+      purchaseSupportSignals += 1;
+      purchaseSupportSignalsByProduct[event.productId] += 1;
+    }
   });
 
   let dominantProduct: ProductId | null = null;
@@ -91,6 +100,7 @@ export function deriveFeatures(events: readonly BehaviorEvent[]): FeatureSnapsho
     dominantProduct,
     dominantShare: window.length === 0 ? 0 : dominantCount / window.length,
     purchaseSupportSignals,
+    purchaseSupportSignalsByProduct,
   };
 }
 
@@ -110,7 +120,8 @@ export function detectState(
     features.windowSize >= 6 &&
     dominantCount >= 6 &&
     features.dominantShare >= 0.75 &&
-    features.purchaseSupportSignals >= 1
+    features.dominantProduct !== null &&
+    features.purchaseSupportSignalsByProduct[features.dominantProduct] >= 1
   ) {
     candidate = "FOCUS";
   } else if (

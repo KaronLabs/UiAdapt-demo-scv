@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { PRODUCTS } from "./domain/catalog";
 import { derivePolicy } from "./domain/runtime";
 import type { AdaptiveState, ProductId } from "./domain/types";
@@ -37,7 +37,8 @@ function App() {
     recordUserEvent,
     setAdaptiveEnabled,
   } = useAdaptiveRuntime();
-  const copy = stateCopy[state.detectedState];
+  const detectedCopy = stateCopy[state.detectedState];
+  const presentationCopy = stateCopy[state.appliedState];
 
   const cartCount = state.events.filter((event) => event.type === "ADD_TO_CART").length;
   const comparisonIds = useMemo(() => {
@@ -59,15 +60,32 @@ function App() {
   const policy = derivePolicy(state.detectedState, state.adaptiveEnabled, state.focusedProductId);
   const showComparison = policy.showComparison;
   const focusedId = policy.focusedProductId;
+  const focusedProduct = focusedId ? PRODUCTS.find((product) => product.id === focusedId) : null;
   const replayIsActive = state.replayStatus === "RUNNING" || state.replayStatus === "PAUSED";
+  const demoStageRef = useRef<HTMLElement>(null);
+  const hasScrolledToStageRef = useRef(false);
+
+  useEffect(() => {
+    if (state.replayStatus === "IDLE") {
+      hasScrolledToStageRef.current = false;
+      return;
+    }
+    if (state.replayStatus !== "RUNNING" || hasScrolledToStageRef.current) return;
+    hasScrolledToStageRef.current = true;
+    const stage = demoStageRef.current;
+    if (!stage || typeof stage.scrollIntoView !== "function") return;
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    stage.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  }, [state.replayStatus]);
 
   return (
     <div className={`app app--${state.appliedState.toLowerCase()}`}>
       <header className="site-header">
-        <a className="brand" href="#main-content" aria-label="UIAdapt Storefront 홈">
+        <a className="brand" href="#main-content" aria-label="Atelier Audio storefront 홈">
           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
-          <span>UIAdapt <em>Atelier</em></span>
+          <span>Atelier Audio</span>
         </a>
+        <span className="powered-by">Powered by UIAdapt</span>
         <p className="header-story"><strong>WHAT</strong>은 그대로. <strong>HOW</strong>는 지금의 행동에 맞게.</p>
         <div className="header-tools">
           <label className="adaptive-toggle">
@@ -135,62 +153,89 @@ function App() {
           </div>
           <div className="state-message">
             <span className="state-message__dot" aria-hidden="true" />
-            <div><strong>{copy.label}</strong><span>{state.adaptiveEnabled ? "화면 정책 적용 중" : "화면 정책 적용 안 함"}</span></div>
+            <div><strong>{detectedCopy.label}</strong><span>{state.adaptiveEnabled ? "화면 정책 적용 중" : "화면 정책 적용 안 함"}</span></div>
           </div>
         </section>
 
-        <section className="storefront" aria-labelledby="storefront-title">
-          <SignalRibbon state={state.appliedState} />
-          <div className="storefront__heading">
+        <section className="demo-stage" ref={demoStageRef} aria-labelledby="storefront-title">
+          <div className="demo-stage__header">
             <div>
-              <p className="eyebrow">Curated wireless listening</p>
-              <h2 id="storefront-title">당신의 리듬을 위한 세 가지 조율</h2>
+              <p className="eyebrow">Atelier Audio · Adaptive storefront</p>
+              <span className="demo-stage__label">The merchant stage, reshaped by observed behavior</span>
             </div>
-            <p>{copy.description}</p>
+            <span className="powered-by">Powered by UIAdapt</span>
           </div>
-          <div className="product-grid" data-state={state.appliedState}>
-            {PRODUCTS.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                focused={focusedId === product.id}
-                compared={state.compareTray.includes(product.id)}
-                muted={Boolean(focusedId && focusedId !== product.id)}
-                onEvent={recordUserEvent}
-              />
-            ))}
-          </div>
-        </section>
 
-        <section className={`comparison-panel${showComparison ? " is-visible" : ""}`} aria-hidden={!showComparison}>
-          <div className="comparison-panel__intro">
-            <p className="eyebrow">Comparison support</p>
-            <h2>차이만 빠르게 들여다보기</h2>
-            <p>원래 상품 정보는 그대로 두고, 반복해서 확인한 항목을 한 기준선 위에 놓았습니다.</p>
-          </div>
-          <div className="comparison-table" role="table" aria-label="선택 상품 비교">
-            <div role="row" className="comparison-row comparison-row--head">
-              <span role="columnheader">기준</span>
-              {comparisonProducts.map((product) => <strong role="columnheader" key={product.id}>{product.name}</strong>)}
-            </div>
-            {[
-              ["가격", ...comparisonProducts.map((p) => `₩${p.price.toLocaleString("ko-KR")}`)],
-              ["배터리", ...comparisonProducts.map((p) => `${p.batteryHours}시간`)],
-              ["노이즈 제어", ...comparisonProducts.map((p) => p.anc)],
-              ["배송", ...comparisonProducts.map((p) => p.shipping)],
-            ].map(([label, ...values]) => (
-              <div role="row" className="comparison-row" key={label}>
-                <span role="rowheader">{label}</span>
-                {values.map((value, index) => <span role="cell" key={`${label}-${index}`}>{value}</span>)}
+          <div className="demo-stage__adaptive-surface">
+            {showComparison && <section className="comparison-panel is-visible" aria-label="비교 지원">
+              <div className="comparison-panel__intro">
+                <p className="eyebrow">Comparison support</p>
+                <h2>차이만 빠르게 들여다보기</h2>
+                <p>원래 상품 정보는 그대로 두고, 반복해서 확인한 항목을 한 기준선 위에 놓았습니다.</p>
               </div>
-            ))}
+              <div className="comparison-table" role="table" aria-label="선택 상품 비교">
+                <div role="row" className="comparison-row comparison-row--head">
+                  <span role="columnheader">기준</span>
+                  {comparisonProducts.map((product) => <strong role="columnheader" key={product.id}>{product.name}</strong>)}
+                </div>
+                {[
+                  ["가격", ...comparisonProducts.map((p) => `₩${p.price.toLocaleString("ko-KR")}`)],
+                  ["배터리", ...comparisonProducts.map((p) => `${p.batteryHours}시간`)],
+                  ["노이즈 제어", ...comparisonProducts.map((p) => p.anc)],
+                  ["배송", ...comparisonProducts.map((p) => p.shipping)],
+                ].map(([label, ...values]) => (
+                  <div role="row" className="comparison-row" key={label}>
+                    <span role="rowheader">{label}</span>
+                    {values.map((value, index) => <span role="cell" key={`${label}-${index}`}>{value}</span>)}
+                  </div>
+                ))}
+              </div>
+            </section>}
+
+            {state.appliedState === "FOCUS" && focusedProduct && <section className="decision-support" aria-label="집중 상품 결정 지원">
+              <div className="decision-support__intro">
+                <p className="eyebrow">Decision support · {focusedProduct.name}</p>
+                <h2>선택에 필요한 정보를 한 흐름에 모았습니다.</h2>
+                <p>상품은 그대로입니다. 지금 확인한 정보의 순서와 강조만 조율했습니다.</p>
+              </div>
+              <div className="decision-support__proof">
+                <div><span>가격</span><strong>₩{focusedProduct.price.toLocaleString("ko-KR")}</strong></div>
+                <div><span>배송</span><strong>{focusedProduct.shipping}</strong></div>
+                <div><span>재고</span><strong>{focusedProduct.inventory}개</strong></div>
+                <div><span>색상</span><strong>{focusedProduct.colors.join(" · ")}</strong></div>
+                <button type="button" className="button button--primary" onClick={() => recordUserEvent("ADD_TO_CART", focusedProduct.id)}>장바구니에 담기</button>
+              </div>
+            </section>}
           </div>
+
+          <section className="storefront" aria-labelledby="storefront-title">
+            <SignalRibbon state={state.appliedState} />
+            <div className="storefront__heading">
+              <div>
+                <p className="eyebrow">Curated wireless listening</p>
+                <h2 id="storefront-title">당신의 리듬을 위한 세 가지 조율</h2>
+              </div>
+              <p>{presentationCopy.description}</p>
+            </div>
+            <div className="product-grid" data-state={state.appliedState}>
+              {PRODUCTS.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  focused={focusedId === product.id}
+                  compared={state.compareTray.includes(product.id)}
+                  muted={Boolean(focusedId && focusedId !== product.id)}
+                  onEvent={recordUserEvent}
+                />
+              ))}
+            </div>
+          </section>
         </section>
 
         <section className="explainers" aria-label="UIAdapt 설명">
           <details className="why-panel">
             <summary>
-              <span><small>Why did the UI change?</small><strong>{copy.title}</strong></span>
+              <span><small>Why did the UI change?</small><strong>{detectedCopy.title}</strong></span>
               <span className="summary-action">근거 보기</span>
             </summary>
             <div className="why-grid">
@@ -221,12 +266,12 @@ function App() {
       </main>
 
       <footer>
-        <span>UIAdapt Product Theater · v4.0</span>
+        <span>Atelier Audio storefront · Powered by UIAdapt</span>
         <p>실제 결제는 수행되지 않습니다. 모든 상품과 행동 데이터는 이 데모 안에만 존재합니다.</p>
       </footer>
 
       <div key={state.detectedState} className={`transition-toast${state.detectedState !== "EXPLORE" ? " is-visible" : ""}`} role="status" aria-live="polite">
-        <span>{state.detectedState}</span><strong>{copy.label}</strong>
+        <span>{state.detectedState}</span><strong>{detectedCopy.label}</strong>
       </div>
     </div>
   );

@@ -7,7 +7,9 @@ describe("adaptive storefront UI contract", () => {
   afterEach(() => vi.useRealTimers());
 
   it("renders the canonical products and keeps diagnostics collapsed", () => {
-    render(<App />);
+    const { container } = render(<App />);
+    expect(screen.getByRole("link", { name: "Atelier Audio storefront 홈" })).toBeInTheDocument();
+    expect(container.querySelector("header .powered-by")).toHaveTextContent("Powered by UIAdapt");
     expect(screen.getByRole("heading", { name: "Aurora One" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Nova Pro" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Halo Air" })).toBeInTheDocument();
@@ -31,11 +33,14 @@ describe("adaptive storefront UI contract", () => {
 
   it("detects FOCUS with Adaptive UI off but keeps EXPLORE presentation", () => {
     const { container } = render(<App />);
+    const exploreDescription = container.querySelector(".storefront__heading > p")?.textContent;
     fireEvent.click(screen.getByRole("checkbox", { name: /Adaptive UI/i }));
     fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
     act(() => vi.advanceTimersByTime(21_000));
     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("FOCUS");
     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
+    expect(container.querySelector(".storefront__heading > p")).toHaveTextContent(exploreDescription ?? "");
+    expect(screen.getByText("선택에 필요한 정보를 가까이 모았습니다.")).toBeInTheDocument();
   });
 
   it("does not remove the active product control during adaptation", () => {
@@ -47,6 +52,16 @@ describe("adaptive storefront UI contract", () => {
     act(() => vi.advanceTimersByTime(7_000));
     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("COMPARE");
     expect(document.activeElement).toBe(priceButton);
+  });
+
+  it("keeps comparison inside the stable demo stage and hides it in FOCUS", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
+    act(() => vi.advanceTimersByTime(7_000));
+    expect(container.querySelector(".demo-stage .comparison-panel.is-visible")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(14_000));
+    expect(container.querySelector(".comparison-panel.is-visible")).not.toBeInTheDocument();
+    expect(container.querySelector(".decision-support")).toBeInTheDocument();
   });
 
   it("stops the scripted replay when the user takes over", () => {

@@ -1,6 +1,6 @@
-# UIAdapt Adaptive Storefront Theater v4.0
+# UIAdapt Adaptive Storefront Theater v4.1
 
-동일한 상품 카탈로그와 동일한 행동 입력을 사용하면서, Adaptive UI가 정보의 배치와 강조만 바꾸는 로컬 데모입니다.
+Atelier Audio의 동일한 상품 카탈로그와 동일한 행동 입력을 사용하면서, Powered by UIAdapt가 정보의 배치와 강조만 바꾸는 로컬 데모입니다.
 
 > Recommendation decides WHAT. UIAdapt decides HOW.
 
@@ -18,7 +18,7 @@ npm ci
 npm run dev
 ```
 
-개발 서버 기본 주소는 `http://127.0.0.1:5173`입니다.
+개발 서버 기본 주소는 `http://127.0.0.1:5173/uiadapt_demo/`입니다.
 
 Production build와 preview:
 
@@ -27,7 +27,7 @@ npm run build
 npm run preview
 ```
 
-Preview 주소는 `http://127.0.0.1:8766`입니다.
+Preview 주소는 `http://127.0.0.1:8766/uiadapt_demo/`입니다.
 
 ## 검증
 
@@ -36,9 +36,17 @@ npm run lint
 npm test
 npm run build
 npm run test:e2e
+npm audit --omit=dev --audit-level=high
 ```
 
-Playwright는 Chromium에서 `1440×900`, `1024×768`, `390×844`를 검증합니다. 테스트는 canonical product text, Replay 상태 전이, Adaptive OFF의 감지/적용 분리, focus 보존, 가로 overflow, console error, 외부 네트워크 요청을 검사합니다.
+Playwright는 Chromium에서 `/uiadapt_demo/` nested path와 `1440×900`, `1024×768`, `390×844`를 검증합니다. 테스트는 canonical product text, Replay 상태 전이, Adaptive OFF의 감지/적용 분리, product-specific purchase evidence, COMPARE main stage, FOCUS decision support, focus 보존, 가로 overflow, console error, failed/external network request를 검사합니다.
+
+## 제품과 적응형 계층
+
+- `Atelier Audio`: 상품을 판매하는 가상의 merchant storefront
+- `Powered by UIAdapt`: 관찰된 행동에 따라 표현 방식을 바꾸는 기술 계층
+- 상품 ID·가격·평점·리뷰·배송·재고·색상은 모든 상태와 Adaptive ON/OFF에서 동일합니다.
+- EXPLORE는 발견, COMPARE는 대조, FOCUS는 한 상품의 결정 지원을 담당합니다.
 
 ## 결정론적 상태 규칙
 

@@ -23,12 +23,16 @@ type EvidencePage = Page & {
   __consoleErrors?: string[];
   __externalRequests?: string[];
   __failedRequests?: string[];
+  __assetResponses?: Array<{ url: string; status: number }>;
+  __assetFailures?: string[];
 };
 
 test.beforeEach(async ({ page }) => {
   const consoleErrors: string[] = [];
   const externalRequests: string[] = [];
   const failedRequests: string[] = [];
+  const assetResponses: Array<{ url: string; status: number }> = [];
+  const assetFailures: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
@@ -37,11 +41,20 @@ test.beforeEach(async ({ page }) => {
     if (url.hostname !== "127.0.0.1") externalRequests.push(request.url());
   });
   page.on("requestfailed", (request) => failedRequests.push(request.url()));
+  page.on("response", (response) => {
+    const url = new URL(response.url());
+    if (url.pathname.startsWith("/uiadapt_demo/assets/")) {
+      assetResponses.push({ url: response.url(), status: response.status() });
+      if (response.status() >= 400) assetFailures.push(`${response.status()} ${response.url()}`);
+    }
+  });
   const evidencePage = page as EvidencePage;
   evidencePage.__consoleErrors = consoleErrors;
   evidencePage.__externalRequests = externalRequests;
   evidencePage.__failedRequests = failedRequests;
-  await page.goto("/");
+  evidencePage.__assetResponses = assetResponses;
+  evidencePage.__assetFailures = assetFailures;
+  await page.goto("/uiadapt_demo/");
   await expect(page.getByRole("heading", { name: "같은 상품, 달라지는 무대." })).toBeVisible();
 });
 
@@ -50,6 +63,7 @@ test.afterEach(async ({ page }) => {
   expect(evidencePage.__consoleErrors ?? []).toEqual([]);
   expect(evidencePage.__externalRequests ?? []).toEqual([]);
   expect(evidencePage.__failedRequests ?? []).toEqual([]);
+  expect(evidencePage.__assetFailures ?? []).toEqual([]);
 });
 
 test("storefront is responsive, local-only, and diagnostics are collapsed", async ({ page }, testInfo) => {
@@ -59,6 +73,28 @@ test("storefront is responsive, local-only, and diagnostics are collapsed", asyn
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: `test-results/${testInfo.project.name}-explore.png`, fullPage: true, animations: "disabled" });
+});
+
+test("nested deployment path loads assets, reloads, and runs the replay", async ({ page }) => {
+  await page.goto("/uiadapt_demo/");
+  await expect(page.getByRole("heading", { name: "같은 상품, 달라지는 무대." })).toBeVisible();
+  const scriptSource = await page.locator('script[type="module"]').getAttribute("src");
+  expect(scriptSource).toMatch(/^\/uiadapt_demo\//);
+  const stylesheetSource = await page.locator('link[rel="stylesheet"]').getAttribute("href");
+  expect(stylesheetSource).toMatch(/^\/uiadapt_demo\//);
+  await settleVisualEvidence(page);
+  expect(await page.evaluate(() => document.fonts.check("16px Manrope"))).toBe(true);
+  await page.reload();
+  await settleVisualEvidence(page);
+  const assetResponses = (page as EvidencePage).__assetResponses ?? [];
+  expect(assetResponses.some(({ url }) => url.endsWith(".js"))).toBe(true);
+  expect(assetResponses.some(({ url }) => url.endsWith(".css"))).toBe(true);
+  expect(assetResponses.some(({ url }) => /\.woff2?$/.test(url))).toBe(true);
+  expect((page as EvidencePage).__assetFailures ?? []).toEqual([]);
+  await page.clock.install();
+  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.clock.fastForward(7_000);
+  await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
 });
 
 test("the canonical replay changes presentation without changing product data", async ({ page }, testInfo) => {
@@ -81,13 +117,37 @@ test("the canonical replay changes presentation without changing product data", 
   await page.screenshot({ path: `test-results/${testInfo.project.name}-focus.png`, fullPage: true, animations: "disabled" });
 });
 
+test("COMPARE is visible in the main stage and FOCUS becomes decision support", async ({ page }, testInfo) => {
+  await page.clock.install();
+  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.clock.fastForward(7_000);
+  const comparePanel = page.locator(".demo-stage .comparison-panel.is-visible");
+  await expect(comparePanel).toBeVisible();
+  const compareBox = await comparePanel.boundingBox();
+  expect(compareBox).not.toBeNull();
+  if (testInfo.project.name === "desktop-1440") {
+    expect(compareBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(900);
+  }
+  await page.clock.fastForward(14_000);
+  await expect(page.locator(".comparison-panel.is-visible")).toHaveCount(0);
+  await expect(page.locator(".decision-support")).toBeVisible();
+  await expect(page.getByText("Aurora One").first()).toBeVisible();
+});
+
+test("merchant and adaptive technology layers are named separately", async ({ page }) => {
+  await expect(page.getByRole("link", { name: "Atelier Audio storefront 홈" })).toBeVisible();
+  await expect(page.locator(".demo-stage__header .powered-by")).toHaveText("Powered by UIAdapt");
+});
+
 test("Adaptive OFF keeps the same detected state but baseline presentation", async ({ page }) => {
   await page.clock.install();
+  const exploreDescription = await page.locator(".storefront__heading > p").textContent();
   await page.getByRole("checkbox", { name: /Adaptive UI/i }).uncheck();
   await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
   await page.clock.fastForward(21_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
+  await expect(page.locator(".storefront__heading > p")).toHaveText(exploreDescription ?? "");
   expect(await productContracts(page)).toEqual(expectedProducts);
 });
 
@@ -114,7 +174,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action", 
   await expect(page.getByTestId("replay-status")).toContainText("일시 정지");
   await expect(page.locator(".product-card").first()).toHaveCSS("transition-duration", "0s");
 
-  await page.goto("/");
+  await page.goto("/uiadapt_demo/");
   for (let index = 0; index < 4; index += 1) await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
   for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
@@ -122,7 +182,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action", 
   await page.keyboard.press("Space");
   await expect(page.getByTestId("replay-status")).toContainText("직접 둘러보거나");
 
-  await page.goto("/");
+  await page.goto("/uiadapt_demo/");
   for (let index = 0; index < 6; index += 1) await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Aurora One 가격 확인" })).toBeFocused();
   await page.keyboard.press("Enter");
