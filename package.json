@@ -16,7 +16,8 @@
     "verify:build-bases": "node scripts/verify-build-bases.mjs",
     "serve:password": "node scripts/password-gateway.mjs",
     "test:gateway": "node --test scripts/password-gateway.test.mjs",
-    "test:replit": "node --test scripts/replit-deployment-contract.test.mjs"
+    "test:replit": "node --test scripts/replit-deployment-contract.test.mjs",
+    "smoke:replit": "node scripts/replit-public-smoke.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
