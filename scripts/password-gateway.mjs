@@ -46,12 +46,29 @@ function rejectUnauthorized(response) {
 }
 
 function upstreamTarget(requestUrl, upstream) {
-  const incoming = new URL(requestUrl ?? "/", "http://gateway.invalid");
-  return new URL(`${incoming.pathname}${incoming.search}`, upstream);
+  try {
+    const incoming = new URL(requestUrl ?? "/", "http://gateway.invalid");
+    return new URL(`${incoming.pathname}${incoming.search}`, upstream);
+  } catch (error) {
+    if (error?.code === "ERR_INVALID_URL") return null;
+    throw error;
+  }
+}
+
+function rejectBadRequest(response) {
+  response.writeHead(400, {
+    "Cache-Control": "no-store",
+    "Content-Type": "text/plain; charset=utf-8",
+  });
+  response.end("Bad request");
 }
 
 function proxyRequest(request, response, upstream) {
   const target = upstreamTarget(request.url, upstream);
+  if (!target) {
+    rejectBadRequest(response);
+    return;
+  }
   const headers = { ...request.headers, host: target.host };
   delete headers.authorization;
 
@@ -93,8 +110,25 @@ function rejectUnauthorizedUpgrade(socket) {
   ].join("\r\n"));
 }
 
+function rejectBadRequestUpgrade(socket) {
+  const body = "Bad request";
+  socket.end([
+    "HTTP/1.1 400 Bad Request",
+    "Cache-Control: no-store",
+    "Connection: close",
+    "Content-Type: text/plain; charset=utf-8",
+    `Content-Length: ${Buffer.byteLength(body)}`,
+    "",
+    body,
+  ].join("\r\n"));
+}
+
 function proxyUpgrade(request, clientSocket, clientHead, upstream) {
   const target = upstreamTarget(request.url, upstream);
+  if (!target) {
+    rejectBadRequestUpgrade(clientSocket);
+    return;
+  }
   const headers = { ...request.headers, host: target.host };
   delete headers.authorization;
 
