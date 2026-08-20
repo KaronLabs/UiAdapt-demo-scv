@@ -1,0 +1,5 @@
+entrypoint = "index.html"
+run = "npm run dev -- --host 0.0.0.0"
+
+[deployment]
+build = "npm run build:replit"
