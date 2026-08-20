@@ -408,4 +408,3 @@ Reviewer confirms:
 - [ ] Step 5: Issue the verdict
 
 Only the independent reviewer may issue PASS or REMAND. The implementation report must stop at READY_FOR_INDEPENDENT_REVIEW if any live evidence is missing.
-

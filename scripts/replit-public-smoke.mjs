@@ -1,4 +1,9 @@
 import { chromium } from "@playwright/test";
+import {
+  normalizePublicUrl,
+  validateAssetResponses,
+  validateDocumentResponse,
+} from "./replit-public-smoke-lib.mjs";
 
 const publicUrl = process.env.REPLIT_PUBLIC_URL;
 
@@ -12,13 +17,9 @@ if (!publicUrl) {
 } else {
   let target;
   try {
-    target = new URL(publicUrl);
-  } catch {
-    fail("REPLIT_PUBLIC_URL must be a valid HTTPS URL");
-  }
-
-  if (target && target.protocol !== "https:") {
-    fail("REPLIT_PUBLIC_URL must use HTTPS");
+    target = normalizePublicUrl(publicUrl);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
   }
 
   if (target && process.exitCode !== 1) {
@@ -51,9 +52,11 @@ if (!publicUrl) {
 
     try {
       const documentResponse = await page.goto(target.href, { waitUntil: "networkidle" });
-      if (!documentResponse || documentResponse.status() >= 400) {
-        throw new Error(`document request failed with status ${documentResponse?.status() ?? "none"}`);
-      }
+      if (!documentResponse) throw new Error("document request did not return a response");
+      validateDocumentResponse({
+        status: documentResponse.status(),
+        contentType: documentResponse.headers()["content-type"] ?? "",
+      });
       await page.evaluate(() => document.fonts.ready);
       const watch = page.getByRole("button", { name: /Watch UIAdapt/i });
       if ((await watch.count()) !== 1) throw new Error("Watch UIAdapt control is missing");
@@ -67,12 +70,7 @@ if (!publicUrl) {
       await page.waitForFunction(() => document.querySelector('[data-current="true"] strong')?.textContent === "FOCUS");
       states.push("FOCUS");
 
-      const badResponses = localResponses.filter(({ status }) => status >= 400);
-      const htmlAssets = localResponses.filter(({ resourceType, contentType }) =>
-        ["script", "stylesheet", "font"].includes(resourceType) && contentType.toLowerCase().includes("text/html"),
-      );
-      if (badResponses.length > 0) throw new Error(`${badResponses.length} local response(s) returned HTTP >= 400`);
-      if (htmlAssets.length > 0) throw new Error(`${htmlAssets.length} asset response(s) returned HTML`);
+      validateAssetResponses(localResponses);
       if (failedRequests.length > 0) throw new Error(`${failedRequests.length} request(s) failed`);
       if (consoleErrors.length > 0) throw new Error(`${consoleErrors.length} console error(s) occurred`);
       if (externalRequests.length > 0) throw new Error(`${externalRequests.length} unexpected external request(s) occurred`);
