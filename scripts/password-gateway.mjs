@@ -45,8 +45,13 @@ function rejectUnauthorized(response) {
   response.end("Authentication required");
 }
 
-function proxyRequest(request, response, upstreamUrl) {
-  const target = new URL(request.url ?? "/", upstreamUrl);
+function upstreamTarget(requestUrl, upstream) {
+  const incoming = new URL(requestUrl ?? "/", "http://gateway.invalid");
+  return new URL(`${incoming.pathname}${incoming.search}`, upstream);
+}
+
+function proxyRequest(request, response, upstream) {
+  const target = upstreamTarget(request.url, upstream);
   const headers = { ...request.headers, host: target.host };
   delete headers.authorization;
 
@@ -74,6 +79,70 @@ function proxyRequest(request, response, upstreamUrl) {
   request.pipe(upstreamRequest);
 }
 
+function rejectUnauthorizedUpgrade(socket) {
+  const body = "Authentication required";
+  socket.end([
+    "HTTP/1.1 401 Unauthorized",
+    'WWW-Authenticate: Basic realm="UIAdapt Demo", charset="UTF-8"',
+    "Cache-Control: no-store",
+    "Connection: close",
+    "Content-Type: text/plain; charset=utf-8",
+    `Content-Length: ${Buffer.byteLength(body)}`,
+    "",
+    body,
+  ].join("\r\n"));
+}
+
+function proxyUpgrade(request, clientSocket, clientHead, upstream) {
+  const target = upstreamTarget(request.url, upstream);
+  const headers = { ...request.headers, host: target.host };
+  delete headers.authorization;
+
+  const upstreamRequest = http.request(target, {
+    method: request.method,
+    headers,
+  });
+
+  upstreamRequest.on("upgrade", (response, upstreamSocket, upstreamHead) => {
+    const responseHeaders = [];
+    for (let index = 0; index < response.rawHeaders.length; index += 2) {
+      responseHeaders.push(`${response.rawHeaders[index]}: ${response.rawHeaders[index + 1]}`);
+    }
+    clientSocket.write([
+      `HTTP/1.1 ${response.statusCode} ${response.statusMessage}`,
+      ...responseHeaders,
+      "",
+      "",
+    ].join("\r\n"));
+    if (upstreamHead.length) clientSocket.write(upstreamHead);
+    if (clientHead.length) upstreamSocket.write(clientHead);
+    upstreamSocket.pipe(clientSocket).pipe(upstreamSocket);
+  });
+
+  upstreamRequest.on("response", (response) => {
+    clientSocket.write([
+      `HTTP/1.1 ${response.statusCode ?? 502} ${response.statusMessage ?? "Bad Gateway"}`,
+      "Connection: close",
+      "",
+      "",
+    ].join("\r\n"));
+    response.pipe(clientSocket);
+  });
+
+  upstreamRequest.on("error", () => {
+    clientSocket.end([
+      "HTTP/1.1 502 Bad Gateway",
+      "Cache-Control: no-store",
+      "Connection: close",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "Upstream unavailable",
+    ].join("\r\n"));
+  });
+
+  upstreamRequest.end();
+}
+
 export function createPasswordGateway({
   password,
   username = DEFAULT_USERNAME,
@@ -88,7 +157,7 @@ export function createPasswordGateway({
     throw new Error("UIAdapt gateway upstream must use http://");
   }
 
-  return http.createServer((request, response) => {
+  const gateway = http.createServer((request, response) => {
     if (!hasValidCredentials(request.headers.authorization, username, password)) {
       rejectUnauthorized(response);
       return;
@@ -105,6 +174,17 @@ export function createPasswordGateway({
 
     proxyRequest(request, response, upstream);
   });
+
+  gateway.on("upgrade", (request, socket, head) => {
+    if (!hasValidCredentials(request.headers.authorization, username, password)) {
+      rejectUnauthorizedUpgrade(socket);
+      return;
+    }
+
+    proxyUpgrade(request, socket, head, upstream);
+  });
+
+  return gateway;
 }
 
 function readPort(value) {

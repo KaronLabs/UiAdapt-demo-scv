@@ -32,6 +32,9 @@ jobs:
       - name: Unit and component tests
         run: npm test
 
+      - name: Password gateway tests
+        run: npm run test:gateway
+
       - name: Production build
         run: npm run build
 
