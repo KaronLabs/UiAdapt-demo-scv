@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import console from "node:console";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { readFileSync } from "node:fs";
 import http from "node:http";
 import { resolve } from "node:path";
 import process from "node:process";
@@ -10,6 +11,28 @@ const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 4180;
 const DEFAULT_UPSTREAM = "http://127.0.0.1:5173";
 const DEFAULT_USERNAME = "reviewer";
+
+export function resolveGatewayPassword({ password, passwordFile } = {}) {
+  if (passwordFile === undefined) return password;
+
+  let filePassword;
+  try {
+    filePassword = readFileSync(passwordFile, "utf8");
+  } catch {
+    throw new Error("UIADAPT_GATEWAY_PASSWORD_FILE must reference a readable, non-empty file");
+  }
+
+  if (filePassword.endsWith("\r\n")) {
+    filePassword = filePassword.slice(0, -2);
+  } else if (filePassword.endsWith("\n")) {
+    filePassword = filePassword.slice(0, -1);
+  }
+
+  if (filePassword.length === 0) {
+    throw new Error("UIADAPT_GATEWAY_PASSWORD_FILE must reference a readable, non-empty file");
+  }
+  return filePassword;
+}
 
 function constantTimeEqual(actual, expected) {
   const actualDigest = createHash("sha256").update(actual).digest();
@@ -236,7 +259,10 @@ const isDirectExecution = entryPath
 if (isDirectExecution) {
   const port = readPort(process.env.UIADAPT_GATEWAY_PORT);
   const gateway = createPasswordGateway({
-    password: process.env.UIADAPT_GATEWAY_PASSWORD,
+    password: resolveGatewayPassword({
+      password: process.env.UIADAPT_GATEWAY_PASSWORD,
+      passwordFile: process.env.UIADAPT_GATEWAY_PASSWORD_FILE,
+    }),
     username: process.env.UIADAPT_GATEWAY_USER ?? DEFAULT_USERNAME,
     upstreamUrl: process.env.UIADAPT_GATEWAY_UPSTREAM ?? DEFAULT_UPSTREAM,
   });

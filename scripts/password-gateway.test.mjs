@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
+import { spawnSync } from "node:child_process";
 import { once } from "node:events";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import process from "node:process";
 import test from "node:test";
 
 async function loadGateway() {
@@ -26,6 +31,12 @@ async function close(server) {
 
 function basicAuth(username, password) {
   return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
+}
+
+async function temporaryDirectory(t) {
+  const directory = await mkdtemp(join(tmpdir(), "uiadapt-gateway-"));
+  t.after(() => rm(directory, { force: true, recursive: true }));
+  return directory;
 }
 
 async function requestWithRawPath({ authorization, path, port }) {
@@ -90,6 +101,93 @@ test("fails closed when the required password is missing", async () => {
     () => createPasswordGateway({ password: "" }),
     /UIADAPT_GATEWAY_PASSWORD/,
   );
+});
+
+test("reads the password file with exactly one trailing LF or CRLF removed", async (t) => {
+  const { resolveGatewayPassword } = await loadGateway();
+  const directory = await temporaryDirectory(t);
+
+  for (const [filename, contents, expected] of [
+    ["lf.txt", "  file-password  \n\n", "  file-password  \n"],
+    ["crlf.txt", "file-password\r\n", "file-password"],
+  ]) {
+    const passwordFile = join(directory, filename);
+    await writeFile(passwordFile, contents, "utf8");
+    assert.equal(resolveGatewayPassword({
+      password: "ignored-environment-password",
+      passwordFile,
+    }), expected);
+  }
+});
+
+test("fails closed on a missing password file even when an environment password exists", async (t) => {
+  const { resolveGatewayPassword } = await loadGateway();
+  const directory = await temporaryDirectory(t);
+  const environmentSecret = "environment-secret-must-not-leak";
+
+  assert.throws(
+    () => resolveGatewayPassword({
+      password: environmentSecret,
+      passwordFile: join(directory, "missing-password.txt"),
+    }),
+    (error) => {
+      assert.match(error.message, /UIADAPT_GATEWAY_PASSWORD_FILE/);
+      assert.doesNotMatch(error.message, new RegExp(environmentSecret));
+      return true;
+    },
+  );
+});
+
+test("fails closed on an empty password file", async (t) => {
+  const { resolveGatewayPassword } = await loadGateway();
+  const directory = await temporaryDirectory(t);
+  const passwordFile = join(directory, "empty-password.txt");
+  await writeFile(passwordFile, "", "utf8");
+
+  assert.throws(
+    () => resolveGatewayPassword({ password: "fallback-secret", passwordFile }),
+    /UIADAPT_GATEWAY_PASSWORD_FILE/,
+  );
+});
+
+test("fails closed on an unreadable password-file target", async (t) => {
+  const { resolveGatewayPassword } = await loadGateway();
+  const directory = await temporaryDirectory(t);
+
+  assert.throws(
+    () => resolveGatewayPassword({ password: "fallback-secret", passwordFile: directory }),
+    /UIADAPT_GATEWAY_PASSWORD_FILE/,
+  );
+});
+
+test("does not expose either password source when password-file startup fails", async (t) => {
+  const directory = await temporaryDirectory(t);
+  const fileSecret = "file-secret-must-not-leak";
+  const environmentSecret = "environment-secret-must-not-leak";
+  const passwordFile = join(directory, `${fileSecret}.txt`);
+
+  const result = spawnSync(process.execPath, [join(import.meta.dirname, "password-gateway.mjs")], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      UIADAPT_GATEWAY_PASSWORD: environmentSecret,
+      UIADAPT_GATEWAY_PASSWORD_FILE: passwordFile,
+      UIADAPT_GATEWAY_PORT: "4180",
+    },
+    timeout: 2_000,
+  });
+  const output = `${result.stdout}${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /UIADAPT_GATEWAY_PASSWORD_FILE/);
+  assert.doesNotMatch(output, new RegExp(fileSecret));
+  assert.doesNotMatch(output, new RegExp(environmentSecret));
+});
+
+test("keeps the direct environment password compatible when no file is configured", async () => {
+  const { resolveGatewayPassword } = await loadGateway();
+
+  assert.equal(resolveGatewayPassword({ password: "direct-environment-password" }), "direct-environment-password");
 });
 
 test("rejects missing and incorrect credentials without contacting upstream", async (t) => {
