@@ -1,0 +1,86 @@
+COMMAND: dist inventory; inspect nested base; scan source network and injection surfaces
+START_TIMESTAMP: 2026-08-20T09:36:20.0864357+09:00
+WORKING_DIRECTORY: E:\03_AllWork\grafana\park-web-demo-v4.1
+TARGET_SHA: 0f69cc5ec9b4c5d822dc1f08634d225bc617ffff
+--- RAW OUTPUT BEGIN ---
+--- DIST INVENTORY ---
+
+FullName                                                                                                       Length
+--------                                                                                                       ------
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\index.html                                                          684
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\bricolage-grotesque-latin-ext-wght-normal-CcLUaPy7.woff2   18668
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2       41344
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\bricolage-grotesque-vietnamese-wght-normal-BUzh504Q.woff2   8608
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2            8356
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff             7204
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff             7208
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2            8460
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff         5820
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2        6912
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff         5772
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2        6972
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-400-normal-CvHOgSBP.woff               13144
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2              14708
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-500-normal-CB9ihrfo.woff               13156
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2              14888
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2          13348
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff           11768
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2          13432
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff           11768
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2          5868
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff           5620
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff           5616
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2          6040
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\index-BTJBcn0m.css                                         27205
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\index-C2KZUVP0.js                                         216500
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\manrope-cyrillic-wght-normal-Dvxsihut.woff2                14500
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\manrope-greek-wght-normal-DL7QRZyv.woff2                    9444
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\manrope-latin-ext-wght-normal-Ch3YOpNY.woff2               15120
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\manrope-latin-wght-normal-DHIcAJRg.woff2                   24836
+E:\03_AllWork\grafana\park-web-demo-v4.1\dist\assets\manrope-vietnamese-wght-normal-usUDDRr7.woff2               8520
+
+
+--- DIST INDEX.HTML ---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f4f3" />
+    <meta
+      name="description"
+      content="같은 상품과 같은 행동을 유지한 채 인터페이스 표현만 적응하는 UIAdapt 제품 데모"
+    />
+    <title>UIAdapt — Adaptive Storefront Theater</title>
+    <script type="module" crossorigin src="/uiadapt_demo/assets/index-C2KZUVP0.js"></script>
+    <link rel="stylesheet" crossorigin href="/uiadapt_demo/assets/index-BTJBcn0m.css">
+  </head>
+  <body>
+    <div id="root"></div>
+
+  </body>
+</html>
+--- VITE CONFIG ---
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  base: "/uiadapt_demo/",
+  server: { host: "127.0.0.1" },
+  preview: { host: "127.0.0.1", port: 8766 },
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    css: true,
+    include: ["src/**/*.test.{ts,tsx}"],
+  },
+});
+--- NESTED BASE MATCHES ---
+    <script type="module" crossorigin src="/uiadapt_demo/assets/index-C2KZUVP0.js"></script>
+    <link rel="stylesheet" crossorigin href="/uiadapt_demo/assets/index-BTJBcn0m.css">
+--- SOURCE NETWORK/HTML-INJECTION SURFACE SCAN ---
+NO_MATCHES
+--- RAW OUTPUT END ---
+EXIT_CODE: 0
+END_TIMESTAMP: 2026-08-20T09:36:20.7948497+09:00

@@ -1,0 +1,28 @@
+COMMAND: discover and hash governing documents in root and ancestors
+START_TIMESTAMP: 2026-08-20T09:36:46.1986054+09:00
+WORKING_DIRECTORY: E:\03_AllWork\grafana\park-web-demo-v4.1
+TARGET_SHA: 0f69cc5ec9b4c5d822dc1f08634d225bc617ffff
+--- RAW OUTPUT BEGIN ---
+missing	E:\03_AllWork\grafana\park-web-demo-v4.1\AGENTS.md
+missing	E:\03_AllWork\grafana\park-web-demo-v4.1\CLAUDE.md
+missing	E:\03_AllWork\grafana\park-web-demo-v4.1\GEMINI.md
+missing	E:\03_AllWork\grafana\park-web-demo-v4.1\SECURITY.md
+present	E:\03_AllWork\grafana\park-web-demo-v4.1\README.md	SHA256=B54DCF81940E6DF57EFBB6E98C774592F7A14ADBB69D02EC906A36457D3C2C32
+present	E:\03_AllWork\grafana\AGENTS.md	SHA256=CDF4CDB6E784B68B9B8EBF988A2936DD1D5D8563C68D2C006463D97EE3034A25
+missing	E:\03_AllWork\grafana\CLAUDE.md
+missing	E:\03_AllWork\grafana\GEMINI.md
+missing	E:\03_AllWork\grafana\SECURITY.md
+missing	E:\03_AllWork\grafana\README.md
+missing	E:\03_AllWork\AGENTS.md
+missing	E:\03_AllWork\CLAUDE.md
+missing	E:\03_AllWork\GEMINI.md
+missing	E:\03_AllWork\SECURITY.md
+missing	E:\03_AllWork\README.md
+missing	E:\AGENTS.md
+missing	E:\CLAUDE.md
+missing	E:\GEMINI.md
+missing	E:\SECURITY.md
+missing	E:\README.md
+--- RAW OUTPUT END ---
+EXIT_CODE: 0
+END_TIMESTAMP: 2026-08-20T09:36:46.8758262+09:00

@@ -1,0 +1,17 @@
+COMMAND: remote branch identity; GitHub Actions query; live status limitation
+START_TIMESTAMP: 2026-08-20T09:36:42.5156118+09:00
+WORKING_DIRECTORY: E:\03_AllWork\grafana\park-web-demo-v4.1
+TARGET_SHA: 0f69cc5ec9b4c5d822dc1f08634d225bc617ffff
+--- RAW OUTPUT BEGIN ---
+origin	git@github-karonlabs:KaronLabs/UiAdapt-demo-scv.git (fetch)
+origin	git@github-karonlabs:KaronLabs/UiAdapt-demo-scv.git (push)
+0f69cc5ec9b4c5d822dc1f08634d225bc617ffff	refs/heads/fix/uiadapt-v4.1-product-contract
+LS_REMOTE_EXIT_CODE: 0
+0f69cc5ec9b4c5d822dc1f08634d225bc617ffff
+68ac3a8abc1dfda26aa004d9d6d8e8db179b17d0
+failed to get runs: HTTP 404: Not Found (https://api.github.com/repos/KaronLabs/UiAdapt-demo-scv/actions/runs?branch=fix%2Fuiadapt-v4.1-product-contract&exclude_pull_requests=true&per_page=5)
+GH_RUN_LIST_EXIT_CODE: 1
+LIVE_DEPLOYMENT: NOT_VERIFIED
+--- RAW OUTPUT END ---
+EXIT_CODE: 0
+END_TIMESTAMP: 2026-08-20T09:36:46.1932006+09:00

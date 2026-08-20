@@ -1,0 +1,110 @@
+COMMAND: npm run test:e2e
+START_TIMESTAMP: 2026-08-20T09:35:31.8979396+09:00
+WORKING_DIRECTORY: E:\03_AllWork\grafana\park-web-demo-v4.1
+TARGET_SHA: 0f69cc5ec9b4c5d822dc1f08634d225bc617ffff
+--- RAW OUTPUT BEGIN ---
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:e2e
+> playwright test
+
+[WebServer] 
+[WebServer] > uiadapt-adaptive-storefront-theater@4.1.0 build
+[WebServer] > tsc -b && vite build
+[WebServer] 
+[WebServer] (node:35024) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] vite v8.2.1 building client environment for production...
+[WebServer] transforming...
+[WebServer] ✓ 27 modules transformed.
+[WebServer] rendering chunks...
+[WebServer] computing gzip size...
+[WebServer] dist/index.html                                                          0.68 kB │ gzip:  0.46 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff            5.61 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff            5.62 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff          5.77 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff          5.82 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2           5.86 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2           6.04 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2         6.91 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2         6.97 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff              7.20 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff              7.20 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2             8.35 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2             8.46 kB
+[WebServer] dist/assets/manrope-vietnamese-wght-normal-usUDDRr7.woff2                8.52 kB
+[WebServer] dist/assets/bricolage-grotesque-vietnamese-wght-normal-BUzh504Q.woff2    8.60 kB
+[WebServer] dist/assets/manrope-greek-wght-normal-DL7QRZyv.woff2                     9.44 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff            11.76 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff            11.76 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff                13.14 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff                13.15 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2           13.34 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2           13.43 kB
+[WebServer] dist/assets/manrope-cyrillic-wght-normal-Dvxsihut.woff2                 14.50 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2               14.70 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2               14.88 kB
+[WebServer] dist/assets/manrope-latin-ext-wght-normal-Ch3YOpNY.woff2                15.12 kB
+[WebServer] dist/assets/bricolage-grotesque-latin-ext-wght-normal-CcLUaPy7.woff2    18.66 kB
+[WebServer] dist/assets/manrope-latin-wght-normal-DHIcAJRg.woff2                    24.83 kB
+[WebServer] dist/assets/bricolage-grotesque-latin-wght-normal-DLoelf7F.woff2        41.34 kB
+[WebServer] dist/assets/index-BTJBcn0m.css                                          27.20 kB │ gzip:  8.48 kB
+[WebServer] dist/assets/index-C2KZUVP0.js                                          216.50 kB │ gzip: 68.27 kB
+[WebServer] 
+[WebServer] ✓ built in 153ms
+[WebServer] 
+[WebServer] > uiadapt-adaptive-storefront-theater@4.1.0 preview
+[WebServer] > vite preview --host 127.0.0.1 --port 8766
+[WebServer] 
+[WebServer] (node:36140) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer]   ➜  Local:   http://127.0.0.1:8766/uiadapt_demo/
+
+Running 36 tests using 3 workers
+
+(node:37480) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  2 [mobile-390] › e2e\storefront.spec.ts:69:1 › storefront is responsive, local-only, and diagnostics are collapsed (1.3s)
+  ok  3 [laptop-1024] › e2e\storefront.spec.ts:69:1 › storefront is responsive, local-only, and diagnostics are collapsed (1.4s)
+  ok  1 [desktop-1440] › e2e\storefront.spec.ts:69:1 › storefront is responsive, local-only, and diagnostics are collapsed (1.4s)
+  ok  4 [mobile-390] › e2e\storefront.spec.ts:78:1 › nested deployment path loads assets, reloads, and runs the replay (689ms)
+  ok  5 [laptop-1024] › e2e\storefront.spec.ts:78:1 › nested deployment path loads assets, reloads, and runs the replay (699ms)
+  ok  6 [desktop-1440] › e2e\storefront.spec.ts:78:1 › nested deployment path loads assets, reloads, and runs the replay (774ms)
+  ok  7 [mobile-390] › e2e\storefront.spec.ts:100:1 › the canonical replay changes presentation without changing product data (996ms)
+  ok  8 [laptop-1024] › e2e\storefront.spec.ts:100:1 › the canonical replay changes presentation without changing product data (1.2s)
+  ok  9 [desktop-1440] › e2e\storefront.spec.ts:100:1 › the canonical replay changes presentation without changing product data (1.3s)
+  ok 10 [mobile-390] › e2e\storefront.spec.ts:120:1 › COMPARE is visible in the main stage and FOCUS becomes decision support (520ms)
+  ok 11 [laptop-1024] › e2e\storefront.spec.ts:120:1 › COMPARE is visible in the main stage and FOCUS becomes decision support (564ms)
+  ok 13 [mobile-390] › e2e\storefront.spec.ts:137:1 › merchant and adaptive technology layers are named separately (387ms)
+  ok 12 [desktop-1440] › e2e\storefront.spec.ts:120:1 › COMPARE is visible in the main stage and FOCUS becomes decision support (665ms)
+  ok 14 [laptop-1024] › e2e\storefront.spec.ts:137:1 › merchant and adaptive technology layers are named separately (358ms)
+  ok 15 [mobile-390] › e2e\storefront.spec.ts:142:1 › Adaptive OFF keeps the same detected state but baseline presentation (555ms)
+  ok 16 [desktop-1440] › e2e\storefront.spec.ts:137:1 › merchant and adaptive technology layers are named separately (384ms)
+  ok 17 [laptop-1024] › e2e\storefront.spec.ts:142:1 › Adaptive OFF keeps the same detected state but baseline presentation (574ms)
+  ok 18 [mobile-390] › e2e\storefront.spec.ts:154:1 › active product control survives the comparison transition (491ms)
+  ok 19 [desktop-1440] › e2e\storefront.spec.ts:142:1 › Adaptive OFF keeps the same detected state but baseline presentation (695ms)
+  ok 20 [laptop-1024] › e2e\storefront.spec.ts:154:1 › active product control survives the comparison transition (544ms)
+  ok 21 [mobile-390] › e2e\storefront.spec.ts:165:1 › keyboard-only path starts, pauses, resets, and records a product action (787ms)
+  ok 22 [desktop-1440] › e2e\storefront.spec.ts:154:1 › active product control survives the comparison transition (557ms)
+  ok 23 [laptop-1024] › e2e\storefront.spec.ts:165:1 › keyboard-only path starts, pauses, resets, and records a product action (844ms)
+  ok 25 [desktop-1440] › e2e\storefront.spec.ts:165:1 › keyboard-only path starts, pauses, resets, and records a product action (879ms)
+  ok 24 [mobile-390] › e2e\storefront.spec.ts:192:1 › Pause and Resume preserve virtual progress (2.2s)
+  ok 26 [laptop-1024] › e2e\storefront.spec.ts:192:1 › Pause and Resume preserve virtual progress (2.4s)
+  ok 27 [desktop-1440] › e2e\storefront.spec.ts:192:1 › Pause and Resume preserve virtual progress (2.2s)
+  ok 30 [desktop-1440] › e2e\storefront.spec.ts:204:1 › Reset cancels every stale Replay timer (2.0s)
+  ok 28 [mobile-390] › e2e\storefront.spec.ts:204:1 › Reset cancels every stale Replay timer (3.3s)
+  ok 29 [laptop-1024] › e2e\storefront.spec.ts:204:1 › Reset cancels every stale Replay timer (3.3s)
+  ok 31 [desktop-1440] › e2e\storefront.spec.ts:215:1 › manual takeover cancels the remaining Replay timers (1.7s)
+  ok 32 [mobile-390] › e2e\storefront.spec.ts:215:1 › manual takeover cancels the remaining Replay timers (2.7s)
+  ok 33 [laptop-1024] › e2e\storefront.spec.ts:215:1 › manual takeover cancels the remaining Replay timers (2.3s)
+  ok 34 [desktop-1440] › e2e\storefront.spec.ts:226:1 › Stop preserves state and cancels the remaining Replay timers (2.1s)
+  ok 35 [mobile-390] › e2e\storefront.spec.ts:226:1 › Stop preserves state and cancels the remaining Replay timers (2.0s)
+  ok 36 [laptop-1024] › e2e\storefront.spec.ts:226:1 › Stop preserves state and cancels the remaining Replay timers (1.9s)
+
+  36 passed (21.7s)
+--- RAW OUTPUT END ---
+EXIT_CODE: 0
+END_TIMESTAMP: 2026-08-20T09:35:54.7972523+09:00
