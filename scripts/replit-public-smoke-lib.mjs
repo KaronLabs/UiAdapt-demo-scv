@@ -23,16 +23,18 @@ export function validateDocumentResponse({ status, contentType }) {
 }
 
 export function validateAssetResponses(responses) {
+  for (const { resourceType, status } of responses) {
+    if (resourceType !== "document" && (status < 200 || status >= 300)) {
+      throw new Error(`${resourceType} response must be 2xx, received ${status}`);
+    }
+  }
   for (const type of checkedAssetTypes) {
     if (!responses.some(({ resourceType }) => resourceType === type)) {
       throw new Error(`${type} response is missing`);
     }
   }
-  for (const { resourceType, status, contentType } of responses) {
+  for (const { resourceType, contentType } of responses) {
     if (!checkedAssetTypes.includes(resourceType)) continue;
-    if (status < 200 || status >= 300) {
-      throw new Error(`${resourceType} response must be 2xx, received ${status}`);
-    }
     if (contentType.toLowerCase().includes("text/html")) {
       throw new Error(`${resourceType} response must not be HTML`);
     }

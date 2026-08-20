@@ -28,4 +28,5 @@ test("script stylesheet and font responses must be 2xx non-HTML", () => {
   assert.throws(() => validateAssetResponses([]), /missing/);
   assert.throws(() => validateAssetResponses(valid.map((item) => item.resourceType === "script" ? { ...item, status: 302 } : item)), /2xx/);
   assert.throws(() => validateAssetResponses(valid.map((item) => item.resourceType === "font" ? { ...item, contentType: "text/html" } : item)), /HTML/);
+  assert.throws(() => validateAssetResponses([...valid, { resourceType: "image", status: 404, contentType: "image/svg+xml" }]), /2xx/);
 });
