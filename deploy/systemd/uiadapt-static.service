@@ -1,0 +1,18 @@
+[Unit]
+Description=UIAdapt static site
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current
+ExecStart=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/node_modules/.bin/serve --no-clipboard --no-port-switching --listen tcp://127.0.0.1:5173 /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/www
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

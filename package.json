@@ -13,15 +13,18 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "verify:build-bases": "node scripts/verify-build-bases.mjs",
+    "serve:static": "serve --no-clipboard --no-port-switching --listen tcp://127.0.0.1:5173 www",
     "serve:password": "node scripts/password-gateway.mjs",
-    "test:gateway": "node --test scripts/password-gateway.test.mjs"
+    "test:gateway": "node --test scripts/password-gateway.test.mjs",
+    "test:deployment": "node --test scripts/nwg-deployment-contract.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "serve": "14.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

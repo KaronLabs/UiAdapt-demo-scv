@@ -1,0 +1,25 @@
+[Unit]
+Description=UIAdapt password gateway
+Requires=uiadapt-static.service
+After=uiadapt-static.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current
+ExecStart=/usr/bin/node /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/scripts/password-gateway.mjs
+LoadCredential=uiadapt-password:/etc/uiadapt-demo/password
+Environment=UIADAPT_GATEWAY_PASSWORD_FILE=%d/uiadapt-password
+Environment=UIADAPT_GATEWAY_USER=reviewer
+Environment=UIADAPT_GATEWAY_PORT=4180
+Environment=UIADAPT_GATEWAY_UPSTREAM=http://127.0.0.1:5173
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
