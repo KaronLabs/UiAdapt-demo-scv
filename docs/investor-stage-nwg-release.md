@@ -113,11 +113,16 @@ const password = raw.endsWith("\r\n") ? raw.slice(0, -2)
   : raw.endsWith("\n") ? raw.slice(0, -1)
     : raw;
 if (password.length === 0) process.exit(2);
+const timeoutMs = Number(process.env.UIADAPT_SMOKE_TIMEOUT_MS ?? "10000");
+if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) process.exit(2);
 
 const target = new URL(process.env.UIADAPT_SMOKE_URL);
 const transport = target.protocol === "https:" ? https : http;
 const authorization = `Basic ${Buffer.from(`reviewer:${password}`).toString("base64")}`;
-const request = transport.request(target, { headers: { authorization } }, (response) => {
+const request = transport.request(target, {
+  headers: { authorization },
+  signal: AbortSignal.timeout(timeoutMs),
+}, (response) => {
   response.resume();
   response.on("end", () => {
     const status = response.statusCode ?? 0;
@@ -128,9 +133,6 @@ const request = transport.request(target, { headers: { authorization } }, (respo
 request.on("error", () => {
   console.log("AUTH_STATUS=0");
   process.exitCode = 1;
-});
-request.setTimeout(10_000, () => {
-  request.destroy(new Error("request timeout"));
 });
 request.end();
 NODE
@@ -228,11 +230,16 @@ const password = raw.endsWith("\r\n") ? raw.slice(0, -2)
   : raw.endsWith("\n") ? raw.slice(0, -1)
     : raw;
 if (password.length === 0) process.exit(2);
+const timeoutMs = Number(process.env.UIADAPT_SMOKE_TIMEOUT_MS ?? "10000");
+if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) process.exit(2);
 
 const target = new URL(process.env.UIADAPT_SMOKE_URL);
 const transport = target.protocol === "https:" ? https : http;
 const authorization = `Basic ${Buffer.from(`reviewer:${password}`).toString("base64")}`;
-const request = transport.request(target, { headers: { authorization } }, (response) => {
+const request = transport.request(target, {
+  headers: { authorization },
+  signal: AbortSignal.timeout(timeoutMs),
+}, (response) => {
   response.resume();
   response.on("end", () => {
     const status = response.statusCode ?? 0;
@@ -244,15 +251,44 @@ request.on("error", () => {
   console.log("AUTH_STATUS=0");
   process.exitCode = 1;
 });
-request.setTimeout(10_000, () => {
-  request.destroy(new Error("request timeout"));
-});
 request.end();
 NODE
 }
 
+test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$CURRENT_TARGET")"
 test ! -e "$DEPLOY_ROOT/current.rollback.new"
 test ! -L "$DEPLOY_ROOT/current.rollback.new"
+test ! -e "$DEPLOY_ROOT/current.manual-recover.new"
+test ! -L "$DEPLOY_ROOT/current.manual-recover.new"
+
+manual_recover() {
+  trap - ERR
+  set +e
+  printf 'manual rollback failed; restoring original release\n' >&2
+  if test -e "$DEPLOY_ROOT/current.manual-recover.new" || test -L "$DEPLOY_ROOT/current.manual-recover.new"; then
+    printf 'manual recovery staging path unexpectedly exists\n' >&2
+    return 1
+  fi
+  ln -s "$CURRENT_TARGET" "$DEPLOY_ROOT/current.manual-recover.new" || return 1
+  test "$(readlink -f "$DEPLOY_ROOT/current.manual-recover.new")" = "$CURRENT_TARGET" || return 1
+  mv -T "$DEPLOY_ROOT/current.manual-recover.new" "$DEPLOY_ROOT/current" || return 1
+  systemctl daemon-reload
+  systemctl restart uiadapt-static.service uiadapt-gateway.service
+  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$CURRENT_TARGET"
+  systemctl is-active --quiet uiadapt-static.service
+  systemctl is-active --quiet uiadapt-gateway.service
+  curl --connect-timeout 3 --max-time 10 \
+    --fail --silent --show-error \
+    http://127.0.0.1:5173/uiadapt_demo/ \
+    --output /dev/null
+  test "$(curl --connect-timeout 3 --max-time 10 \
+    --silent --output /dev/null --write-out '%{http_code}' \
+    http://127.0.0.1:4180/uiadapt_demo/)" = "401"
+  manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"
+  manual_auth_smoke "$PUBLIC_URL"
+}
+
+trap 'manual_recover' ERR
 ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"
 test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$ROLLBACK_TARGET"
 mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
@@ -270,6 +306,7 @@ test "$(curl --connect-timeout 3 --max-time 10 \
   http://127.0.0.1:4180/uiadapt_demo/)" = "401"
 manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"
 manual_auth_smoke "$PUBLIC_URL"
+trap - ERR
 printf 'MANUAL_ROLLBACK_STATUS=PASS\n'
 ```
 

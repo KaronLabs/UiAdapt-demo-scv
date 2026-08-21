@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import process from "node:process";
 import test from "node:test";
-import { clearTimeout, setTimeout } from "node:timers";
+import { clearInterval, clearTimeout, setInterval, setTimeout } from "node:timers";
 import { URL } from "node:url";
 
 const projectRoot = join(import.meta.dirname, "..");
@@ -490,6 +490,8 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     'raw.endsWith("\\r\\n") ? raw.slice(0, -2)',
     'raw.endsWith("\\n") ? raw.slice(0, -1)',
     'Buffer.from(`reviewer:${password}`).toString("base64")',
+    'const timeoutMs = Number(process.env.UIADAPT_SMOKE_TIMEOUT_MS ?? "10000")',
+    "signal: AbortSignal.timeout(timeoutMs)",
   ]) {
     assert.ok(runbook.includes(command), `runbook must provide fail-closed command: ${command}`);
   }
@@ -521,10 +523,7 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     automaticCurlCount,
     "every automated curl request must bound total time",
   );
-  assert.match(
-    automaticScript,
-    /request\.setTimeout\(10_000,[\s\S]*?request\.destroy\(/,
-  );
+  assert.doesNotMatch(automaticScript, /request\.setTimeout/);
   for (const [earlier, later] of [
     ['PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"', "rollback() {"],
     ["rollback() {", "trap 'rollback' ERR"],
@@ -566,10 +565,12 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     'raw.endsWith("\\r\\n") ? raw.slice(0, -2)',
     'raw.endsWith("\\n") ? raw.slice(0, -1)',
     'Buffer.from(`reviewer:${password}`).toString("base64")',
-    "request.setTimeout(10_000",
-    "request.destroy(",
+    'const timeoutMs = Number(process.env.UIADAPT_SMOKE_TIMEOUT_MS ?? "10000")',
+    "signal: AbortSignal.timeout(timeoutMs)",
     'manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"',
     'manual_auth_smoke "$PUBLIC_URL"',
+    "manual_recover() {",
+    "trap 'manual_recover' ERR",
   ]) {
     assert.ok(manualScript.includes(contract), `manual rollback must contain ${contract}`);
   }
@@ -580,6 +581,87 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     'mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"',
   ]) {
     assert.ok(manualSection.includes(command), `manual rollback must recompute target: ${command}`);
+  }
+  assert.doesNotMatch(manualScript, /request\.setTimeout/);
+  for (const [earlier, later] of [
+    ['CURRENT_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"', "manual_recover() {"],
+    ["manual_recover() {", "trap 'manual_recover' ERR"],
+    ["trap 'manual_recover' ERR", 'ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"'],
+    ['manual_auth_smoke "$PUBLIC_URL"', "trap - ERR"],
+  ]) {
+    assert.ok(
+      manualScript.indexOf(earlier) < manualScript.lastIndexOf(later),
+      `${earlier} must precede ${later}`,
+    );
+  }
+});
+
+test("documented auth helper enforces a total wall-clock deadline against trickle responses", { timeout: 5_000 }, async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const automaticSection = runbook.slice(
+    runbook.indexOf("### Automated fail-closed switch"),
+    runbook.indexOf("### Manual rollback"),
+  );
+  const helperMatch = automaticSection.match(/node <<'NODE'\r?\n([\s\S]*?)\r?\nNODE/);
+  assert.ok(helperMatch, "automatic switch must embed the executable Node auth helper");
+
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-deadline-contract-"));
+  const credentialPath = join(temporaryRoot, "password");
+  const password = 'deadline-secret:"\\$[]{}';
+  const trickleServer = net.createServer((socket) => {
+    let interval;
+    socket.once("data", () => {
+      socket.write("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n");
+      interval = setInterval(() => {
+        if (!socket.destroyed) socket.write("1\r\nx\r\n");
+      }, 50);
+    });
+    socket.once("close", () => clearInterval(interval));
+    socket.once("error", () => clearInterval(interval));
+  });
+
+  try {
+    await writeFile(credentialPath, `${password}\r\n`, "utf8");
+    trickleServer.listen(0, "127.0.0.1");
+    await once(trickleServer, "listening");
+    const { port } = trickleServer.address();
+    const child = spawn(process.execPath, ["-e", helperMatch[1]], {
+      cwd: projectRoot,
+      env: {
+        ...process.env,
+        UIADAPT_SMOKE_PASSWORD_FILE: credentialPath,
+        UIADAPT_SMOKE_TIMEOUT_MS: "200",
+        UIADAPT_SMOKE_URL: `http://127.0.0.1:${port}/trickle`,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const output = [];
+    child.stdout.on("data", (chunk) => output.push(chunk));
+    child.stderr.on("data", (chunk) => output.push(chunk));
+    const startedAt = Date.now();
+    let watchdog;
+    const completion = await Promise.race([
+      once(child, "exit").then(([code, signal]) => ({ code, signal })),
+      new Promise((resolveCompletion) => {
+        watchdog = setTimeout(() => resolveCompletion(null), 1_500);
+      }),
+    ]);
+    clearTimeout(watchdog);
+    if (!completion) {
+      child.kill();
+      await once(child, "exit");
+    }
+    const elapsedMs = Date.now() - startedAt;
+    const combinedOutput = Buffer.concat(output).toString("utf8");
+
+    assert.ok(completion, `auth helper exceeded wall-clock bound (${elapsedMs}ms)`);
+    assert.notEqual(completion.code, 0);
+    assert.ok(elapsedMs < 1_500, `auth helper exceeded wall-clock bound (${elapsedMs}ms)`);
+    assert.match(combinedOutput, /^AUTH_STATUS=0$/m);
+    assert.equal(combinedOutput.includes(password), false);
+  } finally {
+    await closeServer(trickleServer);
+    await rm(temporaryRoot, { force: true, recursive: true });
   }
 });
 
