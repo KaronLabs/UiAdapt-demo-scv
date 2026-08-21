@@ -400,6 +400,10 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
 
   assert.match(verifyJob, /node-version: 22[\s\S]*?npm run test:deployment/);
   assert.match(verifyJob, /npm run test:api/);
+  assert.match(
+    verifyJob,
+    /npm run verify:build-bases[\s\S]*?run: npm run build\r?\n[\s\S]*?npm run build:nwg[\s\S]*?npm run test:e2e[\s\S]*?npm audit[\s\S]*?run: git diff --check/,
+  );
   assert.ok(runtimeContractJob, "runtime-contract job must exist");
   assert.match(runtimeContractJob, /uses: actions\/checkout@v4/);
   assert.match(runtimeContractJob, /node-version: 24/);
@@ -427,7 +431,6 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.doesNotMatch(apiIntegrationJob, /uiadapt_demo_app'@'127\.0\.0\.1'/);
   assert.doesNotMatch(apiIntegrationJob, /GRANT [^\n]*\b(?:UPDATE|DELETE)\b/);
   assert.match(apiIntegrationJob, /npm run test:api-integration/);
-  assert.doesNotMatch(workflow, /^\s*run: npm run build$/m);
   assert.match(workflow, /^permissions:\s*\r?\n {2}contents: read$/m);
   assert.doesNotMatch(workflow, /^\s*environment:/m);
   assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);

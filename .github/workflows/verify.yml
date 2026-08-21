@@ -41,6 +41,15 @@ jobs:
       - name: Deployment contract tests
         run: npm run test:deployment
 
+      - name: Verify build bases
+        run: npm run verify:build-bases
+
+      - name: Production build
+        run: npm run build
+
+      - name: NWG build and staging
+        run: npm run build:nwg
+
       - name: Install Chromium and system dependencies
         run: npx playwright install --with-deps chromium
 
@@ -51,6 +60,9 @@ jobs:
         run: |
           set -o pipefail
           npm audit --omit=dev --audit-level=high 2>&1 | tee audit-results.txt
+
+      - name: Check diff whitespace
+        run: git diff --check
 
       - name: Upload verification artifacts
         if: always()

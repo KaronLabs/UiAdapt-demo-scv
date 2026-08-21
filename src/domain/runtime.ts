@@ -1,4 +1,5 @@
 import { WINDOW_SIZE } from "./behaviorConfig";
+import { isBehaviorEventType } from "./behaviorTaxonomy";
 import { evaluateDistribution } from "./distribution";
 import { derivePolicy } from "./policy";
 import { evaluateTransition } from "./transitionEngine";
@@ -122,6 +123,7 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
 
   const { event, epoch } = action;
   if (epoch !== state.sessionEpoch) return reject(state, "STALE_SESSION_EPOCH");
+  if (!isBehaviorEventType(event.type)) return reject(state, "UNKNOWN_EVENT_TYPE");
   if (!Number.isFinite(event.atMs) || event.atMs < 0) return reject(state, "INVALID_EVENT_CLOCK");
   if (!PRODUCT_IDS.includes(event.productId)) return reject(state, "UNKNOWN_PRODUCT_ID");
   if (state.events.some((existing) => existing.id === event.id)) return reject(state, "DUPLICATE_EVENT_ID");

@@ -124,6 +124,25 @@ describe("deterministic evidence and state policy", () => {
     expect(state.lastRejectedReason).toBe("STALE_SESSION_EPOCH");
   });
 
+  it("rejects an unknown event type before distribution evaluation", () => {
+    const state = createInitialRuntime();
+    const invalidEvent = {
+      ...REPLAY_EVENTS[0],
+      id: "unknown-type",
+      type: "UNKNOWN_EVENT",
+    } as unknown as BehaviorEvent;
+
+    const rejected = runtimeReducer(state, {
+      type: "RECORD_EVENT",
+      event: invalidEvent,
+      epoch: state.sessionEpoch,
+    });
+
+    expect(rejected.events).toHaveLength(0);
+    expect(rejected.sequenceNo).toBe(0);
+    expect(rejected.lastRejectedReason).toBe("UNKNOWN_EVENT_TYPE");
+  });
+
   it("does not enter PURCHASE_INTENT before minimum evidence", () => {
     const events: BehaviorEvent[] = [
       { id: "negative-01", atMs: 1_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
