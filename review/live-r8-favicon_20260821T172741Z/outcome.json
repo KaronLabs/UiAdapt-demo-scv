@@ -1,0 +1,71 @@
+{
+  "schema": "uiadapt-live-deployment-outcome/v1",
+  "outcome": "ROLLED_BACK",
+  "target_sha": "e076d9f90af1cd897842383780053595c8654170",
+  "previous_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+  "switch_execution_count": 1,
+  "switch_exit_code": 7,
+  "automatic_rollback_invoked": true,
+  "manual_rollback_execution_count": 0,
+  "manual_rollback_reason": "not invoked because sealed automatic switch trap restored previous pointer; failure occurred inside switch recipe",
+  "final_current_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+  "target_live": false,
+  "target_release_preserved": true,
+  "target_staging_absent": true,
+  "source_gate": {
+    "commands": 10,
+    "vitest": "19/19",
+    "gateway": "16/16",
+    "deployment": "17/17",
+    "playwright": "48/48",
+    "audit_vulnerabilities": 0
+  },
+  "archive": {
+    "sha256": "fdf228fb1af1ddf92ef92a3a20f2286245cc02206f9a60234346de41be911055",
+    "bytes": 13452941,
+    "payload_files": 117,
+    "roundtrip": "PASS"
+  },
+  "r3_pre_switch_browser": {
+    "http": 200,
+    "states": "EXPLORE>COMPARE>FOCUS",
+    "console_errors": 1,
+    "allowed_exception": "exact favicon.ico HTTP 404 resource error",
+    "page_errors": 0,
+    "failed_requests": 0,
+    "external_requests": 0,
+    "result": "PASS"
+  },
+  "candidate_loopback_browser": {
+    "auth": 200,
+    "favicon_status": 200,
+    "favicon_type": "image/svg+xml",
+    "states": "EXPLORE>COMPARE>FOCUS",
+    "console_errors": 0,
+    "page_errors": 0,
+    "failed_requests": 0,
+    "http_404": 0,
+    "external_requests": 0,
+    "result": "PASS"
+  },
+  "switch_failure": {
+    "stage": "sealed runbook smoke after systemctl restart",
+    "observed": "curl connection refused on 127.0.0.1:5173",
+    "evidence_supported_cause": "readiness race: recipe performs immediate curl without waiting; journal shows listener ready after restart",
+    "source_change_permitted": false
+  },
+  "rollback_verification": {
+    "current": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "services": "active+enabled",
+    "local_static": 200,
+    "gateway_unauth": 401,
+    "gateway_wrong": 401,
+    "gateway_auth_root": 302,
+    "gateway_auth_nested": 200,
+    "public_auth_nested": 200,
+    "r3_browser": "PASS",
+    "funnel": "unchanged"
+  },
+  "product_clarity": "NOT_VERIFIED",
+  "created_utc": "2026-08-21T17:39:41.6029185+00:00"
+}

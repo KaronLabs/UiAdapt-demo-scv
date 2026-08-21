@@ -1,0 +1,8 @@
+{
+  "pointer_mutated": false,
+  "end_utc": "2026-08-21T17:35:46.0106468+00:00",
+  "secret_material": "none",
+  "start_utc": "2026-08-21T17:35:43.5862650+00:00",
+  "command": "Invoke-SafeSshScript nwg finalize-release.sh",
+  "exit_code": 0
+}

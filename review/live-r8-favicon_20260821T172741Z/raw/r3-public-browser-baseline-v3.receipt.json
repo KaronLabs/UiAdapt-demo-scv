@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "start_utc": "2026-08-21T17:34:04.7252110+00:00",
+  "end_utc": "2026-08-21T17:34:07.0066910+00:00",
+  "secret_logged": false,
+  "command": "Invoke-SafeSshScript nwg r3-public-browser-baseline-v3.sh",
+  "supersedes": "v2 helper variable typo; v1 remains preserved"
+}

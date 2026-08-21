@@ -1,0 +1,8 @@
+{
+  "previous_note": "publication-gate-note.json",
+  "reason": "nested -text preserves original CRLF command streams and git diff --check reports those CR bytes as whitespace across evidence files",
+  "recorded_utc": "2026-08-21T17:42:27.4393861+00:00",
+  "result": "STYLE_GATE_NOT_APPLICABLE_TO_BYTE_PRESERVED_EVIDENCE",
+  "disposition": "do not rewrite evidence; use working-vs-staged raw blob equality plus app-tree diff count zero",
+  "event": "publication diff check follow-up"
+}

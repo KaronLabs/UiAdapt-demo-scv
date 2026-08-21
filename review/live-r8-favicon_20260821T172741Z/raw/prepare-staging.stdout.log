@@ -1,0 +1,36 @@
+REMOTE_MANIFEST_FILES=117
+REMOTE_MANIFEST_VERIFY=PASS
+
+added 315 packages, and audited 316 packages in 2s
+
+87 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+uiadapt-adaptive-storefront-theater@4.1.0 /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/e076d9f90af1cd897842383780053595c8654170.staging
+├── @eslint/js@10.0.1
+├── @fontsource/ibm-plex-mono@5.3.0
+├── @playwright/test@1.62.1
+├── @testing-library/jest-dom@7.0.1
+├── @testing-library/react@16.3.2
+├── @testing-library/user-event@14.6.5
+├── @types/react-dom@19.2.4
+├── @types/react@19.2.18
+├── @vitejs/plugin-react@6.0.5
+├── eslint-plugin-react-hooks@7.1.1
+├── eslint-plugin-react-refresh@0.5.4
+├── eslint@10.8.1
+├── globals@17.11.0
+├── jsdom@29.1.1
+├── react-dom@19.2.8
+├── react@19.2.8
+├── serve@14.2.6
+├── typescript-eslint@8.67.0
+├── typescript@6.0.3
+├── vite@8.2.1
+├── vitest@4.1.11
+└── wanted-sans@1.0.3
+
+REMOTE_ARCHIVE_SHA=fdf228fb1af1ddf92ef92a3a20f2286245cc02206f9a60234346de41be911055
+REMOTE_STAGING_PREP=PASS
+CURRENT_UNCHANGED=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91

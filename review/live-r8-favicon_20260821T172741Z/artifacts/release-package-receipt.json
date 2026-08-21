@@ -1,0 +1,15 @@
+{
+  "phase": "fresh-local-package",
+  "status": "PACKAGE_PASS",
+  "source_sha": "e076d9f90af1cd897842383780053595c8654170",
+  "archive_path": "E:\\03_AllWork\\uiadapt-r8-favicon-live-evidence\\review\\live-r8-favicon_20260821T172741Z\\artifacts\\uiadapt-r8-favicon-e076d9f90af1cd897842383780053595c8654170.tar.gz",
+  "archive_bytes": 13452941,
+  "archive_sha256": "fdf228fb1af1ddf92ef92a3a20f2286245cc02206f9a60234346de41be911055",
+  "payload_file_count": 117,
+  "payload_expanded_bytes": 14242575,
+  "package_manifest_sha256": "e52fa025e9454eba5c1275b40d0dd435fa8ed96584b894be266e4f6e8b2b1e41",
+  "sha256sums_sha256": "21d88dcc9a6b90e86cf2f927ab888d079597c1eceb908e99f1cbca7c8d8ee5f9",
+  "archive_roundtrip_verification": "PASS",
+  "excluded_paths_present": [],
+  "generated_utc": "2026-08-21T17:30:46.0802357+00:00"
+}

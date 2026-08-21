@@ -1,0 +1,102 @@
+FINAL_CURRENT_SHA=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91
+FINAL_TARGET_RELEASE_PRESENT=PASS
+FINAL_TARGET_STAGING_ABSENT=PASS
+FINAL_STATIC_ACTIVE_ENABLED=PASS
+FINAL_GATEWAY_ACTIVE_ENABLED=PASS
+FINAL_CREDENTIAL_METADATA=PASS
+FINAL_PARENT_TRACKED_DIRTY_COUNT=0
+FINAL_LOCAL_STATIC=200
+FINAL_LOCAL_GATEWAY_UNAUTH=401
+FINAL_INSTALLED_STATIC_UNIT_SHA256=e1f93921024c72a4a150fb5c0940ad02d6e36355162e358e12051ad258fe6b04
+FINAL_INSTALLED_GATEWAY_UNIT_SHA256=1c87eff422caef8c527d47fdd4b14f3adb8318b0111bee4731e6d6e19ed5b999
+FINAL_FUNNEL_JSON_BEGIN
+{
+  "TCP": {
+    "443": {
+      "HTTPS": true
+    },
+    "8443": {
+      "HTTPS": true
+    },
+    "8787": {
+      "HTTP": true
+    }
+  },
+  "Web": {
+    "00-new-world-gpu.tail645adc.ts.net:443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:4180"
+        }
+      }
+    },
+    "00-new-world-gpu.tail645adc.ts.net:8443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8101"
+        }
+      }
+    },
+    "00-new-world-gpu.tail645adc.ts.net:8787": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8787"
+        }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "00-new-world-gpu.tail645adc.ts.net:443": true
+  }
+}
+FINAL_FUNNEL_JSON_END
+SWITCH_WINDOW_JOURNAL_BEGIN
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopping uiadapt-gateway.service - UIAdapt password gateway...
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: uiadapt-gateway.service: Deactivated successfully.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopped uiadapt-gateway.service - UIAdapt password gateway.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: uiadapt-gateway.service: Consumed 1.098s CPU time, 26.6M memory peak, 0B memory swap peak.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopping uiadapt-static.service - UIAdapt static site...
+2026-08-21T17:36:28+00:00 new-world-gpu serve[442164]:  INFO  Gracefully shutting down. Please wait...
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: uiadapt-static.service: Deactivated successfully.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopped uiadapt-static.service - UIAdapt static site.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: uiadapt-static.service: Consumed 1.001s CPU time, 46.5M memory peak, 0B memory swap peak.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Started uiadapt-static.service - UIAdapt static site.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Started uiadapt-gateway.service - UIAdapt password gateway.
+2026-08-21T17:36:28+00:00 new-world-gpu node[738185]: UIAdapt password gateway listening on http://127.0.0.1:4180
+2026-08-21T17:36:28+00:00 new-world-gpu serve[738184]:  INFO  Accepting connections at http://127.0.0.1:5173
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopping uiadapt-gateway.service - UIAdapt password gateway...
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: uiadapt-gateway.service: Deactivated successfully.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopped uiadapt-gateway.service - UIAdapt password gateway.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopping uiadapt-static.service - UIAdapt static site...
+2026-08-21T17:36:28+00:00 new-world-gpu serve[738184]:  INFO  Gracefully shutting down. Please wait...
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: uiadapt-static.service: Deactivated successfully.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Stopped uiadapt-static.service - UIAdapt static site.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Started uiadapt-static.service - UIAdapt static site.
+2026-08-21T17:36:28+00:00 new-world-gpu systemd[1]: Started uiadapt-gateway.service - UIAdapt password gateway.
+2026-08-21T17:36:29+00:00 new-world-gpu node[738306]: UIAdapt password gateway listening on http://127.0.0.1:4180
+2026-08-21T17:36:29+00:00 new-world-gpu serve[738305]:  INFO  Accepting connections at http://127.0.0.1:5173
+2026-08-21T17:36:42+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:36:42 PM 127.0.0.1 GET /uiadapt_demo/
+2026-08-21T17:36:42+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:36:42 PM 127.0.0.1 Returned 200 in 18 ms
+2026-08-21T17:37:20+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:20 PM 127.0.0.1 GET /uiadapt_demo/
+2026-08-21T17:37:20+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:20 PM 127.0.0.1 Returned 200 in 1 ms
+2026-08-21T17:37:21+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:21 PM 127.0.0.1 GET /uiadapt_demo/
+2026-08-21T17:37:21+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:21 PM 127.0.0.1 Returned 200 in 1 ms
+2026-08-21T17:37:21+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:21 PM 127.0.0.1 GET /uiadapt_demo/
+2026-08-21T17:37:21+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:21 PM 127.0.0.1 Returned 200 in 0 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /uiadapt_demo/
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 200 in 1 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /uiadapt_demo/assets/index-pTZi0Dzb.js
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /uiadapt_demo/assets/index-DTUIrAxQ.css
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 200 in 2 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 200 in 3 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /favicon.ico
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 404 in 1 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /uiadapt_demo/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /uiadapt_demo/assets/WantedSansVariable-eIorJFXx.woff2
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 200 in 2 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 GET /uiadapt_demo/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 200 in 1 ms
+2026-08-21T17:37:47+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:37:47 PM 127.0.0.1 Returned 200 in 4 ms
+2026-08-21T17:38:15+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:38:15 PM 127.0.0.1 GET /uiadapt_demo/
+2026-08-21T17:38:15+00:00 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:38:15 PM 127.0.0.1 Returned 200 in 1 ms
+SWITCH_WINDOW_JOURNAL_END

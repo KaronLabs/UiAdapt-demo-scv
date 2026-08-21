@@ -1,0 +1,9 @@
+{
+  "secret_source": "remote credential file read in root Node memory",
+  "end_utc": "2026-08-21T17:32:53.4226480+00:00",
+  "trace_har_video_screenshot_storage_state_report": "disabled_or_not_configured",
+  "command": "Invoke-SafeSshScript nwg r3-public-browser-baseline.sh",
+  "secret_logged": false,
+  "start_utc": "2026-08-21T17:32:51.0165142+00:00",
+  "exit_code": 1
+}

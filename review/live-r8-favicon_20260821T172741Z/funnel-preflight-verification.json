@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "tcp443_https": true,
+    "tcp8443_https": true,
+    "tcp8787_http": true,
+    "proxy443": true,
+    "proxy8443": true,
+    "proxy8787": true,
+    "funnel443": true,
+    "web_entry_count": 3
+  },
+  "checked_utc": "2026-08-21T17:31:26.1522268+00:00",
+  "status": "FUNNEL_INVARIANTS_PASS"
+}

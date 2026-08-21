@@ -1,0 +1,9 @@
+{
+  "end_utc": "2026-08-21T17:36:28.9676703+00:00",
+  "command": "Invoke-SafeSshScript nwg execute-switch-once.sh",
+  "exit_code": 1,
+  "execution_count": 1,
+  "start_utc": "2026-08-21T17:36:27.0233577+00:00",
+  "secret_logged": false,
+  "switch_block_sha256": "1e0b95167bb9fc475881bf4cec04222156517d1da4ac4fbf59caeb5e2d51635f"
+}

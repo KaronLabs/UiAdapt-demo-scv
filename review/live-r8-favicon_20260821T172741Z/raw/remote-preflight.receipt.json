@@ -1,0 +1,8 @@
+{
+  "stdout_file": "raw/remote-preflight.stdout.log",
+  "exit_code": 0,
+  "start_utc": "2026-08-21T17:31:08.4251842+00:00",
+  "stderr_file": "raw/remote-preflight.stderr.log",
+  "end_utc": "2026-08-21T17:31:09.9276402+00:00",
+  "command": "Invoke-SafeSshScript nwg preflight-readonly.sh"
+}

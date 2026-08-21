@@ -1,0 +1,8 @@
+{
+  "secret_logged": false,
+  "purpose": "root cause investigation after baseline fail",
+  "start_utc": "2026-08-21T17:33:18.1541532+00:00",
+  "end_utc": "2026-08-21T17:33:21.6087348+00:00",
+  "exit_code": 0,
+  "command": "Invoke-SafeSshScript nwg r3-console-diagnostic.sh"
+}

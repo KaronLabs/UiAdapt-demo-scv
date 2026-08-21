@@ -1,0 +1,8 @@
+{
+  "command": "scp sealed switch block to nwg /tmp",
+  "remote_path": "/tmp/uiadapt-r8-favicon-switch-e076d9f90af1cd897842383780053595c8654170.sh",
+  "start_utc": "2026-08-21T17:36:01.5409598+00:00",
+  "end_utc": "2026-08-21T17:36:03.3239261+00:00",
+  "local_sha256": "1e0b95167bb9fc475881bf4cec04222156517d1da4ac4fbf59caeb5e2d51635f",
+  "exit_code": 0
+}

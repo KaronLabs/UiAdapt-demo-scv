@@ -1,0 +1,9 @@
+{
+  "interpretation": "Matches the authorized R3 exception; the initial baseline script was stricter than the contract by demanding a page response event.",
+  "disposition": "Preserve failed baseline; run corrected append-only baseline that requires exactly one matching console error and zero observed non-favicon failures.",
+  "observed_console_url": "https://00-new-world-gpu.tail645adc.ts.net/favicon.ico",
+  "observed_response_404_count": 0,
+  "finding": "Chrome emits a console resource error with location favicon.ico but does not expose the browser-managed favicon request through Playwright page response events in this run.",
+  "observed_console_text": "Failed to load resource: the server responded with a status of 404 ()",
+  "recorded_utc": "2026-08-21T17:33:34.6290626+00:00"
+}

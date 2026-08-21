@@ -1,0 +1,8 @@
+{
+  "ports": "dynamic loopback",
+  "secret_logged": false,
+  "exit_code": 0,
+  "start_utc": "2026-08-21T17:34:47.8375913+00:00",
+  "end_utc": "2026-08-21T17:34:50.7135198+00:00",
+  "command": "Invoke-SafeSshScript nwg candidate-loopback-browser.sh"
+}

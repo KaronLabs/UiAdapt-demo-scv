@@ -1,0 +1,7 @@
+{
+  "secret_logged": false,
+  "start_utc": "2026-08-21T17:38:14.7353308+00:00",
+  "end_utc": "2026-08-21T17:38:15.9221413+00:00",
+  "exit_code": 0,
+  "command": "fresh final R3 rollback invariants and switch-window journal"
+}

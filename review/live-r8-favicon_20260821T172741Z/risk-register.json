@@ -1,0 +1,30 @@
+[
+  {
+    "id": "R1",
+    "severity": "high",
+    "status": "blocking_future_switch",
+    "risk": "sealed runbook has no readiness wait after systemctl restart and failed with connection refused",
+    "handling": "new source remediation and fresh authorization required; do not retry this campaign"
+  },
+  {
+    "id": "R2",
+    "severity": "medium",
+    "status": "accepted_unresolved",
+    "risk": "target final release and incoming archive remain on nwg but are not current",
+    "handling": "preserved as failure evidence; do not serve or reuse as a new campaign artifact"
+  },
+  {
+    "id": "R3",
+    "severity": "low",
+    "status": "known_baseline",
+    "risk": "R3 emits one favicon.ico 404 console resource error",
+    "handling": "explicitly allowed only for R3 rollback baseline"
+  },
+  {
+    "id": "R4",
+    "severity": "medium",
+    "status": "not_verified",
+    "risk": "product clarity human test not executed",
+    "handling": "PRODUCT_CLARITY=NOT_VERIFIED"
+  }
+]

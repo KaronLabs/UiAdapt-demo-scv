@@ -1,0 +1,37 @@
+CURRENT=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91
+STATIC_ACTIVE=active
+STATIC_ENABLED=enabled
+GATEWAY_ACTIVE=active
+GATEWAY_ENABLED=enabled
+STATIC_HTTP=200
+GATEWAY_UNAUTH=401
+STATIC_STATUS_BEGIN
+● uiadapt-static.service - UIAdapt static site
+     Loaded: loaded (/etc/systemd/system/uiadapt-static.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-08-21 17:36:28 UTC; 13s ago
+   Main PID: 738305 (MainThread)
+      Tasks: 11 (limit: 144776)
+     Memory: 32.5M (peak: 33.2M)
+        CPU: 283ms
+     CGroup: /system.slice/uiadapt-static.service
+             └─738305 node /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/node_modules/.bin/serve --no-clipboard --no-port-switching --listen tcp://127.0.0.1:5173 /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/www
+
+Aug 21 17:36:28 new-world-gpu systemd[1]: Started uiadapt-static.service - UIAdapt static site.
+Aug 21 17:36:29 new-world-gpu serve[738305]:  INFO  Accepting connections at http://127.0.0.1:5173
+Aug 21 17:36:42 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:36:42 PM 127.0.0.1 GET /uiadapt_demo/
+Aug 21 17:36:42 new-world-gpu serve[738305]:  HTTP  8/21/2026 5:36:42 PM 127.0.0.1 Returned 200 in 18 ms
+STATIC_STATUS_END
+GATEWAY_STATUS_BEGIN
+● uiadapt-gateway.service - UIAdapt password gateway
+     Loaded: loaded (/etc/systemd/system/uiadapt-gateway.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-08-21 17:36:28 UTC; 13s ago
+   Main PID: 738306 (MainThread)
+      Tasks: 7 (limit: 144776)
+     Memory: 16.8M (peak: 17.7M)
+        CPU: 88ms
+     CGroup: /system.slice/uiadapt-gateway.service
+             └─738306 /usr/bin/node /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/scripts/password-gateway.mjs
+
+Aug 21 17:36:28 new-world-gpu systemd[1]: Started uiadapt-gateway.service - UIAdapt password gateway.
+Aug 21 17:36:29 new-world-gpu node[738306]: UIAdapt password gateway listening on http://127.0.0.1:4180
+GATEWAY_STATUS_END

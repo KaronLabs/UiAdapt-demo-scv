@@ -1,0 +1,57 @@
+REMOTE_PREFLIGHT=PASS
+CURRENT_SHA=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91
+TARGET_RELEASE_ABSENT=PASS
+TARGET_STAGING_ABSENT=PASS
+STATIC_ACTIVE_ENABLED=PASS
+GATEWAY_ACTIVE_ENABLED=PASS
+CREDENTIAL_METADATA=PASS
+CREDENTIAL_NONEMPTY=PASS
+PARENT_TRACKED_DIRTY_COUNT=0
+CURRENT_RELEASE_BYTES=77474430
+AVAILABLE_BYTES=47594090496
+REQUIRED_BYTES=154948860
+NODE_VERSION=v24.18.0
+CHROME_VERSION=Google Chrome 150.0.7871.124 
+INSTALLED_STATIC_UNIT_SHA256=e1f93921024c72a4a150fb5c0940ad02d6e36355162e358e12051ad258fe6b04
+INSTALLED_GATEWAY_UNIT_SHA256=1c87eff422caef8c527d47fdd4b14f3adb8318b0111bee4731e6d6e19ed5b999
+FUNNEL_JSON_BEGIN
+{
+  "TCP": {
+    "443": {
+      "HTTPS": true
+    },
+    "8443": {
+      "HTTPS": true
+    },
+    "8787": {
+      "HTTP": true
+    }
+  },
+  "Web": {
+    "00-new-world-gpu.tail645adc.ts.net:443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:4180"
+        }
+      }
+    },
+    "00-new-world-gpu.tail645adc.ts.net:8443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8101"
+        }
+      }
+    },
+    "00-new-world-gpu.tail645adc.ts.net:8787": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8787"
+        }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "00-new-world-gpu.tail645adc.ts.net:443": true
+  }
+}
+FUNNEL_JSON_END

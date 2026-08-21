@@ -1,0 +1,49 @@
+ROLLBACK_LOCAL_AUTH_ROOT=302
+ROLLBACK_LOCAL_AUTH_NESTED=200
+ROLLBACK_PUBLIC_AUTH_NESTED=200
+ROLLBACK_CURRENT_SHA=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91
+ROLLBACK_STATIC_STATUS=200
+ROLLBACK_GATEWAY_UNAUTH=401
+ROLLBACK_GATEWAY_WRONG=401
+ROLLBACK_STATE=PASS
+FUNNEL_JSON_BEGIN
+{
+  "TCP": {
+    "443": {
+      "HTTPS": true
+    },
+    "8443": {
+      "HTTPS": true
+    },
+    "8787": {
+      "HTTP": true
+    }
+  },
+  "Web": {
+    "00-new-world-gpu.tail645adc.ts.net:443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:4180"
+        }
+      }
+    },
+    "00-new-world-gpu.tail645adc.ts.net:8443": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8101"
+        }
+      }
+    },
+    "00-new-world-gpu.tail645adc.ts.net:8787": {
+      "Handlers": {
+        "/": {
+          "Proxy": "http://127.0.0.1:8787"
+        }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "00-new-world-gpu.tail645adc.ts.net:443": true
+  }
+}
+FUNNEL_JSON_END

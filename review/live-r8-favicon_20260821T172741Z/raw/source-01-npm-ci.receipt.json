@@ -1,0 +1,13 @@
+{
+  "command": "npm ci",
+  "cwd": "E:\\03_AllWork\\uiadapt-r8-favicon-live-build-20260821T172741Z",
+  "role": "r8_favicon_live_deployment_operator",
+  "start_utc": "2026-08-21T17:27:55.9862103+00:00",
+  "end_utc": "2026-08-21T17:28:03.1535988+00:00",
+  "duration_ms": 7167.0,
+  "exit_code": 0,
+  "stdout_file": "raw/source-01-npm-ci.stdout.log",
+  "stderr_file": "raw/source-01-npm-ci.stderr.log",
+  "observation": "command completed with exit code 0",
+  "redaction_applied": false
+}

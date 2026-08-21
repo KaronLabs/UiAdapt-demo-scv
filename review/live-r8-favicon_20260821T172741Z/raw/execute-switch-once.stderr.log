@@ -1,0 +1,10 @@
+curl: (7) Failed to connect to 127.0.0.1 port 5173 after 0 ms: Couldn't connect to server
+switch failed; restoring previous release
+curl: (7) Failed to connect to 127.0.0.1 port 5173 after 0 ms: Couldn't connect to server
+Exception: C:\Users\Administrator\.codex\skills\powershell-ssh-safe-quoting\scripts\Invoke-SafeSshScript.ps1:33
+Line |
+  33 |          throw "SSH command failed with exit code $sshExitCode."
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | SSH command failed with exit code 7.
+
+

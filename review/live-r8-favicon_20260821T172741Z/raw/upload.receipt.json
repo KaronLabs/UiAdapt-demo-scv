@@ -1,0 +1,9 @@
+{
+  "archive_sha256": "fdf228fb1af1ddf92ef92a3a20f2286245cc02206f9a60234346de41be911055",
+  "command": "scp -- <fresh archive> nwg:<target incoming>",
+  "start_utc": "2026-08-21T17:31:55.2158366+00:00",
+  "secret_material": "none",
+  "end_utc": "2026-08-21T17:31:56.7662105+00:00",
+  "exit_code": 0,
+  "remote_path": "/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/.e076d9f90af1cd897842383780053595c8654170.incoming.tar.gz"
+}

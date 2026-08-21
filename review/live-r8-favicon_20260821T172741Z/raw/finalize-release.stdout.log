@@ -1,0 +1,19 @@
+
+removed 225 packages, and audited 91 packages in 519ms
+
+27 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+uiadapt-adaptive-storefront-theater@4.1.0 /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/e076d9f90af1cd897842383780053595c8654170.staging
+├── @fontsource/ibm-plex-mono@5.3.0
+├── react-dom@19.2.8
+├── react@19.2.8
+├── serve@14.2.6
+└── wanted-sans@1.0.3
+
+found 0 vulnerabilities
+PRODUCTION_PRUNE=PASS
+EXTERNAL_BROWSER_RUNNER=READY
+FINAL_RELEASE_READY=e076d9f90af1cd897842383780053595c8654170
+CURRENT_UNCHANGED=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91

@@ -1,0 +1,8 @@
+{
+  "end_utc": "2026-08-21T17:33:49.9179534+00:00",
+  "start_utc": "2026-08-21T17:33:46.9693125+00:00",
+  "exit_code": 1,
+  "command": "Invoke-SafeSshScript nwg r3-public-browser-baseline-v2.sh",
+  "supersedes": "initial baseline only because diagnostic proved browser-managed favicon has no page response event",
+  "secret_logged": false
+}

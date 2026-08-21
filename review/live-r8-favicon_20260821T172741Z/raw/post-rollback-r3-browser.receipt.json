@@ -1,0 +1,8 @@
+{
+  "end_utc": "2026-08-21T17:37:33.6639480+00:00",
+  "command": "post-rollback R3 public browser verification",
+  "start_utc": "2026-08-21T17:37:32.4904926+00:00",
+  "allowed_exception": "one favicon.ico console 404 only",
+  "exit_code": 1,
+  "secret_logged": false
+}

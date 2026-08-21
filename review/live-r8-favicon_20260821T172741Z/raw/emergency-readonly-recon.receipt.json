@@ -1,0 +1,6 @@
+{
+  "start_utc": "2026-08-21T17:36:41.4715850+00:00",
+  "exit_code": 0,
+  "command": "emergency read-only recon after switch/rollback failure",
+  "end_utc": "2026-08-21T17:36:42.6943535+00:00"
+}

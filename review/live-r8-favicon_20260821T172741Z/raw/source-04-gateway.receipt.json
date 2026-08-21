@@ -1,0 +1,13 @@
+{
+  "command": "npm run test:gateway",
+  "cwd": "E:\\03_AllWork\\uiadapt-r8-favicon-live-build-20260821T172741Z",
+  "role": "r8_favicon_live_deployment_operator",
+  "start_utc": "2026-08-21T17:28:46.8131495+00:00",
+  "end_utc": "2026-08-21T17:28:48.1794634+00:00",
+  "duration_ms": 1366.0,
+  "exit_code": 0,
+  "stdout_file": "raw/source-04-gateway.stdout.log",
+  "stderr_file": "raw/source-04-gateway.stderr.log",
+  "observation": "command completed with exit code 0",
+  "redaction_applied": false
+}

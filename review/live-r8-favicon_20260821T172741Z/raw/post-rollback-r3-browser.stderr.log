@@ -1,0 +1,7 @@
+Exception: C:\Users\Administrator\.codex\skills\powershell-ssh-safe-quoting\scripts\Invoke-SafeSshScript.ps1:33
+Line |
+  33 |          throw "SSH command failed with exit code $sshExitCode."
+     |          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | SSH command failed with exit code 1.
+
+

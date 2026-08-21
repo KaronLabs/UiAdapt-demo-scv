@@ -1,0 +1,116 @@
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:deployment
+> node --test scripts/nwg-deployment-contract.test.mjs
+
+TAP version 13
+# Subtest: pins a non-SPA static server to the production loopback endpoint
+ok 1 - pins a non-SPA static server to the production loopback endpoint
+  ---
+  duration_ms: 12.7954
+  type: 'test'
+  ...
+# Subtest: defines hardened static and gateway systemd units for the exact current release
+ok 2 - defines hardened static and gateway systemd units for the exact current release
+  ---
+  duration_ms: 15.2505
+  type: 'test'
+  ...
+# Subtest: runs deployment contracts in the Node 22 and Node 24 verification jobs
+ok 3 - runs deployment contracts in the Node 22 and Node 24 verification jobs
+  ---
+  duration_ms: 7.7657
+  type: 'test'
+  ...
+# Subtest: runs verification pushes only for main and the R8 remediation branch
+ok 4 - runs verification pushes only for main and the R8 remediation branch
+  ---
+  duration_ms: 2.062
+  type: 'test'
+  ...
+# Subtest: README records the investor-stage contract and the complete safe verification order
+ok 5 - README records the investor-stage contract and the complete safe verification order
+  ---
+  duration_ms: 9.002
+  type: 'test'
+  ...
+# Subtest: release runbook records version-addressed deployment, readiness, rollback, and measured live status
+ok 6 - release runbook records version-addressed deployment, readiness, rollback, and measured live status
+  ---
+  duration_ms: 15.1948
+  type: 'test'
+  ...
+# Subtest: documented automatic switch preserves the original failure after recovery
+ok 7 - documented automatic switch preserves the original failure after recovery
+  ---
+  duration_ms: 73.5848
+  type: 'test'
+  ...
+# Subtest: documented auth helper enforces a total wall-clock deadline against trickle responses
+ok 8 - documented auth helper enforces a total wall-clock deadline against trickle responses
+  ---
+  duration_ms: 274.6888
+  type: 'test'
+  ...
+# Subtest: tracked threat model states the enforced controls and accepted operational gaps
+ok 9 - tracked threat model states the enforced controls and accepted operational gaps
+  ---
+  duration_ms: 14.918
+  type: 'test'
+  ...
+# Subtest: preserves the existing target when source validation or copying fails
+ok 10 - preserves the existing target when source validation or copying fails
+  ---
+  duration_ms: 8.9415
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration preserves the real project www tree
+ok 11 - behavior: canonical integration preserves the real project www tree
+  ---
+  duration_ms: 8446.2412
+  type: 'test'
+  ...
+# Subtest: project www preservation probe is read-only
+ok 12 - project www preservation probe is read-only
+  ---
+  duration_ms: 1.2104
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration rejects a project www staging mutation
+ok 13 - behavior: canonical integration rejects a project www staging mutation
+  ---
+  duration_ms: 1.2244
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration rejects an explicitly occupied dynamic static port
+ok 14 - behavior: canonical integration rejects an explicitly occupied dynamic static port
+  ---
+  duration_ms: 8093.2797
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration succeeds while port 5173 is externally occupied
+ok 15 - behavior: canonical integration succeeds while port 5173 is externally occupied
+  ---
+  duration_ms: 2826.0882
+  type: 'test'
+  ...
+# Subtest: canonical integration owns staging and cleanup below a temporary root
+ok 16 - canonical integration owns staging and cleanup below a temporary root
+  ---
+  duration_ms: 0.6546
+  type: 'test'
+  ...
+# Subtest: canonical build:nwg release is served through the static and gateway contracts
+ok 17 - canonical build:nwg release is served through the static and gateway contracts
+  ---
+  duration_ms: 2809.022
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22683.8121

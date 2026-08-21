@@ -1,0 +1,9 @@
+{
+  "start_utc": "2026-08-21T17:37:19.4577997+00:00",
+  "command": "rollback state revalidation after automatic rollback",
+  "end_utc": "2026-08-21T17:37:20.9948487+00:00",
+  "reason": "automatic switch trap restored previous pointer; no post-switch external validation failure occurred",
+  "manual_rollback_execution_count": 0,
+  "exit_code": 0,
+  "secret_logged": false
+}

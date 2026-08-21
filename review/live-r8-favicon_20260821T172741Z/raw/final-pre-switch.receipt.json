@@ -1,0 +1,7 @@
+{
+  "command": "Invoke-SafeSshScript nwg final-pre-switch.sh",
+  "start_utc": "2026-08-21T17:36:14.8694331+00:00",
+  "pointer_mutated": false,
+  "end_utc": "2026-08-21T17:36:15.7244312+00:00",
+  "exit_code": 0
+}

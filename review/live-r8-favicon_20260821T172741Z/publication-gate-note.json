@@ -1,0 +1,7 @@
+{
+  "event": "publication cached diff check",
+  "recorded_utc": "2026-08-21T17:41:48.1119375+00:00",
+  "reason": "git diff --check reported original command whitespace and blank EOF in raw stdout/stderr; raw evidence was not rewritten",
+  "disposition": "exclude raw logs from whitespace-style gate; preserve bytes with nested .gitattributes using -text; verify staged Git blob bytes equal working evidence bytes",
+  "result": "FAILED_AS_EXPECTED_FOR_IMMUTABLE_RAW_LOGS"
+}

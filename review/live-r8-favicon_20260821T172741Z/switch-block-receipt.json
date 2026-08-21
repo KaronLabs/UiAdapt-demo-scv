@@ -1,0 +1,8 @@
+{
+  "runbook_path": "docs/investor-stage-nwg-release.md",
+  "source_sha": "e076d9f90af1cd897842383780053595c8654170",
+  "extracted_utc": "2026-08-21T17:35:27.5736754+00:00",
+  "block_sha256": "1e0b95167bb9fc475881bf4cec04222156517d1da4ac4fbf59caeb5e2d51635f",
+  "block_bytes": 4370,
+  "section": "Automated fail-closed switch"
+}

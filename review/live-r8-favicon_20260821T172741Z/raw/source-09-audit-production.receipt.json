@@ -1,0 +1,13 @@
+{
+  "command": "npm audit --omit=dev --audit-level=high",
+  "cwd": "E:\\03_AllWork\\uiadapt-r8-favicon-live-build-20260821T172741Z",
+  "role": "r8_favicon_live_deployment_operator",
+  "start_utc": "2026-08-21T17:29:47.3981755+00:00",
+  "end_utc": "2026-08-21T17:29:48.2948630+00:00",
+  "duration_ms": 897.0,
+  "exit_code": 0,
+  "stdout_file": "raw/source-09-audit-production.stdout.log",
+  "stderr_file": "raw/source-09-audit-production.stderr.log",
+  "observation": "command completed with exit code 0",
+  "redaction_applied": false
+}

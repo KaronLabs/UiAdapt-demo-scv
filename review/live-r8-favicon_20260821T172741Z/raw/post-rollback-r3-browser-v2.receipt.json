@@ -1,0 +1,9 @@
+{
+  "allowed_exception": "one favicon.ico console 404 only",
+  "end_utc": "2026-08-21T17:37:48.4226752+00:00",
+  "secret_logged": false,
+  "exit_code": 0,
+  "command": "post-rollback R3 public browser verification v2 via fresh external runner",
+  "supersedes": "first post-rollback helper referenced renamed staging path",
+  "start_utc": "2026-08-21T17:37:45.7599541+00:00"
+}
