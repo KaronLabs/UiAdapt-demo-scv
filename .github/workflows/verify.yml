@@ -121,9 +121,9 @@ jobs:
           export UIADAPT_MYSQL_PASSWORD="$(openssl rand -hex 32)"
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/001-uiadapt-demo.sql
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo <<SQL
-          CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'127.0.0.1' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
-          ALTER USER 'uiadapt_demo_app'@'127.0.0.1' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
-          GRANT SELECT, INSERT ON uiadapt_demo.* TO 'uiadapt_demo_app'@'127.0.0.1';
+          CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'%' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
+          ALTER USER 'uiadapt_demo_app'@'%' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
+          GRANT SELECT, INSERT ON uiadapt_demo.* TO 'uiadapt_demo_app'@'%';
           FLUSH PRIVILEGES;
           SQL
           echo "UIADAPT_MYSQL_PASSWORD=$UIADAPT_MYSQL_PASSWORD" >> "$GITHUB_ENV"
