@@ -8,8 +8,11 @@ describe("adaptive storefront UI contract", () => {
 
   it("renders the canonical products and keeps diagnostics collapsed", () => {
     const { container } = render(<App />);
-    expect(screen.getByRole("link", { name: "Atelier Audio storefront 홈" })).toBeInTheDocument();
-    expect(container.querySelector("header .powered-by")).toHaveTextContent("Powered by UIAdapt");
+    expect(screen.getByRole("link", { name: "UIAdapt 홈" })).toBeInTheDocument();
+    expect(container.querySelector(".site-header")).toHaveTextContent("Adaptive UI Infrastructure");
+    expect(container.querySelector(".site-header .cart-button")).not.toBeInTheDocument();
+    expect(container.querySelector(".demo-stage .cart-button")).toBeInTheDocument();
+    expect(container.querySelector(".demo-stage__header")).toHaveTextContent("샘플 상점 · Atelier Audio");
     expect(screen.getByRole("heading", { name: "Aurora One" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Nova Pro" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Halo Air" })).toBeInTheDocument();
@@ -19,9 +22,28 @@ describe("adaptive storefront UI contract", () => {
     expect(screen.getByText("Developer View").closest("details")).not.toHaveAttribute("open");
   });
 
+  it("presents the patent-pending investor thesis and causal contract", () => {
+    render(<App />);
+    expect(screen.getByText("특허 출원 기반 적응형 UI 인프라")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeInTheDocument();
+    expect(screen.getByText("추천은 WHAT을 결정합니다. UIAdapt는 HOW를 조율합니다.")).toBeInTheDocument();
+    expect(screen.getByTestId("product-invariants")).toHaveTextContent(
+      "Same catalogSame behaviorDifferent presentation",
+    );
+    expect(screen.getByTestId("causal-trace")).toHaveAccessibleName(
+      "Behavior → State → Policy → Interface",
+    );
+  });
+
+  it("starts the canonical replay from the investor-stage CTA", () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
+    expect(screen.getByTestId("replay-status")).toHaveTextContent("동일한 행동 시퀀스를 재생하고 있습니다.");
+  });
+
   it("replays EXPLORE to COMPARE to FOCUS while preserving product data", () => {
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
     act(() => vi.advanceTimersByTime(7_000));
     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("COMPARE");
     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "COMPARE");
@@ -35,7 +57,7 @@ describe("adaptive storefront UI contract", () => {
     const { container } = render(<App />);
     const exploreDescription = container.querySelector(".storefront__heading > p")?.textContent;
     fireEvent.click(screen.getByRole("checkbox", { name: /Adaptive UI/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
     act(() => vi.advanceTimersByTime(21_000));
     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("FOCUS");
     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
@@ -45,7 +67,7 @@ describe("adaptive storefront UI contract", () => {
 
   it("does not remove the active product control during adaptation", () => {
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
     const priceButton = screen.getByRole("button", { name: "Aurora One 가격 확인" });
     priceButton.focus();
     expect(document.activeElement).toBe(priceButton);
@@ -56,7 +78,7 @@ describe("adaptive storefront UI contract", () => {
 
   it("keeps comparison inside the stable demo stage and hides it in FOCUS", () => {
     const { container } = render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
     act(() => vi.advanceTimersByTime(7_000));
     expect(container.querySelector(".demo-stage .comparison-panel.is-visible")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(14_000));
@@ -66,7 +88,7 @@ describe("adaptive storefront UI contract", () => {
 
   it("stops the scripted replay when the user takes over", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
     fireEvent.click(screen.getByRole("button", { name: "Aurora One 가격 확인" }));
     expect(screen.getByTestId("replay-status")).toHaveTextContent("직접 탐색을 시작해 데모 재생을 멈췄습니다.");
   });

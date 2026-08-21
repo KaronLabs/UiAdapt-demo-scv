@@ -55,7 +55,7 @@ test.beforeEach(async ({ page }) => {
   evidencePage.__assetResponses = assetResponses;
   evidencePage.__assetFailures = assetFailures;
   await page.goto("/uiadapt_demo/");
-  await expect(page.getByRole("heading", { name: "같은 상품, 달라지는 무대." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeVisible();
 });
 
 test.afterEach(async ({ page }) => {
@@ -75,15 +75,74 @@ test("storefront is responsive, local-only, and diagnostics are collapsed", asyn
   await page.screenshot({ path: `test-results/${testInfo.project.name}-explore.png`, fullPage: true, animations: "disabled" });
 });
 
+test("investor stage uses the local Wanted Sans type scale and causal thesis", async ({ page }) => {
+  await settleVisualEvidence(page);
+  await expect(page.getByTestId("product-invariants")).toContainText("Same catalog");
+  await expect(page.getByTestId("causal-trace")).toContainText("Behavior");
+  await expect(page.getByTestId("causal-trace")).toContainText("Interface");
+  expect(await page.evaluate(() => document.fonts.check('16px "Wanted Sans Variable"'))).toBe(true);
+
+  const typeScale = await page.evaluate(() => {
+    const px = (selector: string, property: "fontSize" | "lineHeight" = "fontSize") => {
+      const node = document.querySelector<HTMLElement>(selector);
+      if (!node) throw new Error(`Missing typography contract node: ${selector}`);
+      return Number.parseFloat(getComputedStyle(node)[property]);
+    };
+    return {
+      hero: px(".hero h1"),
+      heroLine: px(".hero h1", "lineHeight"),
+      section: px(".storefront__heading h2"),
+      product: px(".product-card h2"),
+      price: px(".product-card__price .text-action"),
+      body: px(".hero__lead"),
+      spec: px(".product-card__specs dd"),
+      button: px(".product-card__actions .button"),
+      bodyFamily: getComputedStyle(document.body).fontFamily,
+      heroFamily: getComputedStyle(document.querySelector<HTMLElement>(".hero h1")!).fontFamily,
+      buttonFamily: getComputedStyle(document.querySelector<HTMLElement>(".button--watch")!).fontFamily,
+      diagnosticFamily: getComputedStyle(document.querySelector<HTMLElement>(".causal-trace span")!).fontFamily,
+    };
+  });
+  expect(typeScale.hero).toBeGreaterThanOrEqual(52);
+  expect(typeScale.heroLine / typeScale.hero).toBeGreaterThanOrEqual(1.07);
+  expect(typeScale.heroLine / typeScale.hero).toBeLessThanOrEqual(1.09);
+  expect(typeScale.section).toBeGreaterThanOrEqual(36);
+  expect(typeScale.section).toBeLessThanOrEqual(48);
+  expect(typeScale.product).toBeGreaterThanOrEqual(26);
+  expect(typeScale.product).toBeLessThanOrEqual(30);
+  expect(typeScale.price).toBeGreaterThanOrEqual(20);
+  expect(typeScale.price).toBeLessThanOrEqual(22);
+  expect(typeScale.body).toBeGreaterThanOrEqual(15);
+  expect(typeScale.body).toBeLessThanOrEqual(17);
+  expect(typeScale.spec).toBeGreaterThanOrEqual(13);
+  expect(typeScale.spec).toBeLessThanOrEqual(14);
+  expect(typeScale.button).toBeGreaterThanOrEqual(13);
+  expect(typeScale.button).toBeLessThanOrEqual(14);
+  expect(typeScale.bodyFamily).toContain("Wanted Sans Variable");
+  expect(typeScale.heroFamily).toContain("Wanted Sans Variable");
+  expect(typeScale.buttonFamily).toContain("Wanted Sans Variable");
+  expect(typeScale.diagnosticFamily).toContain("IBM Plex Mono");
+
+  const heroRegionsOverlap = await page.evaluate(() => {
+    const first = document.querySelector<HTMLElement>(".hero__copy")!.getBoundingClientRect();
+    const second = document.querySelector<HTMLElement>(".hero__console")!.getBoundingClientRect();
+    return first.left < second.right && first.right > second.left && first.top < second.bottom && first.bottom > second.top;
+  });
+  expect(heroRegionsOverlap).toBe(false);
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 test("nested deployment path loads assets, reloads, and runs the replay", async ({ page }) => {
   await page.goto("/uiadapt_demo/");
-  await expect(page.getByRole("heading", { name: "같은 상품, 달라지는 무대." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeVisible();
   const scriptSource = await page.locator('script[type="module"]').getAttribute("src");
   expect(scriptSource).toMatch(/^\/uiadapt_demo\//);
   const stylesheetSource = await page.locator('link[rel="stylesheet"]').getAttribute("href");
   expect(stylesheetSource).toMatch(/^\/uiadapt_demo\//);
   await settleVisualEvidence(page);
-  expect(await page.evaluate(() => document.fonts.check("16px Manrope"))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('16px "Wanted Sans Variable"'))).toBe(true);
   await page.reload();
   await settleVisualEvidence(page);
   const assetResponses = (page as EvidencePage).__assetResponses ?? [];
@@ -92,7 +151,7 @@ test("nested deployment path loads assets, reloads, and runs the replay", async 
   expect(assetResponses.some(({ url }) => /\.woff2?$/.test(url))).toBe(true);
   expect((page as EvidencePage).__assetFailures ?? []).toEqual([]);
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(7_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
 });
@@ -103,7 +162,7 @@ test("the canonical replay changes presentation without changing product data", 
   const initialPrices = await page.locator(".product-card__price").allTextContents();
   expect(initialPrices.map((value) => value.trim())).toEqual(expectedPrices);
   expect(await productContracts(page)).toEqual(expectedProducts);
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(7_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "COMPARE");
@@ -119,7 +178,7 @@ test("the canonical replay changes presentation without changing product data", 
 
 test("COMPARE is visible in the main stage and FOCUS becomes decision support", async ({ page }, testInfo) => {
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(7_000);
   const comparePanel = page.locator(".demo-stage .comparison-panel.is-visible");
   await expect(comparePanel).toBeVisible();
@@ -134,16 +193,19 @@ test("COMPARE is visible in the main stage and FOCUS becomes decision support", 
   await expect(page.getByText("Aurora One").first()).toBeVisible();
 });
 
-test("merchant and adaptive technology layers are named separately", async ({ page }) => {
-  await expect(page.getByRole("link", { name: "Atelier Audio storefront 홈" })).toBeVisible();
-  await expect(page.locator(".demo-stage__header .powered-by")).toHaveText("Powered by UIAdapt");
+test("UIAdapt and the sample merchant are named separately", async ({ page }) => {
+  await expect(page.getByRole("link", { name: "UIAdapt 홈" })).toBeVisible();
+  await expect(page.locator(".site-header")).toContainText("Adaptive UI Infrastructure");
+  await expect(page.locator(".site-header .cart-button")).toHaveCount(0);
+  await expect(page.locator(".demo-stage__header")).toContainText("샘플 상점 · Atelier Audio");
+  await expect(page.locator(".demo-stage .cart-button")).toBeVisible();
 });
 
 test("Adaptive OFF keeps the same detected state but baseline presentation", async ({ page }) => {
   await page.clock.install();
   const exploreDescription = await page.locator(".storefront__heading > p").textContent();
   await page.getByRole("checkbox", { name: /Adaptive UI/i }).uncheck();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(21_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
@@ -153,7 +215,7 @@ test("Adaptive OFF keeps the same detected state but baseline presentation", asy
 
 test("active product control survives the comparison transition", async ({ page }) => {
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   const price = page.getByRole("button", { name: "Aurora One 가격 확인" });
   await price.focus();
   await expect(price).toBeFocused();
@@ -164,8 +226,8 @@ test("active product control survives the comparison transition", async ({ page 
 
 test("keyboard-only path starts, pauses, resets, and records a product action", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  for (let index = 0; index < 4; index += 1) await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: /Watch UIAdapt/i })).toBeFocused();
+  for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
+  await expect(page.getByTestId("live-demo-cta")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("replay-status")).toContainText("동일한 행동 시퀀스");
   await page.keyboard.press("Tab");
@@ -175,7 +237,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action", 
   await expect(page.locator(".product-card").first()).toHaveCSS("transition-duration", "0s");
 
   await page.goto("/uiadapt_demo/");
-  for (let index = 0; index < 4; index += 1) await page.keyboard.press("Tab");
+  for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
   for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Reset" })).toBeFocused();
@@ -191,7 +253,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action", 
 
 test("Pause and Resume preserve virtual progress", async ({ page }) => {
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(7_000);
   await page.getByRole("button", { name: "Pause" }).click();
   await page.clock.fastForward(20_000);
@@ -203,7 +265,7 @@ test("Pause and Resume preserve virtual progress", async ({ page }) => {
 
 test("Reset cancels every stale Replay timer", async ({ page }) => {
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(3_000);
   await page.getByRole("button", { name: "Reset" }).click();
   await page.clock.fastForward(30_000);
@@ -214,7 +276,7 @@ test("Reset cancels every stale Replay timer", async ({ page }) => {
 
 test("manual takeover cancels the remaining Replay timers", async ({ page }) => {
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(1_000);
   await page.getByRole("button", { name: "Aurora One 가격 확인" }).click();
   await page.clock.fastForward(30_000);
@@ -225,7 +287,7 @@ test("manual takeover cancels the remaining Replay timers", async ({ page }) => 
 
 test("Stop preserves state and cancels the remaining Replay timers", async ({ page }) => {
   await page.clock.install();
-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
+  await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(7_000);
   await page.getByRole("button", { name: "Stop" }).click();
   await page.clock.fastForward(30_000);

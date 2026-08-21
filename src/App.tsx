@@ -25,6 +25,11 @@ const stateCopy: Record<AdaptiveState, { label: string; title: string; descripti
 };
 
 const stateOrder: AdaptiveState[] = ["EXPLORE", "COMPARE", "FOCUS"];
+const stateMission: Record<AdaptiveState, string> = {
+  EXPLORE: "발견",
+  COMPARE: "비교",
+  FOCUS: "결정지원",
+};
 
 function App() {
   const {
@@ -81,12 +86,11 @@ function App() {
   return (
     <div className={`app app--${state.appliedState.toLowerCase()}`}>
       <header className="site-header">
-        <a className="brand" href="#main-content" aria-label="Atelier Audio storefront 홈">
+        <a className="brand" href="#main-content" aria-label="UIAdapt 홈">
           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
-          <span>Atelier Audio</span>
+          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure</small></span>
         </a>
-        <span className="powered-by">Powered by UIAdapt</span>
-        <p className="header-story"><strong>WHAT</strong>은 그대로. <strong>HOW</strong>는 지금의 행동에 맞게.</p>
+        <p className="header-story">Behavior-aware presentation layer</p>
         <div className="header-tools">
           <label className="adaptive-toggle">
             <span>Adaptive UI</span>
@@ -98,30 +102,39 @@ function App() {
             <span className="toggle-track" aria-hidden="true"><span /></span>
             <strong>{state.adaptiveEnabled ? "ON" : "OFF"}</strong>
           </label>
-          <button type="button" className="cart-button" aria-label={`장바구니, 상품 ${cartCount}개`}>
-            Bag <span>{cartCount}</span>
-          </button>
         </div>
       </header>
 
       <main id="main-content">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero__copy">
-            <p className="eyebrow">Adaptive storefront theater · Live product demo</p>
-            <h1 id="hero-title">같은 상품,<br /><span>달라지는 무대.</span></h1>
+            <p className="eyebrow">특허 출원 기반 적응형 UI 인프라</p>
+            <h1 id="hero-title" aria-label="같은 상품을, 더 나은 판단으로.">같은 상품을,<br /><span>더 나은 판단으로.</span></h1>
             <p className="hero__lead">
-              추천 결과는 바꾸지 않습니다. 관찰된 행동에 맞춰 같은 상품을 탐색하고,
-              비교하고, 선택하는 방식을 다시 조율합니다.
+              추천은 WHAT을 결정합니다. UIAdapt는 HOW를 조율합니다.
             </p>
+            <div className="product-invariants" data-testid="product-invariants" aria-label="데모 불변식">
+              <span>Same catalog</span><i aria-hidden="true" />
+              <span>Same behavior</span><i aria-hidden="true" />
+              <strong>Different presentation</strong>
+            </div>
           </div>
           <div className="hero__console" aria-label="UIAdapt 데모 제어">
-            <div className="demo-thesis">
-              <span>Recommendation</span><strong>decides WHAT.</strong>
-              <span>UIAdapt</span><strong>decides HOW.</strong>
+            <div className="causal-system">
+              <SignalRibbon state={state.appliedState} />
+              <div className="causal-trace" data-testid="causal-trace" aria-label="Behavior → State → Policy → Interface">
+                <div><span>01</span><strong>Behavior</strong><small>관찰 행동</small></div>
+                <b aria-hidden="true">→</b>
+                <div><span>02</span><strong>State</strong><small>{state.detectedState}</small></div>
+                <b aria-hidden="true">→</b>
+                <div><span>03</span><strong>Policy</strong><small>{state.adaptiveEnabled ? "Applied" : "Suppressed"}</small></div>
+                <b aria-hidden="true">→</b>
+                <div><span>04</span><strong>Interface</strong><small>{state.appliedState}</small></div>
+              </div>
             </div>
             <div className="replay-controls">
-              <button type="button" className="button button--watch" onClick={startReplay}>
-                <span aria-hidden="true">▶</span> Watch UIAdapt
+              <button type="button" className="button button--watch" onClick={startReplay} data-testid="live-demo-cta">
+                <span aria-hidden="true">▶</span> 27초 라이브 데모
               </button>
               {state.replayStatus === "RUNNING" ? (
                 <button type="button" className="icon-button" onClick={pauseReplay}>Pause</button>
@@ -147,7 +160,7 @@ function App() {
             {stateOrder.map((item, index) => (
               <div key={item} data-current={state.detectedState === item} className={`state-step${state.detectedState === item ? " is-current" : ""}${stateOrder.indexOf(state.detectedState) > index ? " is-past" : ""}`}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{item}</strong>
+                <div><strong>{item}</strong><em>{stateMission[item]}</em></div>
               </div>
             ))}
           </div>
@@ -160,10 +173,12 @@ function App() {
         <section className="demo-stage" ref={demoStageRef} aria-labelledby="storefront-title">
           <div className="demo-stage__header">
             <div>
-              <p className="eyebrow">Atelier Audio · Adaptive storefront</p>
-              <span className="demo-stage__label">The merchant stage, reshaped by observed behavior</span>
+              <p className="eyebrow">샘플 상점 · Atelier Audio</p>
+              <span className="demo-stage__label">동일한 상품과 행동으로 검증하는 적응형 상점 무대</span>
             </div>
-            <span className="powered-by">Powered by UIAdapt</span>
+            <button type="button" className="cart-button" aria-label={`장바구니, 상품 ${cartCount}개`}>
+              Bag <span>{cartCount}</span>
+            </button>
           </div>
 
           <div className="demo-stage__adaptive-surface">
@@ -209,7 +224,6 @@ function App() {
           </div>
 
           <section className="storefront" aria-labelledby="storefront-title">
-            <SignalRibbon state={state.appliedState} />
             <div className="storefront__heading">
               <div>
                 <p className="eyebrow">Curated wireless listening</p>
@@ -266,7 +280,7 @@ function App() {
       </main>
 
       <footer>
-        <span>Atelier Audio storefront · Powered by UIAdapt</span>
+        <span>UIAdapt · Adaptive UI Infrastructure</span>
         <p>실제 결제는 수행되지 않습니다. 모든 상품과 행동 데이터는 이 데모 안에만 존재합니다.</p>
       </footer>
 
