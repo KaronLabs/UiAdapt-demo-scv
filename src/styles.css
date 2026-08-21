@@ -116,7 +116,7 @@ main { width: min(1600px, 100%); margin: 0 auto; }
 
 .state-stage { margin: 0 5vw; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 40px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .state-path { display: flex; align-items: center; }
-.state-step { display: flex; align-items: center; gap: 10px; color: #8a969a; position: relative; }
+.state-step { display: flex; align-items: center; gap: 10px; color: #56656a; position: relative; }
 .state-step:not(:last-child)::after { content: ""; width: clamp(28px, 3.5vw, 58px); height: 1px; margin: 0 clamp(12px, 2vw, 30px); background: var(--line); }
 .state-step > span { font: 500 12px var(--mono); }
 .state-step > div { display: grid; line-height: 1.1; }
@@ -178,7 +178,8 @@ main { width: min(1600px, 100%); margin: 0 auto; }
 .product-card--focused { border-color: rgba(7, 94, 184, 0.55); box-shadow: 0 0 0 4px rgba(7, 94, 184, 0.08), 0 24px 60px rgba(7, 94, 184, 0.14); }
 .product-card--focused .product-card__visual { min-height: 320px; }
 .product-card--focused .product-art { transform: scale(1.06); }
-.product-card--muted { opacity: 0.72; transform: scale(0.985); box-shadow: none; }
+.product-card--muted { transform: scale(0.985); box-shadow: none; }
+.product-card--muted .product-card__visual { opacity: 0.62; filter: saturate(0.45); }
 
 .comparison-panel { display: none; margin: 20px 5vw 0; padding: 34px; background: var(--carbon); color: white; border-radius: 26px; grid-template-columns: minmax(250px, 0.65fr) 1.35fr; gap: 48px; }
 .comparison-panel.is-visible { display: grid; }
@@ -203,7 +204,7 @@ main { width: min(1600px, 100%); margin: 0 auto; }
 .why-panel summary > span:first-child { display: grid; gap: 4px; }
 .why-panel summary small { color: var(--cobalt); font: 500 12px var(--mono); }
 .why-panel summary strong { font-size: 17px; font-weight: 700; }
-.summary-action { color: var(--graphite); font-size: 13px; }
+.summary-action { flex-shrink: 0; color: var(--graphite); font-size: 13px; white-space: nowrap; }
 .why-grid, .developer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 20px 20px; }
 .why-grid div, .developer-grid div { display: grid; gap: 7px; padding: 13px; background: var(--mineral); border-radius: 12px; }
 .why-grid span, .developer-grid span { color: #6b797e; font: 500 12px var(--mono); text-transform: uppercase; }
@@ -234,6 +235,7 @@ footer p { margin: 0; }
   .state-message div { text-align: left; }
   .storefront__heading { grid-template-columns: 1fr; }
   .product-grid, .product-grid[data-state="FOCUS"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-grid:not([data-state="FOCUS"]) > .product-card:last-child:nth-child(odd) { grid-column: 1 / -1; width: calc((100% - 18px) / 2); justify-self: center; }
   .product-card--focused { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; }
   .product-card--focused .product-card__visual { min-height: 100%; }
   .comparison-panel { grid-template-columns: 1fr; gap: 26px; }
@@ -276,6 +278,7 @@ footer p { margin: 0; }
   .storefront__heading h2 { font-size: 36px; }
   .storefront__heading > p { font-size: 15px; }
   .product-grid, .product-grid[data-state="FOCUS"] { grid-template-columns: 1fr; }
+  .product-grid:not([data-state="FOCUS"]) > .product-card:last-child:nth-child(odd) { grid-column: auto; width: 100%; }
   .product-card--focused { grid-column: auto; display: flex; }
   .product-card__visual, .product-card--focused .product-card__visual { min-height: 270px; }
   .product-card__body { padding: 23px 18px 20px; }
@@ -284,7 +287,7 @@ footer p { margin: 0; }
   .product-card__proof { flex-direction: column; }
   .product-card__actions .button { flex: 1 1 auto; }
   .button--primary { margin-left: 0; flex-basis: 100% !important; }
-  .product-card--muted { opacity: 0.78; transform: none; }
+  .product-card--muted { transform: none; }
   .comparison-panel { margin: 0; padding: 27px 18px; border-radius: 22px; }
   .comparison-row { grid-template-columns: 0.7fr 1fr 1fr; gap: 7px; font-size: 13px; }
   .decision-support { grid-template-columns: 1fr; gap: 20px; padding: 25px 18px; border-radius: 22px; }

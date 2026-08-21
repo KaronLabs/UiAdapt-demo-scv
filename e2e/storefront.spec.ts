@@ -27,6 +27,35 @@ type EvidencePage = Page & {
   __assetFailures?: string[];
 };
 
+async function wantedFontEvidence(page: Page) {
+  await page.evaluate(() => document.fonts.ready);
+  return page.evaluate(() => {
+    const family = "Wanted Sans Variable";
+    const normalize = (value: string) => value.replace(/["']/g, "").trim();
+    const cssRuleFound = Array.from(document.styleSheets).some((sheet) =>
+      Array.from(sheet.cssRules).some(
+        (rule) => rule instanceof CSSFontFaceRule && normalize(rule.style.fontFamily) === family,
+      ),
+    );
+    const loadedFace = Array.from(document.fonts.values()).find(
+      (face) => normalize(face.family) === family,
+    );
+    return { cssRuleFound, status: loadedFace?.status ?? "missing" };
+  });
+}
+
+async function productGridBalance(page: Page) {
+  return page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>(".product-grid")!.getBoundingClientRect();
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".product-card"));
+    const last = cards.at(-1)!.getBoundingClientRect();
+    return {
+      centerDelta: Math.abs(last.left + last.width / 2 - (grid.left + grid.width / 2)),
+      widthRatio: last.width / grid.width,
+    };
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   const consoleErrors: string[] = [];
   const externalRequests: string[] = [];
@@ -73,6 +102,7 @@ test("storefront is responsive, local-only, and diagnostics are collapsed", asyn
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: `test-results/${testInfo.project.name}-explore.png`, fullPage: true, animations: "disabled" });
+  await page.screenshot({ path: `test-results/${testInfo.project.name}-explore-viewport.png`, animations: "disabled" });
 });
 
 test("investor stage uses the local Wanted Sans type scale and causal thesis", async ({ page }) => {
@@ -80,7 +110,12 @@ test("investor stage uses the local Wanted Sans type scale and causal thesis", a
   await expect(page.getByTestId("product-invariants")).toContainText("Same catalog");
   await expect(page.getByTestId("causal-trace")).toContainText("Behavior");
   await expect(page.getByTestId("causal-trace")).toContainText("Interface");
-  expect(await page.evaluate(() => document.fonts.check('16px "Wanted Sans Variable"'))).toBe(true);
+  expect(await wantedFontEvidence(page)).toEqual({ cssRuleFound: true, status: "loaded" });
+  expect(
+    ((page as EvidencePage).__assetResponses ?? []).some(
+      ({ url, status }) => /WantedSansVariable[^/]*\.woff2(?:\?|$)/.test(url) && status === 200,
+    ),
+  ).toBe(true);
 
   const typeScale = await page.evaluate(() => {
     const px = (selector: string, property: "fontSize" | "lineHeight" = "fontSize") => {
@@ -134,6 +169,62 @@ test("investor stage uses the local Wanted Sans type scale and causal thesis", a
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test("reviewed layout keeps laptop cards balanced and mobile evidence controls intact", async ({ page }, testInfo) => {
+  await settleVisualEvidence(page);
+  if (testInfo.project.name === "laptop-1024") {
+    const balance = await productGridBalance(page);
+    expect(balance.centerDelta).toBeLessThanOrEqual(1);
+    expect(balance.widthRatio).toBeGreaterThanOrEqual(0.45);
+    expect(balance.widthRatio).toBeLessThanOrEqual(0.55);
+  }
+  if (testInfo.project.name === "mobile-390") {
+    const summaryAction = await page.locator(".why-panel .summary-action").evaluate((node) => {
+      const style = getComputedStyle(node);
+      return { whiteSpace: style.whiteSpace, flexShrink: style.flexShrink };
+    });
+    expect(summaryAction).toEqual({ whiteSpace: "nowrap", flexShrink: "0" });
+  }
+});
+
+test("reviewed text contrast remains WCAG AA in inactive and FOCUS-muted states", async ({ page }) => {
+  await page.clock.install();
+  const contrastFor = (selector: string, backgroundSelector: string) => page.evaluate(
+    ({ selector, backgroundSelector }) => {
+      const node = document.querySelector<HTMLElement>(selector)!;
+      const background = document.querySelector<HTMLElement>(backgroundSelector)!;
+      const channels = (value: string) => (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+      const foreground = channels(getComputedStyle(node).color);
+      const backgroundColor = channels(getComputedStyle(background).backgroundColor);
+      let opacity = 1;
+      for (let current: HTMLElement | null = node; current; current = current.parentElement) {
+        opacity *= Number.parseFloat(getComputedStyle(current).opacity);
+      }
+      const effective = foreground.map((channel, index) => channel * opacity + backgroundColor[index] * (1 - opacity));
+      const luminance = (rgb: number[]) => rgb
+        .map((channel) => channel / 255)
+        .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+        .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+      const light = Math.max(luminance(effective), luminance(backgroundColor));
+      const dark = Math.min(luminance(effective), luminance(backgroundColor));
+      return (light + 0.05) / (dark + 0.05);
+    },
+    { selector, backgroundSelector },
+  );
+
+  const inactiveStateContrast = await contrastFor(
+    ".state-step:not(.is-current):not(.is-past) strong",
+    ":root",
+  );
+  await page.getByTestId("live-demo-cta").click();
+  await page.clock.fastForward(21_000);
+  const mutedBodyContrast = await contrastFor(
+    ".product-card--muted .product-card__detail",
+    ".product-card--muted",
+  );
+  expect.soft(inactiveStateContrast).toBeGreaterThanOrEqual(4.5);
+  expect.soft(mutedBodyContrast).toBeGreaterThanOrEqual(4.5);
+});
+
 test("nested deployment path loads assets, reloads, and runs the replay", async ({ page }) => {
   await page.goto("/uiadapt_demo/");
   await expect(page.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeVisible();
@@ -142,13 +233,13 @@ test("nested deployment path loads assets, reloads, and runs the replay", async 
   const stylesheetSource = await page.locator('link[rel="stylesheet"]').getAttribute("href");
   expect(stylesheetSource).toMatch(/^\/uiadapt_demo\//);
   await settleVisualEvidence(page);
-  expect(await page.evaluate(() => document.fonts.check('16px "Wanted Sans Variable"'))).toBe(true);
+  expect(await wantedFontEvidence(page)).toEqual({ cssRuleFound: true, status: "loaded" });
   await page.reload();
   await settleVisualEvidence(page);
   const assetResponses = (page as EvidencePage).__assetResponses ?? [];
   expect(assetResponses.some(({ url }) => url.endsWith(".js"))).toBe(true);
   expect(assetResponses.some(({ url }) => url.endsWith(".css"))).toBe(true);
-  expect(assetResponses.some(({ url }) => /\.woff2?$/.test(url))).toBe(true);
+  expect(assetResponses.some(({ url, status }) => /WantedSansVariable[^/]*\.woff2(?:\?|$)/.test(url) && status === 200)).toBe(true);
   expect((page as EvidencePage).__assetFailures ?? []).toEqual([]);
   await page.clock.install();
   await page.getByTestId("live-demo-cta").click();
@@ -162,18 +253,37 @@ test("the canonical replay changes presentation without changing product data", 
   const initialPrices = await page.locator(".product-card__price").allTextContents();
   expect(initialPrices.map((value) => value.trim())).toEqual(expectedPrices);
   expect(await productContracts(page)).toEqual(expectedProducts);
+  if (testInfo.project.name === "laptop-1024") {
+    const balance = await productGridBalance(page);
+    expect(balance.centerDelta).toBeLessThanOrEqual(1);
+    expect(balance.widthRatio).toBeGreaterThanOrEqual(0.45);
+    expect(balance.widthRatio).toBeLessThanOrEqual(0.55);
+  }
   await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(7_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "COMPARE");
   expect(await productContracts(page)).toEqual(expectedProducts);
+  if (testInfo.project.name === "laptop-1024") {
+    const balance = await productGridBalance(page);
+    expect(balance.centerDelta).toBeLessThanOrEqual(1);
+  }
+  if (testInfo.project.name === "desktop-1440") {
+    const comparePanel = page.locator(".comparison-panel.is-visible");
+    const box = await comparePanel.boundingBox();
+    const viewportHeight = page.viewportSize()!.height;
+    const visibleHeight = box ? Math.max(0, Math.min(viewportHeight, box.y + box.height) - Math.max(0, box.y)) : 0;
+    expect(visibleHeight).toBeGreaterThanOrEqual(Math.min(240, (box?.height ?? 0) * 0.6));
+  }
   await page.screenshot({ path: `test-results/${testInfo.project.name}-compare.png`, fullPage: true, animations: "disabled" });
+  await page.screenshot({ path: `test-results/${testInfo.project.name}-compare-viewport.png`, animations: "disabled" });
   await page.clock.fastForward(14_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "FOCUS");
   expect((await page.locator(".product-card__price").allTextContents()).map((value) => value.trim())).toEqual(expectedPrices);
   expect(await productContracts(page)).toEqual(expectedProducts);
   await page.screenshot({ path: `test-results/${testInfo.project.name}-focus.png`, fullPage: true, animations: "disabled" });
+  await page.screenshot({ path: `test-results/${testInfo.project.name}-focus-viewport.png`, animations: "disabled" });
 });
 
 test("COMPARE is visible in the main stage and FOCUS becomes decision support", async ({ page }, testInfo) => {
