@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { spawn, spawnSync } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { mkdir, mkdtemp, readFile, readdir, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import net from "node:net";
@@ -420,21 +420,25 @@ test("README records the investor-stage contract and the complete safe verificat
     "npm audit --omit=dev --audit-level=high",
   ];
 
-  let previousIndex = -1;
-  for (const command of commands) {
-    const commandIndex = readme.indexOf(command);
-    assert.ok(commandIndex > previousIndex, `${command} must appear once in the documented order`);
-    previousIndex = commandIndex;
-  }
+  const verificationBlock = readme.match(
+    /## 전체 검증 순서[\s\S]*?```powershell\r?\n([\s\S]*?)```/,
+  );
+  assert.ok(verificationBlock, "README must contain the PowerShell verification block");
+  const documentedCommands = verificationBlock[1]
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  assert.deepEqual(documentedCommands, commands);
 
   assert.match(readme, /Wanted Sans/);
   assert.match(readme, /Same catalog · Same behavior · Different presentation/);
   assert.match(readme, /Behavior → State → Policy → Interface/);
   assert.match(readme, /docs\/investor-stage-nwg-release\.md/);
   assert.match(readme, /docs\/security\/investor-preview-threat-model\.md/);
+  assert.match(readme, /never stages, cleans, or writes projectRoot\/www/i);
 });
 
-test("release runbook records immutable deployment, readiness, rollback, and measured live status", async () => {
+test("release runbook records version-addressed deployment, readiness, rollback, and measured live status", async () => {
   const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
 
   for (const contract of [
@@ -464,6 +468,34 @@ test("release runbook records immutable deployment, readiness, rollback, and mea
   assert.match(runbook, /secret[\s\S]*(?:must not|금지)[\s\S]*log/i);
   assert.match(runbook, /https:\/\/tailscale\.com\/docs\/reference\/tailscale-cli\/funnel/);
   assert.match(runbook, /https:\/\/www\.freedesktop\.org\/software\/systemd\/man\/latest\/systemd\.exec\.html/);
+  assert.match(runbook, /version-addressed release/i);
+  assert.match(runbook, /deployment-time archive\/manifest hash verification/i);
+  assert.match(runbook, /no filesystem immutable bit/i);
+  assert.match(runbook, /no root-owned read-only enforcement/i);
+  assert.match(runbook, /ubuntu ownership is a residual risk/i);
+  assert.doesNotMatch(runbook, /immutable (?:release|releases)/i);
+
+  for (const command of [
+    'DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"',
+    'PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"',
+    'ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"',
+    'mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"',
+    "systemctl restart uiadapt-static.service uiadapt-gateway.service",
+    'ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new"',
+    'mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"',
+    'AUTH_CONFIG="$(mktemp /run/uiadapt-curl.XXXXXX)"',
+    'chmod 0600 "$AUTH_CONFIG"',
+    "read -r -s -p 'Password: ' REVIEW_PASSWORD",
+    'unset REVIEW_PASSWORD',
+    'curl --config "$AUTH_CONFIG"',
+  ]) {
+    assert.ok(runbook.includes(command), `runbook must provide fail-closed command: ${command}`);
+  }
+  assert.match(runbook, /stat -c %d[\s\S]*NEW_RELEASE/);
+  assert.match(runbook, /readlink -f[\s\S]*\/releases\//);
+  assert.match(runbook, /8443[\s\S]*(?:must not|금지)[\s\S]*8787/i);
+  assert.match(runbook, /never stages, cleans, or writes projectRoot\/www/i);
+  assert.doesNotMatch(runbook, /curl\s+(?:[^\n]*\s)?(?:--user|-u)(?:\s|=)/);
 });
 
 test("tracked threat model states the enforced controls and accepted operational gaps", async () => {
@@ -491,6 +523,12 @@ test("tracked threat model states the enforced controls and accepted operational
   assert.match(threatModel, /fail-closed/i);
   assert.match(threatModel, /https:\/\/tailscale\.com\/docs\/features\/tailscale-funnel/);
   assert.match(threatModel, /https:\/\/nodejs\.org\/api\/http\.html/);
+  assert.match(threatModel, /version-addressed release/i);
+  assert.match(threatModel, /deployment-time archive\/manifest hash verification/i);
+  assert.match(threatModel, /no filesystem immutable bit/i);
+  assert.match(threatModel, /no root-owned read-only enforcement/i);
+  assert.match(threatModel, /ubuntu ownership is a residual risk/i);
+  assert.doesNotMatch(threatModel, /immutable (?:release|releases)/i);
 });
 
 test("preserves the existing target when source validation or copying fails", async () => {
@@ -530,28 +568,27 @@ test("preserves the existing target when source validation or copying fails", as
 
 test("behavior: canonical integration preserves the real project www tree", { timeout: 20_000 }, async () => {
   const projectWwwRoot = join(projectRoot, "www");
-  const projectReleaseRoot = join(projectWwwRoot, "uiadapt_demo");
   const wwwExisted = await pathExists(projectWwwRoot);
-  const releaseExisted = await pathExists(projectReleaseRoot);
-  const sentinelPath = join(projectReleaseRoot, `.r8-sentinel-${randomUUID()}.bin`);
-  const sentinelBytes = Buffer.from([0, 17, 42, 128, 255]);
+  const beforeHash = wwwExisted ? await hashDirectoryTree(projectWwwRoot) : null;
 
-  try {
-    await mkdir(projectReleaseRoot, { recursive: true });
-    await writeFile(sentinelPath, sentinelBytes, { flag: "wx" });
-    const beforeHash = await hashDirectoryTree(projectWwwRoot);
+  const result = await runCanonicalIntegration();
 
-    const result = await runCanonicalIntegration();
+  const wwwExistsAfter = await pathExists(projectWwwRoot);
+  assert.equal(wwwExistsAfter, wwwExisted);
+  if (wwwExisted) assert.equal(await hashDirectoryTree(projectWwwRoot), beforeHash);
+  assert.ok(resolve(result.releaseRoot).startsWith(`${resolve(result.temporaryRoot)}${sep}`));
+  assert.ok(!resolve(result.releaseRoot).startsWith(`${resolve(projectWwwRoot)}${sep}`));
+});
 
-    assert.equal(await hashDirectoryTree(projectWwwRoot), beforeHash);
-    assert.deepEqual(await readFile(sentinelPath), sentinelBytes);
-    assert.ok(resolve(result.releaseRoot).startsWith(`${resolve(result.temporaryRoot)}${sep}`));
-    assert.ok(!resolve(result.releaseRoot).startsWith(`${resolve(projectWwwRoot)}${sep}`));
-  } finally {
-    await rm(sentinelPath, { force: true });
-    if (!releaseExisted) await removeOwnedEmptyDirectory(projectReleaseRoot);
-    if (!wwwExisted) await removeOwnedEmptyDirectory(projectWwwRoot);
-  }
+test("project www preservation probe is read-only", async () => {
+  const source = await readProjectFile("scripts/nwg-deployment-contract.test.mjs");
+  const preservationProbe = source.slice(
+    source.indexOf('test("behavior: canonical integration preserves the real project www tree"'),
+    source.indexOf('test("project www preservation probe is read-only"'),
+  );
+
+  assert.doesNotMatch(preservationProbe, /\b(?:mkdir|writeFile|rm|rmdir)\s*\(/);
+  assert.match(preservationProbe, /hashDirectoryTree/);
 });
 
 test("behavior: canonical integration rejects a project www staging mutation", async () => {

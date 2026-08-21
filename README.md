@@ -26,7 +26,7 @@ npm run dev
 
 ## 전체 검증 순서
 
-깨끗한 checkout에서 아래 순서를 그대로 실행합니다. `test:deployment`는 실제 `projectRoot/www`나 운영 release를 변경하지 않고 자체 temporary root와 dynamic ports만 사용합니다.
+깨끗한 checkout에서 아래 순서를 그대로 실행합니다. `test:deployment`는 자체 temporary root와 dynamic ports만 사용하며, `never stages, cleans, or writes projectRoot/www`를 계약으로 고정합니다. 운영 release도 변경하지 않습니다.
 
 ```powershell
 npm ci

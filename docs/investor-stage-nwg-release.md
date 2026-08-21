@@ -12,7 +12,7 @@ Internet
   → current/www/uiadapt_demo/
 ```
 
-- immutable release: `/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/<SHA>`
+- version-addressed release: `/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/<SHA>`
 - active pointer: `/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current`
 - static unit: `uiadapt-static.service`
 - gateway unit: `uiadapt-gateway.service`
@@ -48,19 +48,118 @@ npm audit --omit=dev --audit-level=high
 ### `test:deployment` 비파괴 계약
 
 - integration은 OS `temporary root` 아래에 전용 `www`와 credential fixture를 만듭니다.
-- `projectRoot/www`를 integration staging 또는 cleanup 대상으로 사용하는 것은 금지합니다.
+- `never stages, cleans, or writes projectRoot/www`: 실제 project tree는 존재 여부와 hash를 읽어 전후 비교할 뿐입니다.
+- `projectRoot/www`를 integration staging 또는 cleanup 대상으로 사용하는 것은 금지합니다. 외부 probation test가 준비한 sentinel도 test runner는 읽기만 합니다.
 - 실제 `releases/<SHA>`와 `current`는 읽기·쓰기·삭제하지 않습니다.
 - production static service의 `127.0.0.1:5173`과 충돌하지 않도록 static과 gateway 모두 dynamic port를 예약합니다.
 - 실패 후에도 삭제 대상은 테스트가 소유한 temporary root 아래로 제한합니다.
-- 회귀시험은 프로젝트 `www` tree hash와 sentinel bytes가 전후 동일한지 검사합니다.
+- 회귀시험은 프로젝트 `www` tree의 존재 여부와 hash가 전후 동일한지 검사합니다.
 
-## 3. 원자적 릴리스
+## 3. Version-addressed 릴리스와 원자적 pointer 교체
 
-1. 검증한 exact Git SHA를 `releases/<SHA>.staging`에 전송하고 source/archive hash를 대조합니다.
+1. 검증한 exact Git SHA를 `releases/<SHA>.staging`에 전송하고 deployment-time archive/manifest hash verification을 수행합니다.
 2. production dependency 설치와 unit 검증이 끝나면 staging을 `releases/<SHA>`로 rename합니다.
 3. `current.new` symlink를 새 release로 만들고 `current`로 원자 교체합니다.
 4. `systemctl daemon-reload` 후 static, gateway 순서로 재시작합니다.
 5. 기존 release는 rollback이 끝날 때까지 삭제하지 않습니다.
+
+SHA 기반 directory 이름은 내용 변경을 기술적으로 차단하지 않습니다. `no filesystem immutable bit` 및 `no root-owned read-only enforcement`가 현재 증명된 상태입니다. release tree와 service는 `ubuntu`가 소유·실행할 수 있으므로 `ubuntu ownership is a residual risk`입니다.
+
+### Fail-closed same-filesystem switch와 rollback
+
+다음 Bash 명령은 새 release가 이미 전송·검증된 뒤 root 운영자가 실행하는 pointer 교체 절차입니다. `NEW_SHA`에는 exact 40자리 lowercase Git SHA만 넣습니다. 이 블록은 비밀번호를 명령행이나 로그에 출력하지 않으며 Funnel 8443·8787 설정을 변경하지 않습니다.
+
+```bash
+set -euo pipefail
+set +x
+
+DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"
+NEW_SHA="${NEW_SHA:?set the exact 40-character lowercase Git SHA}"
+printf '%s\n' "$NEW_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+NEW_RELEASE="$DEPLOY_ROOT/releases/$NEW_SHA"
+test -d "$NEW_RELEASE"
+test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$NEW_RELEASE")"
+
+PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"
+case "$PREVIOUS_TARGET" in
+  "$DEPLOY_ROOT"/releases/*) ;;
+  *) printf 'refusing unexpected current target\n' >&2; exit 1 ;;
+esac
+
+test ! -e "$DEPLOY_ROOT/current.new"
+test ! -L "$DEPLOY_ROOT/current.new"
+ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"
+test "$(readlink -f "$DEPLOY_ROOT/current.new")" = "$NEW_RELEASE"
+mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"
+
+systemctl restart uiadapt-static.service uiadapt-gateway.service
+test "$(readlink -f "$DEPLOY_ROOT/current")" = "$NEW_RELEASE"
+systemctl is-active --quiet uiadapt-static.service
+systemctl is-active --quiet uiadapt-gateway.service
+curl --fail --silent --show-error \
+  http://127.0.0.1:5173/uiadapt_demo/ \
+  --output /dev/null
+test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+  http://127.0.0.1:4180/uiadapt_demo/)" = "401"
+```
+
+정적 readiness 또는 gateway 401 검사가 실패하면 아래 rollback을 즉시 실행합니다. `PREVIOUS_TARGET`은 switch 전 위 경계 검사로 `releases/` 아래임이 확인된 값이어야 합니다.
+
+```bash
+set -euo pipefail
+set +x
+
+DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"
+test -n "${PREVIOUS_TARGET:-}"
+case "$PREVIOUS_TARGET" in
+  "$DEPLOY_ROOT"/releases/*) ;;
+  *) printf 'refusing unexpected rollback target\n' >&2; exit 1 ;;
+esac
+test -d "$PREVIOUS_TARGET"
+
+test ! -e "$DEPLOY_ROOT/current.rollback.new"
+test ! -L "$DEPLOY_ROOT/current.rollback.new"
+ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new"
+test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET"
+mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
+systemctl restart uiadapt-static.service uiadapt-gateway.service
+test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET"
+systemctl is-active --quiet uiadapt-static.service
+systemctl is-active --quiet uiadapt-gateway.service
+curl --fail --silent --show-error \
+  http://127.0.0.1:5173/uiadapt_demo/ \
+  --output /dev/null
+```
+
+인증 및 public smoke는 비표시 입력으로 만든 root-only curl config를 사용합니다. 아래 명령은 secret을 child process argument에 넣지 않으며 실제 secret 또는 config 내용을 stdout, shell trace, evidence log에 기록하지 않습니다.
+
+```bash
+set -euo pipefail
+set +x
+
+AUTH_CONFIG="$(mktemp /run/uiadapt-curl.XXXXXX)"
+trap 'rm -f "$AUTH_CONFIG"' EXIT
+chmod 0600 "$AUTH_CONFIG"
+read -r -s -p 'Password: ' REVIEW_PASSWORD
+printf '\n'
+printf 'user = "reviewer:%s"\n' "$REVIEW_PASSWORD" > "$AUTH_CONFIG"
+unset REVIEW_PASSWORD
+
+curl --config "$AUTH_CONFIG" \
+  --fail --silent --show-error \
+  http://127.0.0.1:4180/uiadapt_demo/ \
+  --output /dev/null
+curl --config "$AUTH_CONFIG" \
+  --fail --silent --show-error \
+  https://00-new-world-gpu.tail645adc.ts.net/uiadapt_demo/ \
+  --output /dev/null
+
+rm -f "$AUTH_CONFIG"
+trap - EXIT
+```
+
+`tailscale funnel` 재설정 명령은 이 절차에 포함하지 않으며 기존 8443 설정은 변경 금지, 기존 8787 설정도 변경 금지입니다.
 
 ## 4. Credential 계약과 rotation
 
@@ -83,7 +182,7 @@ systemd의 `active`만으로 readiness를 선언하지 않습니다.
 
 ## 6. Rollback
 
-readiness, authentication 또는 public smoke가 하나라도 실패하면 `success`를 선언하지 않습니다. `current`를 직전 정상 `releases/<SHA>`로 원자 교체하고 static과 gateway를 재시작한 뒤 동일 검증을 반복합니다. 최초 배포라 이전 release가 없으면 새 unit과 Funnel :443만 중지하며, 실패 release와 로그는 감사 증거로 보존합니다.
+readiness, authentication 또는 public smoke가 하나라도 실패하면 `success`를 선언하지 않습니다. 위 fail-closed 명령으로 `current`를 캡처한 `PREVIOUS_TARGET`으로 되돌리고 static과 gateway를 재시작한 뒤 동일 검증을 반복합니다. 최초 배포라 이전 release가 없으면 새 unit과 Funnel :443만 중지하며, 실패 release와 로그는 감사 증거로 보존합니다.
 
 ## 7. 측정된 상태와 현재 작업 경계
 

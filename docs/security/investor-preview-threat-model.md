@@ -6,7 +6,7 @@
 
 - `preview content`의 비공개성
 - Basic Auth credential
-- immutable `release integrity`와 `current` 선택
+- version-addressed `release integrity` 영수증과 `current` 선택
 - gateway/static availability
 - 로그의 credential 비노출
 
@@ -46,13 +46,13 @@ Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전�
 - malformed HTTP/WebSocket target은 거부하고 gateway는 계속 동작합니다.
 - credential은 `root:root` `0600` source에서 systemd `LoadCredential`로 전달합니다.
 - units는 `NoNewPrivileges=true`, `PrivateTmp=true`, `ProtectSystem=strict`, `ProtectHome=true`를 적용합니다.
-- immutable `releases/<SHA>`와 원자적 `current` symlink가 release integrity와 rollback 경계를 제공합니다.
+- `releases/<SHA>` version-addressed release와 원자적 `current` symlink가 추적·rollback 경계를 제공합니다.
 
 ## 4. 운영 통제
 
 - Basic Auth는 Tailscale Funnel TLS 뒤에서만 공개합니다.
 - Funnel 정책, public certificate, bandwidth 및 ingress availability는 Tailscale 운영 경계입니다.
-- source/archive/remote manifest hash와 `current` target을 배포마다 대조합니다.
+- deployment-time archive/manifest hash verification으로 source/archive/remote manifest와 `current` target을 배포마다 대조합니다.
 - readiness, authentication, public smoke가 모두 통과하기 전에 기존 release를 제거하지 않습니다.
 - credential rotation은 root 소유 파일 원자 교체, gateway restart, 음성·양성 인증 검증으로 수행합니다.
 - journal과 배포 증거에는 credential 값이나 credential hash를 기록하지 않습니다.
@@ -67,6 +67,7 @@ Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전�
 - gateway에는 `no explicitly pinned WebSocket idle timeout`이 없습니다.
 - Node HTTP의 기본 timeout 동작은 runtime version에 의존하며 repository가 별도 request/header/body limit를 고정하지 않습니다.
 - service user는 전용 계정이 아니라 비교적 broad한 `ubuntu`입니다. systemd hardening은 적용되어도 사용자 권한 범위는 그대로입니다.
+- `no filesystem immutable bit`와 `no root-owned read-only enforcement` 상태이므로 SHA directory 이름만으로 내용 불변성을 보증하지 않습니다. `ubuntu ownership is a residual risk`이며 운영 권한 오용은 별도 신뢰 경계입니다.
 - 애플리케이션은 Funnel relay, certificate issuance, DDoS protection 또는 host firewall을 검증하지 않습니다.
 
 ## 6. 위협별 판정
