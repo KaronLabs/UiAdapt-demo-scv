@@ -247,6 +247,17 @@ test("nested deployment path loads assets, reloads, and runs the replay", async 
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
 });
 
+test("production index declares and serves a local favicon at the nested base", async ({ page }) => {
+  const favicon = page.locator('link[rel~="icon"]');
+  await expect(favicon).toHaveAttribute("type", "image/svg+xml");
+  await expect(favicon).toHaveAttribute("href", "/uiadapt_demo/favicon.svg");
+
+  const response = await page.request.get("/uiadapt_demo/favicon.svg");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toContain("image/svg+xml");
+  expect(await response.text()).not.toMatch(/<html/i);
+});
+
 test("the canonical replay changes presentation without changing product data", async ({ page }, testInfo) => {
   await page.clock.install();
   await settleVisualEvidence(page);
