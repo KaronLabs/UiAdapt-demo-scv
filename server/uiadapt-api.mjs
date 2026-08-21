@@ -23,7 +23,14 @@ function routeError(error) {
   if (error instanceof ApiError) return error;
   if (error?.code === "CONFLICT") return new ApiError(409, "CONFLICT");
   if (error?.code === "NOT_FOUND") return new ApiError(404, "NOT_FOUND");
+  if (error?.code === "TRAJECTORY_INCONSISTENT") return new ApiError(422, "TRAJECTORY_INCONSISTENT");
   return new ApiError(500, "INTERNAL_ERROR");
+}
+
+export function resolveApiHost(env = process.env) {
+  const host = env.UIADAPT_API_HOST ?? "127.0.0.1";
+  if (host !== "127.0.0.1") throw new Error("UIADAPT_API_LOOPBACK_ONLY");
+  return host;
 }
 
 function matchTrajectoryPath(pathname) {
@@ -91,7 +98,7 @@ export function createUiAdaptServer(options) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { pool, db } = createDatabaseFromEnv();
   const server = createUiAdaptServer({ db });
-  const host = process.env.UIADAPT_API_HOST ?? "127.0.0.1";
+  const host = resolveApiHost();
   const port = Number(process.env.UIADAPT_API_PORT ?? 4181);
   server.listen(port, host);
   const shutdown = async () => {

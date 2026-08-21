@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { after, before, test } from "node:test";
-import { createUiAdaptHandler } from "./uiadapt-api.mjs";
+import { createUiAdaptHandler, resolveApiHost } from "./uiadapt-api.mjs";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
+const FORGED_SESSION_ID = "22222222-2222-4222-8222-222222222222";
 
 function session(overrides = {}) {
   return {
@@ -77,8 +78,10 @@ function createFakeDb() {
       trajectories.set(key, payload);
       return { duplicate: false };
     },
-    async getTrajectory() {
-      return [...trajectories.values()].sort((a, b) => a.sequenceNo - b.sequenceNo);
+    async getTrajectory(sessionId) {
+      return [...trajectories.values()]
+        .filter((item) => item.sessionId === sessionId)
+        .sort((a, b) => a.sequenceNo - b.sequenceNo);
     },
   };
 }
@@ -96,6 +99,11 @@ before(async () => {
 });
 
 after(() => server.close());
+
+test("fails closed when the API host is not loopback", () => {
+  assert.equal(resolveApiHost({}), "127.0.0.1");
+  assert.throws(() => resolveApiHost({ UIADAPT_API_HOST: "0.0.0.0" }), { message: "UIADAPT_API_LOOPBACK_ONLY" });
+});
 
 async function request(path, { method = "GET", body, headers = {} } = {}) {
   const response = await globalThis.fetch(`${origin}${path}`, {
@@ -141,6 +149,26 @@ test("returns 400 for malformed UUID, sequence, and score and 422 for semantic e
     method: "POST",
     body: frame({ event: { ...frame().event, type: "NOT_AN_EVENT" } }),
   })).status, 422);
+});
+
+test("rejects a trajectory whose event, sequence, window, and distribution disagree", async () => {
+  await request("/api/uiadapt/sessions", { method: "POST", body: session({ sessionId: FORGED_SESSION_ID }) });
+  const forged = frame({
+    sessionId: FORGED_SESSION_ID,
+    sequenceNo: 2,
+    behaviorDimension: "DETAIL",
+    event: { ...frame().event, id: "forged-trajectory" },
+    snapshot: {
+      ...frame().snapshot,
+      eventCount: 999,
+      windowSize: 20,
+      counts: { BROWSE: 0, DETAIL: 0, COMPARE: 0, DECISION: 0, CART_INTENT: 0 },
+    },
+  });
+  assert.deepEqual(
+    await request("/api/uiadapt/trajectory", { method: "POST", body: forged }),
+    { status: 422, body: { error: "TRAJECTORY_INCONSISTENT" } },
+  );
 });
 
 test("creates sessions idempotently and rejects conflicting metadata", async () => {

@@ -9,9 +9,9 @@ let pool;
 let db;
 let sessionId;
 
-function frame(sequenceNo, eventId = `event-${sequenceNo}`) {
+function frame(sequenceNo, eventId = `event-${sequenceNo}`, targetSessionId = sessionId) {
   return {
-    sessionId,
+    sessionId: targetSessionId,
     sequenceNo,
     event: { id: eventId, atMs: sequenceNo * 500, type: "VIEW_PRODUCT", productId: "aurora-one", source: "REPLAY" },
     behaviorDimension: "BROWSE",
@@ -57,6 +57,22 @@ if (enabled) {
     await assert.rejects(
       () => db.appendTrajectory(frame(1, "event-conflict")),
       (error) => error.code === "CONFLICT",
+    );
+  });
+
+  test("rejects a source mismatch and a sequence gap before inserting", async () => {
+    const isolatedSessionId = randomUUID();
+    await db.createSession({ sessionId: isolatedSessionId, startedAtMs: Date.now(), source: "REPLAY", adaptiveEnabled: true });
+
+    const sourceMismatch = frame(1, "event-source-mismatch", isolatedSessionId);
+    sourceMismatch.event.source = "USER";
+    await assert.rejects(
+      () => db.appendTrajectory(sourceMismatch),
+      (error) => error.code === "TRAJECTORY_INCONSISTENT",
+    );
+    await assert.rejects(
+      () => db.appendTrajectory(frame(2, "event-sequence-gap", isolatedSessionId)),
+      (error) => error.code === "TRAJECTORY_INCONSISTENT",
     );
   });
 } else {

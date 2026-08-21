@@ -419,6 +419,9 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.match(apiIntegrationJob, /UIADAPT_CI_MYSQL_APP_PASSWORD/);
   assert.match(apiIntegrationJob, /db\/001-uiadapt-demo\.sql/);
   assert.match(apiIntegrationJob, /UIADAPT_INTEGRATION: "1"/);
+  assert.match(apiIntegrationJob, /--health-cmd="mysqladmin ping -h 127\.0\.0\.1 -uroot --password=\\"\$MYSQL_ROOT_PASSWORD\\""/);
+  assert.match(apiIntegrationJob, /GRANT SELECT, INSERT ON uiadapt_demo\.\* TO/);
+  assert.doesNotMatch(apiIntegrationJob, /GRANT [^\n]*\bUPDATE\b/);
   assert.match(apiIntegrationJob, /npm run test:api-integration/);
   assert.doesNotMatch(workflow, /^\s*run: npm run build$/m);
   assert.match(workflow, /^permissions:\s*\r?\n {2}contents: read$/m);
@@ -426,7 +429,7 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);
 });
 
-test("runs verification pushes only for main and the R8 remediation branch", async () => {
+test("runs verification pushes for main, R8 remediation, and the distribution candidate", async () => {
   const workflow = await readProjectFile(".github/workflows/verify.yml");
   const pushBranches = workflow.match(
     /^ {2}push:\s*\r?\n {4}branches:\s*\[([^\]]+)\]$/m,
@@ -438,7 +441,7 @@ test("runs verification pushes only for main and the R8 remediation branch", asy
   assert.ok(pushBranches, "push branch filter must exist");
   assert.deepEqual(
     pushBranches[1].split(",").map((branch) => branch.trim()),
-    ["main", "codex/uiadapt-investor-r8-remediation"],
+    ["main", "codex/uiadapt-investor-r8-remediation", "codex/uiadapt-distribution-engine-v1"],
   );
   assert.ok(pullRequestBranches, "pull_request branch filter must exist");
   assert.deepEqual(

@@ -18,6 +18,27 @@ const EVENT_SOURCES = new Set(["USER", "REPLAY"]);
 const DIMENSIONS = new Set(["BROWSE", "DETAIL", "COMPARE", "DECISION", "CART_INTENT"]);
 const STATES = new Set(["EXPLORE", "COMPARE", "PURCHASE_INTENT"]);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DIMENSION_KEYS = ["BROWSE", "DETAIL", "COMPARE", "DECISION", "CART_INTENT"];
+const EVENT_DIMENSIONS = new Map([
+  ["VIEW_PRODUCT", "BROWSE"],
+  ["OPEN_DETAILS", "DETAIL"],
+  ["ADD_COMPARE", "COMPARE"],
+  ["REMOVE_COMPARE", "COMPARE"],
+  ["CHECK_PRICE", "DECISION"],
+  ["CHECK_REVIEWS", "DECISION"],
+  ["SELECT_COLOR", "DECISION"],
+  ["CHECK_SHIPPING", "DECISION"],
+  ["ADD_TO_CART", "CART_INTENT"],
+]);
+const REFERENCE_DISTRIBUTION = Object.freeze({
+  BROWSE: 0.5,
+  DETAIL: 0.2,
+  COMPARE: 0.15,
+  DECISION: 0.1,
+  CART_INTENT: 0.05,
+});
+const DECIMAL_SCALE = 10;
+const DECIMAL_EPSILON = 1e-9;
 
 export class ApiError extends Error {
   constructor(status, code) {
@@ -58,6 +79,18 @@ function requireInteger(value, code, { min = 0, max = Number.MAX_SAFE_INTEGER } 
 function requireNumber(value, code, { min = 0, max = 1 } = {}) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) invalid(code);
   return value;
+}
+
+export function canonicalDecimal(value) {
+  return Number(value.toFixed(DECIMAL_SCALE));
+}
+
+function canonicalDistribution(distribution) {
+  return Object.fromEntries(DIMENSION_KEYS.map((dimension) => [dimension, canonicalDecimal(distribution[dimension])]));
+}
+
+function closeEnough(left, right) {
+  return Math.abs(left - right) <= DECIMAL_EPSILON;
 }
 
 function requireUuid(value, code) {
@@ -114,11 +147,11 @@ function validateCounts(counts) {
 function validateDistribution(distribution, prefix) {
   const body = requireObject(distribution, `${prefix}_DISTRIBUTION_REQUIRED`);
   return {
-    BROWSE: requireNumber(body.BROWSE, `INVALID_${prefix}_BROWSE`),
-    DETAIL: requireNumber(body.DETAIL, `INVALID_${prefix}_DETAIL`),
-    COMPARE: requireNumber(body.COMPARE, `INVALID_${prefix}_COMPARE`),
-    DECISION: requireNumber(body.DECISION, `INVALID_${prefix}_DECISION`),
-    CART_INTENT: requireNumber(body.CART_INTENT, `INVALID_${prefix}_CART_INTENT`),
+    BROWSE: canonicalDecimal(requireNumber(body.BROWSE, `INVALID_${prefix}_BROWSE`)),
+    DETAIL: canonicalDecimal(requireNumber(body.DETAIL, `INVALID_${prefix}_DETAIL`)),
+    COMPARE: canonicalDecimal(requireNumber(body.COMPARE, `INVALID_${prefix}_COMPARE`)),
+    DECISION: canonicalDecimal(requireNumber(body.DECISION, `INVALID_${prefix}_DECISION`)),
+    CART_INTENT: canonicalDecimal(requireNumber(body.CART_INTENT, `INVALID_${prefix}_CART_INTENT`)),
   };
 }
 
@@ -140,7 +173,7 @@ function validateTransition(transition) {
     sequenceNo: requireInteger(body.sequenceNo, "INVALID_TRANSITION_SEQUENCE", { min: 1 }),
     fromState: requireEnum(body.fromState, STATES, "INVALID_TRANSITION_FROM"),
     toState: requireEnum(body.toState, STATES, "INVALID_TRANSITION_TO"),
-    changeScore: requireNumber(body.changeScore, "INVALID_TRANSITION_SCORE"),
+    changeScore: canonicalDecimal(requireNumber(body.changeScore, "INVALID_TRANSITION_SCORE")),
     persistenceCount: requireInteger(body.persistenceCount, "INVALID_PERSISTENCE_COUNT", { min: 1, max: 3 }),
   };
 }
@@ -153,7 +186,7 @@ function validateSnapshot(snapshot) {
     counts: validateCounts(body.counts),
     current: validateDistribution(body.current, "CURRENT"),
     reference: validateDistribution(body.reference, "REFERENCE"),
-    changeScore: requireNumber(body.changeScore, "INVALID_CHANGE_SCORE"),
+    changeScore: canonicalDecimal(requireNumber(body.changeScore, "INVALID_CHANGE_SCORE")),
     candidateState: requireEnum(body.candidateState, STATES, "INVALID_CANDIDATE_STATE"),
     candidatePersistence: requireInteger(body.candidatePersistence, "INVALID_CANDIDATE_PERSISTENCE", { max: 3 }),
     detectedState: requireEnum(body.detectedState, STATES, "INVALID_DETECTED_STATE"),
@@ -161,9 +194,79 @@ function validateSnapshot(snapshot) {
   };
 }
 
+function distributionSum(distribution) {
+  return DIMENSION_KEYS.reduce((sum, dimension) => sum + distribution[dimension], 0);
+}
+
+function countsSum(counts) {
+  return DIMENSION_KEYS.reduce((sum, dimension) => sum + counts[dimension], 0);
+}
+
+function expectedChangeScore(current, reference) {
+  const distance = DIMENSION_KEYS.reduce(
+    (sum, dimension) => sum + Math.abs(current[dimension] - reference[dimension]),
+    0,
+  );
+  return canonicalDecimal(Math.min(1, Math.max(0, distance / 2)));
+}
+
+export function assertTrajectoryConsistency(payload) {
+  const { event, behaviorDimension, sequenceNo, snapshot, transition } = payload;
+  if (EVENT_DIMENSIONS.get(event.type) !== behaviorDimension) semantic("TRAJECTORY_INCONSISTENT");
+  if (snapshot.eventCount !== sequenceNo) semantic("TRAJECTORY_INCONSISTENT");
+
+  const expectedWindowSize = Math.min(sequenceNo, 20);
+  if (snapshot.windowSize !== expectedWindowSize || countsSum(snapshot.counts) !== snapshot.windowSize) {
+    semantic("TRAJECTORY_INCONSISTENT");
+  }
+
+  for (const dimension of DIMENSION_KEYS) {
+    const expectedCurrent = snapshot.windowSize === 0 ? 0 : snapshot.counts[dimension] / snapshot.windowSize;
+    if (!closeEnough(snapshot.current[dimension], expectedCurrent)) semantic("TRAJECTORY_INCONSISTENT");
+    if (!closeEnough(snapshot.reference[dimension], REFERENCE_DISTRIBUTION[dimension])) {
+      semantic("TRAJECTORY_INCONSISTENT");
+    }
+  }
+
+  const expectedCurrentSum = snapshot.windowSize === 0 ? 0 : 1;
+  if (!closeEnough(distributionSum(snapshot.current), expectedCurrentSum)) semantic("TRAJECTORY_INCONSISTENT");
+  if (!closeEnough(distributionSum(snapshot.reference), 1)) semantic("TRAJECTORY_INCONSISTENT");
+  if (!closeEnough(snapshot.changeScore, expectedChangeScore(snapshot.current, snapshot.reference))) {
+    semantic("TRAJECTORY_INCONSISTENT");
+  }
+
+  if (transition !== null) {
+    if (
+      transition.sequenceNo !== sequenceNo
+      || transition.fromState === transition.toState
+      || transition.toState !== snapshot.detectedState
+      || transition.persistenceCount !== snapshot.candidatePersistence
+      || !closeEnough(transition.changeScore, snapshot.changeScore)
+    ) {
+      semantic("TRAJECTORY_INCONSISTENT");
+    }
+  }
+  return payload;
+}
+
+export function canonicalizeTrajectory(payload) {
+  return {
+    ...payload,
+    snapshot: {
+      ...payload.snapshot,
+      current: canonicalDistribution(payload.snapshot.current),
+      reference: canonicalDistribution(payload.snapshot.reference),
+      changeScore: canonicalDecimal(payload.snapshot.changeScore),
+    },
+    transition: payload.transition === null
+      ? null
+      : { ...payload.transition, changeScore: canonicalDecimal(payload.transition.changeScore) },
+  };
+}
+
 export function validateTrajectory(payload) {
   const body = requireObject(payload, "TRAJECTORY_OBJECT_REQUIRED");
-  return {
+  const trajectory = {
     sessionId: requireUuid(body.sessionId, "INVALID_SESSION_ID"),
     sequenceNo: requireInteger(body.sequenceNo, "INVALID_SEQUENCE_NO", { min: 1 }),
     event: validateEvent(body.event),
@@ -171,6 +274,7 @@ export function validateTrajectory(payload) {
     snapshot: validateSnapshot(body.snapshot),
     transition: validateTransition(body.transition),
   };
+  return assertTrajectoryConsistency(trajectory);
 }
 
 export function validateSessionId(value) {

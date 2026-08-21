@@ -25,10 +25,11 @@ describe("canonical product contract", () => {
 });
 
 describe("deterministic evidence and state policy", () => {
-  it("derives COMPARE evidence from repeated product switching", () => {
+  it("keeps product interaction diagnostics separate from distribution evidence", () => {
     const features = deriveFeatures(REPLAY_EVENTS.slice(0, 4));
-    expect(features.distinctProducts).toBe(3);
-    expect(features.switchCount).toBe(3);
+    expect(features.windowSize).toBe(4);
+    expect(features.interactionsByProduct).toEqual({ "aurora-one": 2, "nova-pro": 1, "halo-air": 1 });
+    expect(features.dominantProduct).toBe("aurora-one");
   });
 
   it("reaches COMPARE and then PURCHASE_INTENT on the canonical replay", () => {
@@ -137,8 +138,7 @@ describe("deterministic evidence and state policy", () => {
     const features = deriveFeatures(events);
     const state = play(events);
     expect(features.dominantProduct).toBe("aurora-one");
-    expect(features.dominantShare).toBe(0.75);
-    expect(features.purchaseSupportSignalsByProduct).toEqual({ "aurora-one": 0, "nova-pro": 1, "halo-air": 0 });
+    expect(features.interactionsByProduct).toEqual({ "aurora-one": 6, "nova-pro": 2, "halo-air": 0 });
     expect(state.detectedState).not.toBe("PURCHASE_INTENT");
   });
 

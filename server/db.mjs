@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import mysql from "mysql2/promise";
+import { assertTrajectoryConsistency, canonicalizeTrajectory } from "./validation.mjs";
 
 const SESSION_COLUMNS = "session_id, started_at_ms, event_source, adaptive_enabled";
 
@@ -14,6 +15,12 @@ function conflict() {
 function notFound() {
   const error = new Error("NOT_FOUND");
   error.code = "NOT_FOUND";
+  return error;
+}
+
+function inconsistentTrajectory() {
+  const error = new Error("TRAJECTORY_INCONSISTENT");
+  error.code = "TRAJECTORY_INCONSISTENT";
   return error;
 }
 
@@ -39,7 +46,7 @@ export function createMysqlPool(env = process.env) {
     waitForConnections: true,
     connectionLimit: 4,
     maxIdle: 4,
-    queueLimit: 0,
+    queueLimit: 128,
   });
 }
 
@@ -64,6 +71,10 @@ async function withTransaction(pool, callback) {
 
 function sameJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function sameTrajectory(left, right) {
+  return sameJson(canonicalizeTrajectory(left), canonicalizeTrajectory(right));
 }
 
 function frameFromRows(event, snapshot, transition) {
@@ -148,7 +159,7 @@ async function findExisting(connection, sessionId, sequenceNo, eventId) {
      FOR UPDATE`,
     [sessionId, event.sequence_no],
   );
-  return frameFromRows(event, snapshotRows[0], transitionRows[0] ?? null);
+  return canonicalizeTrajectory(frameFromRows(event, snapshotRows[0], transitionRows[0] ?? null));
 }
 
 export function createDbAdapter(pool) {
@@ -182,17 +193,40 @@ export function createDbAdapter(pool) {
     },
 
     async appendTrajectory(payload) {
+      const normalized = canonicalizeTrajectory(payload);
+      assertTrajectoryConsistency(normalized);
       return withTransaction(pool, async (connection) => {
         const [sessionRows] = await connection.execute(
-          "SELECT session_id FROM uiadapt_sessions WHERE session_id = ? FOR UPDATE",
-          [payload.sessionId],
+          "SELECT session_id, event_source FROM uiadapt_sessions WHERE session_id = ? FOR UPDATE",
+          [normalized.sessionId],
         );
         if (sessionRows.length === 0) throw notFound();
+        if (sessionRows[0].event_source !== normalized.event.source) throw inconsistentTrajectory();
 
-        const existing = await findExisting(connection, payload.sessionId, payload.sequenceNo, payload.event.id);
+        const existing = await findExisting(connection, normalized.sessionId, normalized.sequenceNo, normalized.event.id);
         if (existing) {
-          if (sameJson(existing, payload)) return { duplicate: true };
+          if (sameTrajectory(existing, normalized)) return { duplicate: true };
           throw conflict();
+        }
+
+        const [previousRows] = await connection.execute(
+          `SELECT sequence_no, at_ms
+           FROM uiadapt_events
+           WHERE session_id = ?
+           ORDER BY sequence_no DESC
+           LIMIT 1
+           FOR UPDATE`,
+          [normalized.sessionId],
+        );
+        const previous = previousRows[0];
+        if (
+          (!previous && normalized.sequenceNo !== 1)
+          || (previous && (
+            normalized.sequenceNo !== Number(previous.sequence_no) + 1
+            || normalized.event.atMs < Number(previous.at_ms)
+          ))
+        ) {
+          throw inconsistentTrajectory();
         }
 
         await connection.execute(
@@ -200,14 +234,14 @@ export function createDbAdapter(pool) {
            (session_id, sequence_no, event_id, at_ms, raw_event_type, product_id, event_source, behavior_dimension)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            payload.sessionId,
-            payload.sequenceNo,
-            payload.event.id,
-            payload.event.atMs,
-            payload.event.type,
-            payload.event.productId,
-            payload.event.source,
-            payload.behaviorDimension,
+            normalized.sessionId,
+            normalized.sequenceNo,
+            normalized.event.id,
+            normalized.event.atMs,
+            normalized.event.type,
+            normalized.event.productId,
+            normalized.event.source,
+            normalized.behaviorDimension,
           ],
         );
         await connection.execute(
@@ -219,44 +253,44 @@ export function createDbAdapter(pool) {
             candidate_persistence, detected_state, applied_state)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            payload.sessionId,
-            payload.sequenceNo,
-            payload.snapshot.eventCount,
-            payload.snapshot.windowSize,
-            payload.snapshot.counts.BROWSE,
-            payload.snapshot.counts.DETAIL,
-            payload.snapshot.counts.COMPARE,
-            payload.snapshot.counts.DECISION,
-            payload.snapshot.counts.CART_INTENT,
-            payload.snapshot.current.BROWSE,
-            payload.snapshot.current.DETAIL,
-            payload.snapshot.current.COMPARE,
-            payload.snapshot.current.DECISION,
-            payload.snapshot.current.CART_INTENT,
-            payload.snapshot.reference.BROWSE,
-            payload.snapshot.reference.DETAIL,
-            payload.snapshot.reference.COMPARE,
-            payload.snapshot.reference.DECISION,
-            payload.snapshot.reference.CART_INTENT,
-            payload.snapshot.changeScore,
-            payload.snapshot.candidateState,
-            payload.snapshot.candidatePersistence,
-            payload.snapshot.detectedState,
-            payload.snapshot.appliedState,
+            normalized.sessionId,
+            normalized.sequenceNo,
+            normalized.snapshot.eventCount,
+            normalized.snapshot.windowSize,
+            normalized.snapshot.counts.BROWSE,
+            normalized.snapshot.counts.DETAIL,
+            normalized.snapshot.counts.COMPARE,
+            normalized.snapshot.counts.DECISION,
+            normalized.snapshot.counts.CART_INTENT,
+            normalized.snapshot.current.BROWSE,
+            normalized.snapshot.current.DETAIL,
+            normalized.snapshot.current.COMPARE,
+            normalized.snapshot.current.DECISION,
+            normalized.snapshot.current.CART_INTENT,
+            normalized.snapshot.reference.BROWSE,
+            normalized.snapshot.reference.DETAIL,
+            normalized.snapshot.reference.COMPARE,
+            normalized.snapshot.reference.DECISION,
+            normalized.snapshot.reference.CART_INTENT,
+            normalized.snapshot.changeScore,
+            normalized.snapshot.candidateState,
+            normalized.snapshot.candidatePersistence,
+            normalized.snapshot.detectedState,
+            normalized.snapshot.appliedState,
           ],
         );
-        if (payload.transition) {
+        if (normalized.transition) {
           await connection.execute(
             `INSERT INTO uiadapt_transitions
              (session_id, trigger_sequence_no, from_state, to_state, change_score, persistence_count)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [
-              payload.sessionId,
-              payload.sequenceNo,
-              payload.transition.fromState,
-              payload.transition.toState,
-              payload.transition.changeScore,
-              payload.transition.persistenceCount,
+              normalized.sessionId,
+              normalized.sequenceNo,
+              normalized.transition.fromState,
+              normalized.transition.toState,
+              normalized.transition.changeScore,
+              normalized.transition.persistenceCount,
             ],
           );
         }

@@ -14,18 +14,12 @@ import type {
 export { derivePolicy } from "./policy";
 
 const PRODUCT_IDS: readonly ProductId[] = ["aurora-one", "nova-pro", "halo-air"];
-const PURCHASE_SIGNALS = new Set(["SELECT_COLOR", "CHECK_SHIPPING", "ADD_TO_CART"]);
 
 function emptyFeatures(): FeatureSnapshot {
   return {
     windowSize: 0,
-    distinctProducts: 0,
-    switchCount: 0,
     interactionsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
     dominantProduct: null,
-    dominantShare: 0,
-    purchaseSupportSignals: 0,
-    purchaseSupportSignalsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
   };
 }
 
@@ -63,21 +57,9 @@ export function deriveFeatures(events: readonly BehaviorEvent[]): FeatureSnapsho
     "nova-pro": 0,
     "halo-air": 0,
   };
-  let switchCount = 0;
-  let purchaseSupportSignals = 0;
-  const purchaseSupportSignalsByProduct: Record<ProductId, number> = {
-    "aurora-one": 0,
-    "nova-pro": 0,
-    "halo-air": 0,
-  };
 
-  window.forEach((event, index) => {
+  window.forEach((event) => {
     interactionsByProduct[event.productId] += 1;
-    if (index > 0 && window[index - 1].productId !== event.productId) switchCount += 1;
-    if (PURCHASE_SIGNALS.has(event.type)) {
-      purchaseSupportSignals += 1;
-      purchaseSupportSignalsByProduct[event.productId] += 1;
-    }
   });
 
   let dominantProduct: ProductId | null = null;
@@ -92,13 +74,8 @@ export function deriveFeatures(events: readonly BehaviorEvent[]): FeatureSnapsho
 
   return {
     windowSize: window.length,
-    distinctProducts: PRODUCT_IDS.filter((id) => interactionsByProduct[id] > 0).length,
-    switchCount,
     interactionsByProduct,
     dominantProduct,
-    dominantShare: window.length === 0 ? 0 : dominantCount / window.length,
-    purchaseSupportSignals,
-    purchaseSupportSignalsByProduct,
   };
 }
 

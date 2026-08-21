@@ -121,6 +121,24 @@ test("Developer View exposes distribution evidence and policy status", async ({ 
   await expect(page.getByTestId("replay-status")).toContainText("직접 둘러보거나");
 });
 
+test("keeps local behavior responsive when the telemetry API degrades", async ({ page }) => {
+  await page.unroute("**/api/uiadapt/**");
+  await page.route("**/api/uiadapt/**", (route) => route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: JSON.stringify({ error: "UNAVAILABLE" }),
+  }));
+
+  await page.getByText("Developer View").click();
+  await page.getByRole("button", { name: "Aurora One 가격 확인" }).click();
+  await expect(page.getByTestId("event-count")).toHaveText("1");
+  await expect(page.locator(".developer-view")).toContainText("DEGRADED");
+  const evidencePage = page as EvidencePage;
+  evidencePage.__consoleErrors = (evidencePage.__consoleErrors ?? []).filter(
+    (message) => !message.includes("status of 503 (Service Unavailable)"),
+  );
+});
+
 test("investor stage uses the local Wanted Sans type scale and causal thesis", async ({ page }) => {
   await settleVisualEvidence(page);
   await expect(page.getByTestId("product-invariants")).toContainText("Same catalog");

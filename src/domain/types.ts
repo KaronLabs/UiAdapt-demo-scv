@@ -81,14 +81,8 @@ export interface BehaviorEvent {
 
 export interface FeatureSnapshot {
   windowSize: number;
-  distinctProducts: number;
-  switchCount: number;
   interactionsByProduct: Record<ProductId, number>;
   dominantProduct: ProductId | null;
-  dominantShare: number;
-  /** Aggregate diagnostic count; state detection uses the per-product map below. */
-  purchaseSupportSignals: number;
-  purchaseSupportSignalsByProduct: Record<ProductId, number>;
 }
 
 export interface PresentationPolicy {

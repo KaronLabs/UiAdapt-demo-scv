@@ -2,7 +2,7 @@ name: UIAdapt v4.1 verification
 
 on:
   push:
-    branches: [main, codex/uiadapt-investor-r8-remediation]
+    branches: [main, codex/uiadapt-investor-r8-remediation, codex/uiadapt-distribution-engine-v1]
   pull_request:
     branches: [main]
 
@@ -98,7 +98,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD}"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot --password=\"$MYSQL_ROOT_PASSWORD\""
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -125,7 +125,7 @@ jobs:
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo <<SQL
           CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'127.0.0.1' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
           ALTER USER 'uiadapt_demo_app'@'127.0.0.1' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
-          GRANT SELECT, INSERT, UPDATE ON uiadapt_demo.* TO 'uiadapt_demo_app'@'127.0.0.1';
+          GRANT SELECT, INSERT ON uiadapt_demo.* TO 'uiadapt_demo_app'@'127.0.0.1';
           FLUSH PRIVILEGES;
           SQL
           unset MYSQL_PWD
