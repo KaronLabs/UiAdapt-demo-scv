@@ -1,0 +1,113 @@
+{
+  "phase": "phase1-final-verification",
+  "status": "PHASE1_GO",
+  "start_utc": "2026-08-21T11:53:32.3468145+00:00",
+  "end_utc": "2026-08-21T11:53:33.3048463+00:00",
+  "source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "tracked_source_changes": 0,
+  "command_receipts": [
+    {
+      "receipt": "phase1-01-npm-ci.receipt.json",
+      "command": "npm ci",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-02-lint.receipt.json",
+      "command": "npm run lint",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-03-vitest.receipt.json",
+      "command": "npm test",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-04-gateway.receipt.json",
+      "command": "npm run test:gateway",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-05-deployment.receipt.json",
+      "command": "npm run test:deployment",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-06-build-bases.receipt.json",
+      "command": "npm run verify:build-bases",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-07-build-nwg.receipt.json",
+      "command": "npm run build:nwg",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-08-playwright.receipt.json",
+      "command": "npm run test:e2e",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-09-audit-production.receipt.json",
+      "command": "npm audit --omit=dev --audit-level=high",
+      "exit_code": 0
+    },
+    {
+      "receipt": "phase1-10-git-diff-check.receipt.json",
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "command_receipt_count": 10,
+  "archive_path": "E:\\03_AllWork\\uiadapt-live-evidence-work\\review\\live-r8_20260821T114306Z\\artifacts\\uiadapt-r8-00c4c47a63f859d33b4264f6e6ddb3c5ef71913b.tar.gz",
+  "archive_bytes": 13451505,
+  "archive_sha256": "dd53e2e5280d7133d1460f7871e09b54c0d162737d9b00b087f1ccb06a490793",
+  "internal_external_manifest_match": true,
+  "payload_file_count": 115,
+  "payload_expanded_bytes": 14238510,
+  "payload_hash_verification": "PASS",
+  "excluded_paths_present": [],
+  "stderr_inventory": [
+    {
+      "file": "phase1-01-npm-ci.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-02-lint.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-03-vitest.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-04-gateway.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-05-deployment.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-06-build-bases.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-07-build-nwg.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-08-playwright.stderr.log",
+      "bytes": 866
+    },
+    {
+      "file": "phase1-09-audit-production.stderr.log",
+      "bytes": 0
+    },
+    {
+      "file": "phase1-10-git-diff-check.stderr.log",
+      "bytes": 0
+    }
+  ],
+  "first_packaging_attempt_preserved": true,
+  "remote_mutation": false
+}

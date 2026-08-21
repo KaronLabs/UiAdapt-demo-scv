@@ -1,0 +1,13 @@
+{
+  "command": "npm run test:e2e",
+  "cwd": "E:\\03_AllWork\\uiadapt-r8-live-build-20260821T114306Z",
+  "role": "r8_deployment_operator_phase1",
+  "start_utc": "2026-08-21T11:48:59.9819265+00:00",
+  "end_utc": "2026-08-21T11:49:27.4017172+00:00",
+  "duration_ms": 27420.0,
+  "exit_code": 0,
+  "stdout_file": "E:\\03_AllWork\\uiadapt-live-evidence-work\\review\\live-r8_20260821T114306Z\\raw\\phase1-08-playwright.stdout.log",
+  "stderr_file": "E:\\03_AllWork\\uiadapt-live-evidence-work\\review\\live-r8_20260821T114306Z\\raw\\phase1-08-playwright.stderr.log",
+  "observation": "command completed with exit code 0",
+  "redaction_applied": false
+}

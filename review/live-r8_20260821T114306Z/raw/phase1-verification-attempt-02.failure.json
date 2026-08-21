@@ -1,0 +1,11 @@
+{
+  "phase": "phase1-final-verification",
+  "attempt": 2,
+  "status": "FAILED_BEFORE_RECEIPT",
+  "source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "raw_error": "The term 'true' is not recognized as a name of a cmdlet, function, script file, or executable program.",
+  "root_cause": "PowerShell hashtable used JSON boolean literals instead of PowerShell $true and $false",
+  "archive_modified": false,
+  "remote_mutation": false,
+  "redaction_applied": false
+}

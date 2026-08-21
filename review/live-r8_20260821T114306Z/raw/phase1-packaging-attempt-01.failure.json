@@ -1,0 +1,14 @@
+{
+  "phase": "local-package",
+  "attempt": 1,
+  "status": "FAILED_BEFORE_ARCHIVE",
+  "command": "package-phase1.ps1",
+  "source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "error_location": "package-phase1.ps1:99",
+  "error_type": "Measure-Object invalid property expression",
+  "raw_error": "Cannot process argument because the value of argument \"bytes\" is not valid. Change the value of the \"bytes\" argument and run the operation again.",
+  "root_cause": "entries are OrderedDictionary objects; Measure-Object -Property does not resolve the dictionary key as a PS property expression",
+  "archive_created": false,
+  "remote_mutation": false,
+  "redaction_applied": false
+}

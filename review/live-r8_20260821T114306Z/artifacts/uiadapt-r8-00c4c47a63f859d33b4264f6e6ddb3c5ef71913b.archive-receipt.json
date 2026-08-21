@@ -1,0 +1,17 @@
+{
+  "phase": "local-package",
+  "status": "PHASE1_GO",
+  "source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "source_worktree": "E:\\03_AllWork\\uiadapt-r8-live-build-20260821T114306Z",
+  "archive_path": "E:\\03_AllWork\\uiadapt-live-evidence-work\\review\\live-r8_20260821T114306Z\\artifacts\\uiadapt-r8-00c4c47a63f859d33b4264f6e6ddb3c5ef71913b.tar.gz",
+  "archive_bytes": 13451505,
+  "archive_sha256": "dd53e2e5280d7133d1460f7871e09b54c0d162737d9b00b087f1ccb06a490793",
+  "payload_file_count": 115,
+  "payload_expanded_bytes": 14238510,
+  "package_manifest_path": "E:\\03_AllWork\\uiadapt-live-evidence-work\\review\\live-r8_20260821T114306Z\\artifacts\\uiadapt-r8-00c4c47a63f859d33b4264f6e6ddb3c5ef71913b.PACKAGE-CONTENTS.json",
+  "package_manifest_sha256": "796ff82ab504eab60fec27597a25ee77ea31b5e429d751c23dfe6c9f9af305a8",
+  "sha256sums_path": "E:\\03_AllWork\\uiadapt-live-evidence-work\\review\\live-r8_20260821T114306Z\\artifacts\\uiadapt-r8-00c4c47a63f859d33b4264f6e6ddb3c5ef71913b.SHA256SUMS",
+  "sha256sums_sha256": "35a5dada1dfb2ea832a79068faf780f0204043d343651953fdba0735c6f6f0a2",
+  "archive_roundtrip_verification": "PASS",
+  "generated_utc": "2026-08-21T11:51:47.4142714+00:00"
+}

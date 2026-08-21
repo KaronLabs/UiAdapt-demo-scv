@@ -1,0 +1,11 @@
+{
+  "phase": "phase1-final-verification",
+  "attempt": 1,
+  "status": "FAILED_BEFORE_RECEIPT",
+  "source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "raw_error": "The property 'Count' cannot be found on this object. Verify that the property exists.",
+  "root_cause": "StrictMode rejects .Count on a null pipeline result when no excluded package paths are present",
+  "archive_modified": false,
+  "remote_mutation": false,
+  "redaction_applied": false
+}

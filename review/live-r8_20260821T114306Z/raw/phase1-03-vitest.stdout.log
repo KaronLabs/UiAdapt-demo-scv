@@ -1,0 +1,13 @@
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 E:/03_AllWork/uiadapt-r8-live-build-20260821T114306Z
+
+
+ Test Files  2 passed (2)
+      Tests  19 passed (19)
+   Start at  20:48:07
+   Duration  19.35s (transform 291ms, setup 5.86s, import 360ms, tests 734ms, environment 29.78s)
+
