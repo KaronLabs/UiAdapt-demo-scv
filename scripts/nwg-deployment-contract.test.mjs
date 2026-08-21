@@ -683,28 +683,39 @@ test("documented switch and rollback poll bounded readiness after every restart"
   async function runReadinessScenario(staticReadyAfter, gatewayReadyAfter, maxAttempts) {
     const scenario = `
 set -Eeuo pipefail
-STATIC_PROBES=0
-SLEEP_CALLS=0
+PROBE_FILE="$(mktemp)"
+SLEEP_FILE="$(mktemp)"
+printf '0' > "$PROBE_FILE"
+printf '0' > "$SLEEP_FILE"
 STATIC_READY_AFTER="${staticReadyAfter}"
 GATEWAY_READY_AFTER="${gatewayReadyAfter}"
 systemctl() { return 0; }
 curl() {
   if printf '%s\\n' "$*" | grep -q '127.0.0.1:5173'; then
-    STATIC_PROBES=$((STATIC_PROBES + 1))
-    test "$STATIC_PROBES" -ge "$STATIC_READY_AFTER"
+    local static_probes
+    static_probes=$(($(cat "$PROBE_FILE") + 1))
+    printf '%s' "$static_probes" > "$PROBE_FILE"
+    test "$static_probes" -ge "$STATIC_READY_AFTER"
     return
   fi
-  test "$STATIC_PROBES" -ge "$GATEWAY_READY_AFTER" || return
+  test "$(cat "$PROBE_FILE")" -ge "$GATEWAY_READY_AFTER" || return
   printf '401'
 }
-sleep() { SLEEP_CALLS=$((SLEEP_CALLS + 1)); }
+sleep() {
+  local sleep_calls
+  sleep_calls=$(($(cat "$SLEEP_FILE") + 1))
+  printf '%s' "$sleep_calls" > "$SLEEP_FILE"
+}
+export PROBE_FILE SLEEP_FILE STATIC_READY_AFTER GATEWAY_READY_AFTER
+export -f systemctl curl sleep
 ${readinessMatch[0]}
 set +e
 wait_for_readiness "${maxAttempts}" 0
 STATUS=$?
 set -e
 printf 'STATUS=%s\\nSTATIC_PROBES=%s\\nSLEEP_CALLS=%s\\n' \
-  "$STATUS" "$STATIC_PROBES" "$SLEEP_CALLS"
+  "$STATUS" "$(cat "$PROBE_FILE")" "$(cat "$SLEEP_FILE")"
+rm -f "$PROBE_FILE" "$SLEEP_FILE"
 `;
     const result = spawnSync(command, ["-s"], {
       cwd: projectRoot,
@@ -726,6 +737,41 @@ printf 'STATUS=%s\\nSTATIC_PROBES=%s\\nSLEEP_CALLS=%s\\n' \
   assert.match(boundedFailure, /^STATUS=1$/m);
   assert.match(boundedFailure, /^STATIC_PROBES=4$/m);
   assert.match(boundedFailure, /^SLEEP_CALLS=3$/m);
+
+  const hangingScenario = `
+set -Eeuo pipefail
+systemctl() { command sleep 2; }
+curl() { return 0; }
+export -f systemctl curl
+${readinessMatch[0]}
+set +e
+wait_for_readiness 1 0.5 1
+STATUS=$?
+set -e
+printf 'HANG_STATUS=%s\\n' "$STATUS"
+`;
+  const hangingStartedAt = Date.now();
+  const hangingResult = spawnSync(command, ["-s"], {
+    cwd: projectRoot,
+    input: hangingScenario,
+    encoding: "utf8",
+    timeout: 5_000,
+  });
+  const hangingElapsedMs = Date.now() - hangingStartedAt;
+  assert.equal(hangingResult.error, undefined, "hanging systemctl must be cut off by the readiness deadline");
+  assert.equal(hangingResult.status, 0, `${hangingResult.stdout}\n${hangingResult.stderr}`);
+  assert.match(`${hangingResult.stdout}${hangingResult.stderr}`, /^HANG_STATUS=124$/m);
+  assert.ok(hangingElapsedMs < 3_000, `readiness deadline exceeded (${hangingElapsedMs}ms)`);
+
+  const rollbackMatch = automaticScript.match(/rollback\(\) \{[\s\S]*?\r?\n\}/);
+  assert.ok(rollbackMatch, "automatic switch must contain rollback recovery");
+  for (const recoveryCheck of [
+    /127\.0\.0\.1:4180\/uiadapt_demo/,
+    /auth_smoke "http:\/\/127\.0\.0\.1:4180\/uiadapt_demo\/" \|\| exit "\$failure_status"/,
+    /auth_smoke "\$PUBLIC_URL" \|\| exit "\$failure_status"/,
+  ]) {
+    assert.match(rollbackMatch[0], recoveryCheck, "rollback must repeat the complete authenticated smoke");
+  }
 });
 
 test("documented automatic switch preserves the original failure after recovery", { timeout: 10_000 }, async () => {
@@ -748,6 +794,7 @@ set -Eeuo pipefail
 OLD_SHA="${oldSha}"
 NEW_SHA="${newSha}"
 DEPLOY_ROOT="/test-deploy-root"
+PUBLIC_URL="https://00-new-world-gpu.tail645adc.ts.net/uiadapt_demo/"
 PREVIOUS_TARGET="$DEPLOY_ROOT/releases/$OLD_SHA"
 CURRENT_TARGET="$DEPLOY_ROOT/releases/$NEW_SHA"
 STAGED_TARGET=""
@@ -773,6 +820,8 @@ curl() {
   if printf '%s\\n' "$*" | grep -q '127.0.0.1:4180'; then printf '401'; fi
   return 0
 }
+auth_smoke() { printf 'AUTH_RECOVERY=%s\\n' "$1"; return 0; }
+export -f systemctl curl
 trap 'printf "FINAL_TARGET=%s\\n" "$CURRENT_TARGET"' EXIT
 ${readinessMatch[0]}
 ${rollbackMatch[0]}
@@ -794,9 +843,11 @@ printf 'SWITCH_STATUS=PASS\\n'
   const combinedOutput = Buffer.concat(output).toString("utf8");
 
   assert.equal(signal, null);
-  assert.notEqual(code, 0, `injected restart failure must survive recovery:\n${combinedOutput}`);
+  assert.equal(code, 42, `injected restart failure must survive recovery exactly:\n${combinedOutput}`);
   assert.doesNotMatch(combinedOutput, /SWITCH_STATUS=PASS/);
   assert.match(combinedOutput, new RegExp(`FINAL_TARGET=.*${oldSha}$`, "m"));
+  assert.match(combinedOutput, /^AUTH_RECOVERY=http:\/\/127\.0\.0\.1:4180\/uiadapt_demo\/$/m);
+  assert.match(combinedOutput, /^AUTH_RECOVERY=https:\/\/00-new-world-gpu\.tail645adc\.ts\.net\/uiadapt_demo\/$/m);
 });
 
 test("documented auth helper enforces a total wall-clock deadline against trickle responses", { timeout: 5_000 }, async () => {

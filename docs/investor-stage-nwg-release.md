@@ -141,11 +141,20 @@ NODE
 wait_for_readiness() {
   local max_attempts="${1:-20}"
   local poll_seconds="${2:-0.5}"
-  local attempt
+  local deadline_seconds="${3:-30}"
   case "$max_attempts" in
     ''|*[!0-9]*) printf 'invalid readiness attempt bound\n' >&2; return 2 ;;
   esac
   test "$max_attempts" -gt 0 || { printf 'invalid readiness attempt bound\n' >&2; return 2; }
+  case "$deadline_seconds" in
+    ''|*[!0-9]*) printf 'invalid readiness deadline\n' >&2; return 2 ;;
+  esac
+  test "$deadline_seconds" -gt 0 || { printf 'invalid readiness deadline\n' >&2; return 2; }
+  timeout --signal=TERM --kill-after=1s "${deadline_seconds}s" \
+    bash -s -- "$max_attempts" "$poll_seconds" <<'READINESS'
+set -Eeuo pipefail
+max_attempts="$1"
+poll_seconds="$2"
   for ((attempt=1; attempt<=max_attempts; attempt++)); do
     if systemctl is-active --quiet uiadapt-static.service &&
       systemctl is-active --quiet uiadapt-gateway.service &&
@@ -156,14 +165,15 @@ wait_for_readiness() {
       test "$(curl --connect-timeout 1 --max-time 2 \
         --silent --output /dev/null --write-out '%{http_code}' \
         http://127.0.0.1:4180/uiadapt_demo/)" = "401"; then
-      return 0
+      exit 0
     fi
     if test "$attempt" -lt "$max_attempts"; then
       sleep "$poll_seconds"
     fi
   done
   printf 'services did not become ready after %s attempts\n' "$max_attempts" >&2
-  return 1
+  exit 1
+READINESS
 }
 
 smoke() {
@@ -203,6 +213,11 @@ rollback() {
     --fail --silent --show-error \
     http://127.0.0.1:5173/uiadapt_demo/ \
     --output /dev/null || exit "$failure_status"
+  test "$(curl --connect-timeout 3 --max-time 10 \
+    --silent --output /dev/null --write-out '%{http_code}' \
+    http://127.0.0.1:4180/uiadapt_demo/)" = "401" || exit "$failure_status"
+  auth_smoke "http://127.0.0.1:4180/uiadapt_demo/" || exit "$failure_status"
+  auth_smoke "$PUBLIC_URL" || exit "$failure_status"
   exit "$failure_status"
 }
 
@@ -290,11 +305,20 @@ NODE
 wait_for_readiness() {
   local max_attempts="${1:-20}"
   local poll_seconds="${2:-0.5}"
-  local attempt
+  local deadline_seconds="${3:-30}"
   case "$max_attempts" in
     ''|*[!0-9]*) printf 'invalid readiness attempt bound\n' >&2; return 2 ;;
   esac
   test "$max_attempts" -gt 0 || { printf 'invalid readiness attempt bound\n' >&2; return 2; }
+  case "$deadline_seconds" in
+    ''|*[!0-9]*) printf 'invalid readiness deadline\n' >&2; return 2 ;;
+  esac
+  test "$deadline_seconds" -gt 0 || { printf 'invalid readiness deadline\n' >&2; return 2; }
+  timeout --signal=TERM --kill-after=1s "${deadline_seconds}s" \
+    bash -s -- "$max_attempts" "$poll_seconds" <<'READINESS'
+set -Eeuo pipefail
+max_attempts="$1"
+poll_seconds="$2"
   for ((attempt=1; attempt<=max_attempts; attempt++)); do
     if systemctl is-active --quiet uiadapt-static.service &&
       systemctl is-active --quiet uiadapt-gateway.service &&
@@ -305,14 +329,15 @@ wait_for_readiness() {
       test "$(curl --connect-timeout 1 --max-time 2 \
         --silent --output /dev/null --write-out '%{http_code}' \
         http://127.0.0.1:4180/uiadapt_demo/)" = "401"; then
-      return 0
+      exit 0
     fi
     if test "$attempt" -lt "$max_attempts"; then
       sleep "$poll_seconds"
     fi
   done
   printf 'services did not become ready after %s attempts\n' "$max_attempts" >&2
-  return 1
+  exit 1
+READINESS
 }
 
 test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$CURRENT_TARGET")"
