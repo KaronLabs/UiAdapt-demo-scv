@@ -1,6 +1,7 @@
 export type ProductId = "aurora-one" | "nova-pro" | "halo-air";
 export type AdaptiveState = "EXPLORE" | "COMPARE" | "FOCUS";
 export type EventSource = "USER" | "REPLAY";
+export type BehaviorDimension = "BROWSE" | "DETAIL" | "COMPARE" | "DECISION" | "CART_INTENT";
 
 export type BehaviorEventType =
   | "VIEW_PRODUCT"
