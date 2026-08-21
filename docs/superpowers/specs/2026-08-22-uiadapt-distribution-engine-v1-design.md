@@ -293,8 +293,12 @@ npm run build:nwg
 npm run test:api-integration
 npm run test:e2e
 npm audit --omit=dev --audit-level=high
-git diff --check
+git diff --check "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)evidence/**'
 ```
+
+The diff gate covers the feature source, documentation, and workflow changes. The
+tracked `evidence/**` tree is excluded because its raw streams are sealed evidence
+bytes and are verified by their own manifests rather than rewritten for whitespace.
 
 The browser E2E perimeter is extended without redesigning the page. It proves the 27-second causal sequence, Developer View distribution/evidence, Adaptive OFF divergence between detected/applied state, product invariants, API degraded behavior, nested assets, keyboard behavior, and zero unintended external requests.
 

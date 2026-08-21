@@ -407,7 +407,7 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   );
   assert.match(verifyJob, /BASE_SHA:/);
   assert.match(verifyJob, /HEAD_SHA:/);
-  assert.match(verifyJob, /git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA"/);
+  assert.match(verifyJob, /git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA" -- \. ':\(exclude\)evidence\/\*\*'/);
   assert.ok(runtimeContractJob, "runtime-contract job must exist");
   assert.match(runtimeContractJob, /uses: actions\/checkout@v4/);
   assert.match(runtimeContractJob, /node-version: 24/);
