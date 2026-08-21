@@ -93,12 +93,12 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.UIADAPT_CI_MYSQL_ROOT_PASSWORD }}
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
           MYSQL_DATABASE: uiadapt_demo
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot --password=\"$MYSQL_ROOT_PASSWORD\""
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -116,11 +116,9 @@ jobs:
         run: npm ci
 
       - name: Apply disposable schema and grant application account
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.UIADAPT_CI_MYSQL_ROOT_PASSWORD }}
-          UIADAPT_MYSQL_PASSWORD: ${{ secrets.UIADAPT_CI_MYSQL_APP_PASSWORD }}
         run: |
-          export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"
+          set -eu
+          export UIADAPT_MYSQL_PASSWORD="$(openssl rand -hex 32)"
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/001-uiadapt-demo.sql
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo <<SQL
           CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'127.0.0.1' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
@@ -128,11 +126,10 @@ jobs:
           GRANT SELECT, INSERT ON uiadapt_demo.* TO 'uiadapt_demo_app'@'127.0.0.1';
           FLUSH PRIVILEGES;
           SQL
-          unset MYSQL_PWD
+          echo "UIADAPT_MYSQL_PASSWORD=$UIADAPT_MYSQL_PASSWORD" >> "$GITHUB_ENV"
 
       - name: MySQL API integration
         env:
           UIADAPT_INTEGRATION: "1"
           UIADAPT_DB_USER: uiadapt_demo_app
-          UIADAPT_MYSQL_PASSWORD: ${{ secrets.UIADAPT_CI_MYSQL_APP_PASSWORD }}
         run: npm run test:api-integration

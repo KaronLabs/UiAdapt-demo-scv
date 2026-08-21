@@ -415,11 +415,13 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   const apiIntegrationJob = workflow.match(/^ {2}api-integration:[\s\S]*$/m)?.[0];
   assert.ok(apiIntegrationJob, "api-integration job must exist");
   assert.match(apiIntegrationJob, /image: mysql:8\.0/);
-  assert.match(apiIntegrationJob, /MYSQL_ROOT_PASSWORD: \$\{\{ secrets\.UIADAPT_CI_MYSQL_ROOT_PASSWORD \}\}/);
-  assert.match(apiIntegrationJob, /UIADAPT_CI_MYSQL_APP_PASSWORD/);
+  assert.match(apiIntegrationJob, /MYSQL_ALLOW_EMPTY_PASSWORD: "yes"/);
+  assert.match(apiIntegrationJob, /openssl rand -hex 32/);
+  assert.match(apiIntegrationJob, /GITHUB_ENV/);
+  assert.doesNotMatch(apiIntegrationJob, /UIADAPT_CI_MYSQL_(?:ROOT|APP)_PASSWORD/);
   assert.match(apiIntegrationJob, /db\/001-uiadapt-demo\.sql/);
   assert.match(apiIntegrationJob, /UIADAPT_INTEGRATION: "1"/);
-  assert.match(apiIntegrationJob, /--health-cmd="mysqladmin ping -h 127\.0\.0\.1 -uroot --password=\\"\$MYSQL_ROOT_PASSWORD\\""/);
+  assert.match(apiIntegrationJob, /--health-cmd="mysqladmin ping -h 127\.0\.0\.1 -uroot --silent"/);
   assert.match(apiIntegrationJob, /GRANT SELECT, INSERT ON uiadapt_demo\.\* TO/);
   assert.doesNotMatch(apiIntegrationJob, /GRANT [^\n]*\bUPDATE\b/);
   assert.match(apiIntegrationJob, /npm run test:api-integration/);
