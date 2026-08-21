@@ -2,7 +2,7 @@ name: UIAdapt v4.1 verification
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/uiadapt-investor-r8-remediation]
   pull_request:
     branches: [main]
 

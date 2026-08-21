@@ -405,6 +405,29 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);
 });
 
+test("runs verification pushes only for main and the R8 remediation branch", async () => {
+  const workflow = await readProjectFile(".github/workflows/verify.yml");
+  const pushBranches = workflow.match(
+    /^ {2}push:\s*\r?\n {4}branches:\s*\[([^\]]+)\]$/m,
+  );
+  const pullRequestBranches = workflow.match(
+    /^ {2}pull_request:\s*\r?\n {4}branches:\s*\[([^\]]+)\]$/m,
+  );
+
+  assert.ok(pushBranches, "push branch filter must exist");
+  assert.deepEqual(
+    pushBranches[1].split(",").map((branch) => branch.trim()),
+    ["main", "codex/uiadapt-investor-r8-remediation"],
+  );
+  assert.ok(pullRequestBranches, "pull_request branch filter must exist");
+  assert.deepEqual(
+    pullRequestBranches[1].split(",").map((branch) => branch.trim()),
+    ["main"],
+  );
+  assert.doesNotMatch(workflow, /^\s*environment:/m);
+  assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);
+});
+
 test("README records the investor-stage contract and the complete safe verification order", async () => {
   const readme = await readProjectFile("README.md");
   const commands = [
