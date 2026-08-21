@@ -115,12 +115,12 @@ Files: Modify src/App.tsx, src/App.test.tsx, e2e/storefront.spec.ts; modify src/
 
 Files: Modify package.json and package-lock.json; create db/001-uiadapt-demo.sql, server/validation.mjs, server/db.mjs, server/uiadapt-api.mjs, server/uiadapt-api.test.mjs, and server/uiadapt-api.integration.test.mjs.
 
-- [ ] Write RED tests for malformed JSON/content type 400, body limit 413, semantic enum errors 422, invalid UUID/sequence/score 400, exact duplicate 200, and conflicting duplicate 409.
+- [ ] Write Node ESM RED tests for malformed JSON/content type 400, body limit 413, semantic enum errors 422, invalid UUID/sequence/score 400, exact duplicate 200, and conflicting duplicate 409.
 - [ ] Add mysql2 and test:api-integration; run npm install --package-lock-only followed by npm ci. Do not run npm audit fix.
 - [ ] Create four InnoDB/utf8mb4 tables: sessions, events, distribution_snapshots, transitions. Use foreign keys, ordered sequence keys, unique event identity, no PII, no triggers/procedures, and no state logic in SQL.
 - [ ] Implement credential-file loading without logging, parameterized pool/transaction helpers, session creation, trajectory transaction, exact idempotency, conflict 409, and ordered trajectory query.
 - [ ] Implement loopback health/session/trajectory endpoints. Missing credential fails closed; unavailable MySQL yields health 503 and never changes browser state.
-- [ ] Run unit tests. Run integration locally only if a disposable MySQL URL exists; otherwise record unavailable, never install/start/provision MySQL. Run the same integration command in CI and commit with message feat: persist distribution trajectories in MySQL.
+- [ ] Run node --test server/uiadapt-api.test.mjs. Run node --test server/uiadapt-api.integration.test.mjs locally only if a disposable MySQL URL exists; otherwise record unavailable, never install/start/provision MySQL. Run the same integration command in CI and commit with message feat: persist distribution trajectories in MySQL.
 
 ### Task 8: Fixed gateway routing and operations
 
