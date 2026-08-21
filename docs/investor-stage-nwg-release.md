@@ -129,6 +129,9 @@ request.on("error", () => {
   console.log("AUTH_STATUS=0");
   process.exitCode = 1;
 });
+request.setTimeout(10_000, () => {
+  request.destroy(new Error("request timeout"));
+});
 request.end();
 NODE
 }
@@ -137,10 +140,12 @@ smoke() {
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$NEW_RELEASE"
   systemctl is-active --quiet uiadapt-static.service
   systemctl is-active --quiet uiadapt-gateway.service
-  curl --fail --silent --show-error \
+  curl --connect-timeout 3 --max-time 10 \
+    --fail --silent --show-error \
     http://127.0.0.1:5173/uiadapt_demo/ \
     --output /dev/null
-  test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+  test "$(curl --connect-timeout 3 --max-time 10 \
+    --silent --output /dev/null --write-out '%{http_code}' \
     http://127.0.0.1:4180/uiadapt_demo/)" = "401"
   auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"
   auth_smoke "$PUBLIC_URL"
@@ -162,7 +167,8 @@ rollback() {
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET"
   systemctl is-active --quiet uiadapt-static.service
   systemctl is-active --quiet uiadapt-gateway.service
-  curl --fail --silent --show-error \
+  curl --connect-timeout 3 --max-time 10 \
+    --fail --silent --show-error \
     http://127.0.0.1:5173/uiadapt_demo/ \
     --output /dev/null
 }
@@ -189,11 +195,14 @@ set -Eeuo pipefail
 set +x
 
 DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"
+CREDENTIAL_FILE="/etc/uiadapt-demo/password"
+PUBLIC_URL="https://00-new-world-gpu.tail645adc.ts.net/uiadapt_demo/"
 ROLLBACK_SHA="${ROLLBACK_SHA:?set the exact prior 40-character lowercase Git SHA}"
 
 test "$(id -u)" -eq 0
 test -d "$DEPLOY_ROOT/releases"
 test -L "$DEPLOY_ROOT/current"
+test -r "$CREDENTIAL_FILE"
 printf '%s\n' "$ROLLBACK_SHA" | grep -Eq '^[0-9a-f]{40}$'
 
 CURRENT_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"
@@ -205,6 +214,43 @@ esac
 ROLLBACK_TARGET="$DEPLOY_ROOT/releases/$ROLLBACK_SHA"
 test -d "$ROLLBACK_TARGET"
 test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$ROLLBACK_TARGET")"
+
+manual_auth_smoke() {
+  UIADAPT_SMOKE_PASSWORD_FILE="$CREDENTIAL_FILE" \
+  UIADAPT_SMOKE_URL="$1" \
+  node <<'NODE'
+const { readFileSync } = require("node:fs");
+const http = require("node:http");
+const https = require("node:https");
+
+const raw = readFileSync(process.env.UIADAPT_SMOKE_PASSWORD_FILE, "utf8");
+const password = raw.endsWith("\r\n") ? raw.slice(0, -2)
+  : raw.endsWith("\n") ? raw.slice(0, -1)
+    : raw;
+if (password.length === 0) process.exit(2);
+
+const target = new URL(process.env.UIADAPT_SMOKE_URL);
+const transport = target.protocol === "https:" ? https : http;
+const authorization = `Basic ${Buffer.from(`reviewer:${password}`).toString("base64")}`;
+const request = transport.request(target, { headers: { authorization } }, (response) => {
+  response.resume();
+  response.on("end", () => {
+    const status = response.statusCode ?? 0;
+    console.log(`AUTH_STATUS=${status}`);
+    if (status !== 200) process.exitCode = 1;
+  });
+});
+request.on("error", () => {
+  console.log("AUTH_STATUS=0");
+  process.exitCode = 1;
+});
+request.setTimeout(10_000, () => {
+  request.destroy(new Error("request timeout"));
+});
+request.end();
+NODE
+}
+
 test ! -e "$DEPLOY_ROOT/current.rollback.new"
 test ! -L "$DEPLOY_ROOT/current.rollback.new"
 ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"
@@ -215,15 +261,19 @@ systemctl restart uiadapt-static.service uiadapt-gateway.service
 test "$(readlink -f "$DEPLOY_ROOT/current")" = "$ROLLBACK_TARGET"
 systemctl is-active --quiet uiadapt-static.service
 systemctl is-active --quiet uiadapt-gateway.service
-curl --fail --silent --show-error \
+curl --connect-timeout 3 --max-time 10 \
+  --fail --silent --show-error \
   http://127.0.0.1:5173/uiadapt_demo/ \
   --output /dev/null
-test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+test "$(curl --connect-timeout 3 --max-time 10 \
+  --silent --output /dev/null --write-out '%{http_code}' \
   http://127.0.0.1:4180/uiadapt_demo/)" = "401"
+manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"
+manual_auth_smoke "$PUBLIC_URL"
 printf 'MANUAL_ROLLBACK_STATUS=PASS\n'
 ```
 
-수동 rollback 후에는 위와 동일한 secret-safe Node helper로 local/public authenticated smoke를 다시 실행합니다. `tailscale funnel` 재설정 명령은 두 recipe에 포함하지 않으며 기존 8443 설정은 변경 금지, 기존 8787 설정도 변경 금지입니다.
+수동 rollback block도 자체 secret-safe Node helper로 local/public authenticated smoke를 실행합니다. 모든 curl과 Node 요청은 제한시간을 넘기면 nonzero로 실패합니다. `tailscale funnel` 재설정 명령은 두 recipe에 포함하지 않으며 기존 8443 설정은 변경 금지, 기존 8787 설정도 변경 금지입니다.
 
 ## 4. Credential 계약과 rotation
 

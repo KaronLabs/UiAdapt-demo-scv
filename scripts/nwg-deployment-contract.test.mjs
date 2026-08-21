@@ -509,6 +509,22 @@ test("release runbook records version-addressed deployment, readiness, rollback,
   const automaticScripts = [...automaticSection.matchAll(/```bash\r?\n([\s\S]*?)```/g)];
   assert.equal(automaticScripts.length, 1, "switch, rollback trap, and smoke must share one Bash process");
   const automaticScript = automaticScripts[0][1];
+  const automaticCurlCount = (automaticScript.match(/\bcurl\b/g) ?? []).length;
+  assert.ok(automaticCurlCount > 0);
+  assert.equal(
+    (automaticScript.match(/--connect-timeout\s+\d+/g) ?? []).length,
+    automaticCurlCount,
+    "every automated curl request must bound connection time",
+  );
+  assert.equal(
+    (automaticScript.match(/--max-time\s+\d+/g) ?? []).length,
+    automaticCurlCount,
+    "every automated curl request must bound total time",
+  );
+  assert.match(
+    automaticScript,
+    /request\.setTimeout\(10_000,[\s\S]*?request\.destroy\(/,
+  );
   for (const [earlier, later] of [
     ['PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"', "rollback() {"],
     ["rollback() {", "trap 'rollback' ERR"],
@@ -528,6 +544,35 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     runbook.indexOf("## 4. Credential"),
   );
   assert.doesNotMatch(manualSection, /PREVIOUS_TARGET/);
+  const manualScripts = [...manualSection.matchAll(/```bash\r?\n([\s\S]*?)```/g)];
+  assert.equal(manualScripts.length, 1, "manual rollback must be one self-contained Bash process");
+  const manualScript = manualScripts[0][1];
+  const manualCurlCount = (manualScript.match(/\bcurl\b/g) ?? []).length;
+  assert.ok(manualCurlCount > 0);
+  assert.equal(
+    (manualScript.match(/--connect-timeout\s+\d+/g) ?? []).length,
+    manualCurlCount,
+    "every manual curl request must bound connection time",
+  );
+  assert.equal(
+    (manualScript.match(/--max-time\s+\d+/g) ?? []).length,
+    manualCurlCount,
+    "every manual curl request must bound total time",
+  );
+  for (const contract of [
+    "manual_auth_smoke() {",
+    "node <<'NODE'",
+    'readFileSync(process.env.UIADAPT_SMOKE_PASSWORD_FILE, "utf8")',
+    'raw.endsWith("\\r\\n") ? raw.slice(0, -2)',
+    'raw.endsWith("\\n") ? raw.slice(0, -1)',
+    'Buffer.from(`reviewer:${password}`).toString("base64")',
+    "request.setTimeout(10_000",
+    "request.destroy(",
+    'manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"',
+    'manual_auth_smoke "$PUBLIC_URL"',
+  ]) {
+    assert.ok(manualScript.includes(contract), `manual rollback must contain ${contract}`);
+  }
   for (const command of [
     'ROLLBACK_SHA="${ROLLBACK_SHA:?set the exact prior 40-character lowercase Git SHA}"',
     'ROLLBACK_TARGET="$DEPLOY_ROOT/releases/$ROLLBACK_SHA"',
