@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { spawn, spawnSync } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { once } from "node:events";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import net from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import process from "node:process";
 import test from "node:test";
 import { clearTimeout, setTimeout } from "node:timers";
@@ -39,6 +40,72 @@ async function reserveLoopbackPort() {
   server.close();
   await once(server, "close");
   return port;
+}
+
+async function pathExists(path) {
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+async function hashDirectoryTree(root) {
+  const hash = createHash("sha256");
+
+  async function visit(directory, relativeDirectory = "") {
+    const entries = await readdir(directory, { withFileTypes: true });
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      const relativePath = join(relativeDirectory, entry.name);
+      const absolutePath = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        hash.update(`directory:${relativePath}\0`);
+        await visit(absolutePath, relativePath);
+      } else if (entry.isFile()) {
+        hash.update(`file:${relativePath}\0`);
+        hash.update(await readFile(absolutePath));
+      } else {
+        assert.fail(`unsupported entry in project www tree: ${relativePath}`);
+      }
+    }
+  }
+
+  await visit(root);
+  return hash.digest("hex");
+}
+
+async function removeOwnedEmptyDirectory(path) {
+  try {
+    await rmdir(path);
+  } catch (error) {
+    if (error.code === "ENOENT" || error.code === "ENOTEMPTY" || error.code === "EEXIST") return;
+    throw error;
+  }
+}
+
+async function closeServer(server) {
+  if (!server.listening) return;
+  server.close();
+  await once(server, "close");
+}
+
+async function isLoopbackPortListening(port) {
+  return new Promise((resolveListening) => {
+    const socket = net.createConnection({ host: "127.0.0.1", port });
+    let settled = false;
+    const settle = (listening) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolveListening(listening);
+    };
+    socket.once("connect", () => settle(true));
+    socket.once("error", () => settle(false));
+    socket.setTimeout(500, () => settle(false));
+  });
 }
 
 function launchNode(modulePath, args, env = process.env) {
@@ -101,6 +168,148 @@ function expectedAssetMime(pathname) {
   if (pathname.endsWith(".ttf")) return /^font\/ttf\b/;
   if (pathname.endsWith(".otf")) return /^font\/otf\b/;
   assert.fail(`unexpected asset extension: ${pathname}`);
+}
+
+function isStrictlyBelow(parent, candidate) {
+  const relativePath = relative(resolve(parent), resolve(candidate));
+  return relativePath !== ""
+    && relativePath !== ".."
+    && !relativePath.startsWith(`..${sep}`)
+    && !isAbsolute(relativePath);
+}
+
+async function runCanonicalIntegration({
+  wwwRoot: configuredWwwRoot,
+  staticPort: configuredStaticPort,
+} = {}) {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-nwg-contract-"));
+  const cleanupRoot = join(temporaryRoot, "workspace");
+  const sourceRoot = join(projectRoot, "dist");
+  const wwwRoot = configuredWwwRoot ?? join(cleanupRoot, "www");
+  const releaseRoot = join(wwwRoot, "uiadapt_demo");
+  const passwordFile = join(cleanupRoot, "password");
+  const password = "deployment-contract-password";
+  let staticProcess;
+  let gatewayProcess;
+
+  try {
+    assert.ok(
+      isStrictlyBelow(temporaryRoot, cleanupRoot),
+      "cleanup target must stay strictly below the temporary root",
+    );
+    assert.ok(
+      isStrictlyBelow(temporaryRoot, wwwRoot),
+      "staging root must stay strictly below the temporary root",
+    );
+    assert.ok(
+      isStrictlyBelow(wwwRoot, releaseRoot),
+      "release root must stay strictly below the staging root",
+    );
+
+    await mkdir(cleanupRoot, { recursive: true });
+    await writeFile(passwordFile, `${password}\n`, "utf8");
+    const releaseResult = process.platform === "win32"
+      ? spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", "npm run build"], {
+        cwd: projectRoot,
+        encoding: "utf8",
+      })
+      : spawnSync("npm", ["run", "build"], { cwd: projectRoot, encoding: "utf8" });
+    assert.equal(releaseResult.status, 0, `${releaseResult.stdout}${releaseResult.stderr}`);
+    const { stageNwg } = await import("./stage-nwg.mjs");
+    await stageNwg({ sourceRoot, wwwRoot });
+    assert.match(await readFile(join(releaseRoot, "index.html"), "utf8"), /<div id="root"><\/div>/);
+
+    const staticPort = configuredStaticPort ?? await reserveLoopbackPort();
+    let gatewayPort = await reserveLoopbackPort();
+    while (gatewayPort === staticPort) gatewayPort = await reserveLoopbackPort();
+    staticProcess = launchNode(
+      join(projectRoot, "node_modules", "serve", "build", "main.js"),
+      [
+        "--no-clipboard",
+        "--no-port-switching",
+        "--listen",
+        `tcp://127.0.0.1:${staticPort}`,
+        wwwRoot,
+      ],
+      { ...process.env, NO_UPDATE_CHECK: "1" },
+    );
+    await waitForStatus(
+      `http://127.0.0.1:${staticPort}/uiadapt_demo/`,
+      200,
+      {},
+      staticProcess,
+    );
+
+    gatewayProcess = launchNode(
+      join(projectRoot, "scripts", "password-gateway.mjs"),
+      [],
+      {
+        ...process.env,
+        UIADAPT_GATEWAY_PASSWORD_FILE: passwordFile,
+        UIADAPT_GATEWAY_PORT: String(gatewayPort),
+        UIADAPT_GATEWAY_UPSTREAM: `http://127.0.0.1:${staticPort}`,
+        UIADAPT_GATEWAY_USER: "reviewer",
+      },
+    );
+    const gatewayRoot = `http://127.0.0.1:${gatewayPort}`;
+    await waitForStatus(`${gatewayRoot}/uiadapt_demo/`, 401, {}, gatewayProcess);
+
+    const wrongResponse = await globalThis.fetch(`${gatewayRoot}/uiadapt_demo/`, {
+      headers: { authorization: basicAuth("reviewer", "wrong-password") },
+    });
+    assert.equal(wrongResponse.status, 401);
+
+    const authorization = basicAuth("reviewer", password);
+    const rootResponse = await globalThis.fetch(`${gatewayRoot}/`, {
+      headers: { authorization },
+      redirect: "manual",
+    });
+    assert.equal(rootResponse.status, 302);
+    assert.equal(rootResponse.headers.get("location"), "/uiadapt_demo/");
+
+    const htmlResponse = await globalThis.fetch(`${gatewayRoot}/uiadapt_demo/`, {
+      headers: { authorization },
+    });
+    assert.equal(htmlResponse.status, 200);
+    assert.match(htmlResponse.headers.get("content-type") ?? "", /^text\/html\b/);
+    const html = await htmlResponse.text();
+    const assetUrls = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)]
+      .map((match) => new URL(match[1], `${gatewayRoot}/uiadapt_demo/`));
+    assert.ok(assetUrls.some((url) => url.pathname.endsWith(".js")));
+    assert.ok(assetUrls.some((url) => url.pathname.endsWith(".css")));
+
+    const fontUrls = [];
+    for (const assetUrl of assetUrls) {
+      const response = await globalThis.fetch(assetUrl, { headers: { authorization } });
+      assert.equal(response.status, 200, assetUrl.href);
+      const contentType = response.headers.get("content-type") ?? "";
+      assert.doesNotMatch(contentType, /^text\/html\b/, assetUrl.href);
+      assert.match(contentType, expectedAssetMime(assetUrl.pathname), assetUrl.href);
+      const body = await response.text();
+      if (assetUrl.pathname.endsWith(".css")) {
+        fontUrls.push(
+          ...[...body.matchAll(/url\((?:["'])?([^"')]+\.(?:woff2?|ttf|otf))(?:["'])?\)/g)]
+            .map((match) => new URL(match[1], assetUrl)),
+        );
+      }
+    }
+
+    assert.ok(fontUrls.length > 0, "built CSS must reference at least one font asset");
+    for (const fontUrl of fontUrls) {
+      const response = await globalThis.fetch(fontUrl, { headers: { authorization } });
+      assert.equal(response.status, 200, fontUrl.href);
+      const contentType = response.headers.get("content-type") ?? "";
+      assert.doesNotMatch(contentType, /^text\/html\b/, fontUrl.href);
+      assert.match(contentType, expectedAssetMime(fontUrl.pathname), fontUrl.href);
+    }
+
+    return { gatewayPort, releaseRoot, staticPort, temporaryRoot };
+  } finally {
+    await stopChild(gatewayProcess);
+    await stopChild(staticProcess);
+    await rm(cleanupRoot, { force: true, recursive: true });
+    await removeOwnedEmptyDirectory(temporaryRoot);
+  }
 }
 
 function assertCommonServiceContract(service) {
@@ -231,112 +440,92 @@ test("preserves the existing target when source validation or copying fails", as
   }
 });
 
-test("canonical build:nwg release is served through the static and gateway contracts", { timeout: 20_000 }, async () => {
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-nwg-contract-"));
-  const wwwRoot = join(projectRoot, "www");
-  const releaseRoot = join(wwwRoot, "uiadapt_demo");
-  const passwordFile = join(temporaryRoot, "password");
-  const password = "deployment-contract-password";
-  let staticProcess;
-  let gatewayProcess;
+test("behavior: canonical integration preserves the real project www tree", { timeout: 20_000 }, async () => {
+  const projectWwwRoot = join(projectRoot, "www");
+  const projectReleaseRoot = join(projectWwwRoot, "uiadapt_demo");
+  const wwwExisted = await pathExists(projectWwwRoot);
+  const releaseExisted = await pathExists(projectReleaseRoot);
+  const sentinelPath = join(projectReleaseRoot, `.r8-sentinel-${randomUUID()}.bin`);
+  const sentinelBytes = Buffer.from([0, 17, 42, 128, 255]);
 
   try {
-    await writeFile(passwordFile, `${password}\n`, "utf8");
-    await rm(releaseRoot, { force: true, recursive: true });
-    const releaseResult = spawnSync(
-      process.execPath,
-      [process.env.npm_execpath, "run", "build:nwg"],
-      { cwd: projectRoot, encoding: "utf8" },
-    );
-    assert.equal(releaseResult.status, 0, `${releaseResult.stdout}${releaseResult.stderr}`);
-    assert.match(await readFile(join(releaseRoot, "index.html"), "utf8"), /<div id="root"><\/div>/);
+    await mkdir(projectReleaseRoot, { recursive: true });
+    await writeFile(sentinelPath, sentinelBytes, { flag: "wx" });
+    const beforeHash = await hashDirectoryTree(projectWwwRoot);
 
-    const staticPort = 5173;
-    const gatewayPort = await reserveLoopbackPort();
-    staticProcess = launchNode(
-      join(projectRoot, "node_modules", "serve", "build", "main.js"),
-      [
-        "--no-clipboard",
-        "--no-port-switching",
-        "--listen",
-        `tcp://127.0.0.1:${staticPort}`,
-        wwwRoot,
-      ],
-      { ...process.env, NO_UPDATE_CHECK: "1" },
-    );
-    await waitForStatus(
-      `http://127.0.0.1:${staticPort}/uiadapt_demo/`,
-      200,
-      {},
-      staticProcess,
-    );
+    const result = await runCanonicalIntegration();
 
-    gatewayProcess = launchNode(
-      join(projectRoot, "scripts", "password-gateway.mjs"),
-      [],
-      {
-        ...process.env,
-        UIADAPT_GATEWAY_PASSWORD_FILE: passwordFile,
-        UIADAPT_GATEWAY_PORT: String(gatewayPort),
-        UIADAPT_GATEWAY_UPSTREAM: `http://127.0.0.1:${staticPort}`,
-        UIADAPT_GATEWAY_USER: "reviewer",
-      },
-    );
-    const gatewayRoot = `http://127.0.0.1:${gatewayPort}`;
-    await waitForStatus(`${gatewayRoot}/uiadapt_demo/`, 401, {}, gatewayProcess);
-
-    const wrongResponse = await globalThis.fetch(`${gatewayRoot}/uiadapt_demo/`, {
-      headers: { authorization: basicAuth("reviewer", "wrong-password") },
-    });
-    assert.equal(wrongResponse.status, 401);
-
-    const authorization = basicAuth("reviewer", password);
-    const rootResponse = await globalThis.fetch(`${gatewayRoot}/`, {
-      headers: { authorization },
-      redirect: "manual",
-    });
-    assert.equal(rootResponse.status, 302);
-    assert.equal(rootResponse.headers.get("location"), "/uiadapt_demo/");
-
-    const htmlResponse = await globalThis.fetch(`${gatewayRoot}/uiadapt_demo/`, {
-      headers: { authorization },
-    });
-    assert.equal(htmlResponse.status, 200);
-    assert.match(htmlResponse.headers.get("content-type") ?? "", /^text\/html\b/);
-    const html = await htmlResponse.text();
-    const assetUrls = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)]
-      .map((match) => new URL(match[1], `${gatewayRoot}/uiadapt_demo/`));
-    assert.ok(assetUrls.some((url) => url.pathname.endsWith(".js")));
-    assert.ok(assetUrls.some((url) => url.pathname.endsWith(".css")));
-
-    const fontUrls = [];
-    for (const assetUrl of assetUrls) {
-      const response = await globalThis.fetch(assetUrl, { headers: { authorization } });
-      assert.equal(response.status, 200, assetUrl.href);
-      const contentType = response.headers.get("content-type") ?? "";
-      assert.doesNotMatch(contentType, /^text\/html\b/, assetUrl.href);
-      assert.match(contentType, expectedAssetMime(assetUrl.pathname), assetUrl.href);
-      const body = await response.text();
-      if (assetUrl.pathname.endsWith(".css")) {
-        fontUrls.push(
-          ...[...body.matchAll(/url\((?:["'])?([^"')]+\.(?:woff2?|ttf|otf))(?:["'])?\)/g)]
-            .map((match) => new URL(match[1], assetUrl)),
-        );
-      }
-    }
-
-    assert.ok(fontUrls.length > 0, "built CSS must reference at least one font asset");
-    for (const fontUrl of fontUrls) {
-      const response = await globalThis.fetch(fontUrl, { headers: { authorization } });
-      assert.equal(response.status, 200, fontUrl.href);
-      const contentType = response.headers.get("content-type") ?? "";
-      assert.doesNotMatch(contentType, /^text\/html\b/, fontUrl.href);
-      assert.match(contentType, expectedAssetMime(fontUrl.pathname), fontUrl.href);
-    }
+    assert.equal(await hashDirectoryTree(projectWwwRoot), beforeHash);
+    assert.deepEqual(await readFile(sentinelPath), sentinelBytes);
+    assert.ok(resolve(result.releaseRoot).startsWith(`${resolve(result.temporaryRoot)}${sep}`));
+    assert.ok(!resolve(result.releaseRoot).startsWith(`${resolve(projectWwwRoot)}${sep}`));
   } finally {
-    await stopChild(gatewayProcess);
-    await stopChild(staticProcess);
-    await rm(releaseRoot, { force: true, recursive: true });
-    await rm(temporaryRoot, { force: true, recursive: true });
+    await rm(sentinelPath, { force: true });
+    if (!releaseExisted) await removeOwnedEmptyDirectory(projectReleaseRoot);
+    if (!wwwExisted) await removeOwnedEmptyDirectory(projectWwwRoot);
   }
+});
+
+test("behavior: canonical integration rejects a project www staging mutation", async () => {
+  await assert.rejects(
+    runCanonicalIntegration({ wwwRoot: join(projectRoot, "www") }),
+    /staging root must stay strictly below the temporary root/,
+  );
+});
+
+test("behavior: canonical integration rejects an explicitly occupied dynamic static port", { timeout: 20_000 }, async () => {
+  const dummyServer = net.createServer((socket) => socket.destroy());
+  dummyServer.listen(0, "127.0.0.1");
+  await once(dummyServer, "listening");
+  const { port: occupiedPort } = dummyServer.address();
+
+  try {
+    await assert.rejects(
+      runCanonicalIntegration({ staticPort: occupiedPort }),
+      new RegExp(`http://127\\.0\\.0\\.1:${occupiedPort}/uiadapt_demo/ did not become ready`),
+    );
+  } finally {
+    await closeServer(dummyServer);
+  }
+});
+
+test("behavior: canonical integration succeeds while port 5173 is externally occupied", { timeout: 20_000 }, async () => {
+  let ownedServer;
+  if (!await isLoopbackPortListening(5173)) {
+    ownedServer = net.createServer((socket) => socket.destroy());
+    try {
+      ownedServer.listen(5173, "127.0.0.1");
+      await once(ownedServer, "listening");
+    } catch (error) {
+      if (error.code !== "EADDRINUSE") throw error;
+      ownedServer = undefined;
+    }
+  }
+
+  try {
+    const result = await runCanonicalIntegration();
+    assert.notEqual(result.staticPort, 5173);
+  } finally {
+    if (ownedServer) await closeServer(ownedServer);
+  }
+});
+
+test("canonical integration owns staging and cleanup below a temporary root", async () => {
+  const source = await readProjectFile("scripts/nwg-deployment-contract.test.mjs");
+  const canonicalIntegration = source.slice(
+    source.indexOf("async function runCanonicalIntegration"),
+    source.indexOf("\nfunction assertCommonServiceContract"),
+  );
+
+  assert.doesNotMatch(canonicalIntegration, /join\(projectRoot, "www"\)/);
+  assert.doesNotMatch(canonicalIntegration, /const staticPort = 5173/);
+  assert.doesNotMatch(canonicalIntegration, /rm\(releaseRoot,/);
+  assert.match(canonicalIntegration, /const cleanupRoot = join\(temporaryRoot, "workspace"\)/);
+  assert.match(canonicalIntegration, /const wwwRoot = configuredWwwRoot \?\? join\(cleanupRoot, "www"\)/);
+  assert.match(canonicalIntegration, /await rm\(cleanupRoot, \{ force: true, recursive: true \}\)/);
+  assert.match(canonicalIntegration, /await removeOwnedEmptyDirectory\(temporaryRoot\)/);
+});
+
+test("canonical build:nwg release is served through the static and gateway contracts", { timeout: 20_000 }, async () => {
+  await runCanonicalIntegration();
 });
