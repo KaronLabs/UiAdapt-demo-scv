@@ -1,0 +1,24 @@
+UTC=2026-08-21T18:05:26Z
+CURRENT=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91
+STATIC=active/enabled
+GATEWAY=active/enabled
+CREDENTIAL_METADATA=root:root:600:nonempty
+DISK_AVAILABLE_KB=46338228
+PARENT_GIT_BEGIN
+PARENT_GIT_END
+FUNNEL_BEGIN
+
+# Funnel on:
+#     - https://00-new-world-gpu.tail645adc.ts.net
+
+https://00-new-world-gpu.tail645adc.ts.net (Funnel on)
+|-- / proxy http://127.0.0.1:4180
+
+https://00-new-world-gpu.tail645adc.ts.net:8443 (tailnet only)
+|-- / proxy http://127.0.0.1:8101
+
+http://00-new-world-gpu:8787 (tailnet only)
+http://00-new-world-gpu.tail645adc.ts.net:8787 (tailnet only)
+|-- / proxy http://127.0.0.1:8787
+
+FUNNEL_END

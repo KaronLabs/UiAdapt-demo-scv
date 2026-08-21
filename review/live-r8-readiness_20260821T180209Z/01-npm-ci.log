@@ -1,0 +1,8 @@
+
+added 315 packages, and audited 316 packages in 7s
+
+87 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+COMMAND=npm ci START_UTC=2026-08-21T18:02:35.4534571Z END_UTC=2026-08-21T18:02:42.3979028Z EXIT_CODE=0

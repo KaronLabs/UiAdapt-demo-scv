@@ -1,0 +1,2 @@
+found 0 vulnerabilities
+COMMAND=npm audit --omit=dev --audit-level=high START_UTC=2026-08-21T18:04:27.5442194Z END_UTC=2026-08-21T18:04:28.4229438Z EXIT_CODE=0

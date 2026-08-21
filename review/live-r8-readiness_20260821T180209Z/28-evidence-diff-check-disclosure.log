@@ -1,0 +1,5 @@
+COMMAND=git diff --cached --check
+RESULT=NONZERO
+CAUSE=verbatim Playwright web-server output contains lines ending with a space
+HANDLING=preserved; application source diff is zero and evidence bytes are normalized only from CRLF to LF before sealing
+APP_SOURCE_CHANGE_COUNT=0

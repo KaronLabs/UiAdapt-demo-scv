@@ -1,0 +1,5 @@
+
+> uiadapt-adaptive-storefront-theater@4.1.0 lint
+> eslint .
+
+COMMAND=npm run lint START_UTC=2026-08-21T18:02:42.4157974Z END_UTC=2026-08-21T18:03:03.5862747Z EXIT_CODE=0

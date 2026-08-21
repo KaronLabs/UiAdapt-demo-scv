@@ -1,0 +1,9 @@
+file:///mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/a0c701d6a9f8737e787e607106da87185bf19319.staging/[eval1]:27
+  if(pageErrors.length||failed.length||external.length||((notFound.length||consoleErrors.length)&&!allowed)) throw new Error(label+" hygiene "+JSON.stringify({pageErrors,consoleErrors,failed,notFound,external}));
+                                                                                                                   ^
+
+Error: PUBLIC hygiene {"pageErrors":[],"consoleErrors":["Failed to load resource: the server responded with a status of 404 ()"],"failed":[],"notFound":[],"external":[]}
+    at inspect (file:///mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/a0c701d6a9f8737e787e607106da87185bf19319.staging/[eval1]:27:116)
+    at async file:///mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/a0c701d6a9f8737e787e607106da87185bf19319.staging/[eval1]:36:1
+
+Node.js v24.18.0

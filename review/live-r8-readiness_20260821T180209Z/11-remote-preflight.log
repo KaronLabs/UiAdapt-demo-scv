@@ -1,0 +1,5 @@
+UTC=2026-08-21T18:05:14Z
+CURRENT=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91
+STATIC=active/enabled
+GATEWAY=active/enabled
+bash: line 21: test: ${cred_meta##*:}: integer expression expected

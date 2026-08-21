@@ -1,0 +1,111 @@
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:gateway
+> node --test scripts/password-gateway.test.mjs
+
+TAP version 13
+# Subtest: fails closed when the required password is missing
+ok 1 - fails closed when the required password is missing
+  ---
+  duration_ms: 4.4619
+  type: 'test'
+  ...
+# Subtest: reads the password file with exactly one trailing LF or CRLF removed
+ok 2 - reads the password file with exactly one trailing LF or CRLF removed
+  ---
+  duration_ms: 9.3858
+  type: 'test'
+  ...
+# Subtest: fails closed on a missing password file even when an environment password exists
+ok 3 - fails closed on a missing password file even when an environment password exists
+  ---
+  duration_ms: 1.731
+  type: 'test'
+  ...
+# Subtest: fails closed on an empty password file
+ok 4 - fails closed on an empty password file
+  ---
+  duration_ms: 4.5906
+  type: 'test'
+  ...
+# Subtest: fails closed on an unreadable password-file target
+ok 5 - fails closed on an unreadable password-file target
+  ---
+  duration_ms: 1.5572
+  type: 'test'
+  ...
+# Subtest: does not expose either password source when password-file startup fails
+ok 6 - does not expose either password source when password-file startup fails
+  ---
+  duration_ms: 69.17
+  type: 'test'
+  ...
+# Subtest: keeps the direct environment password compatible when no file is configured
+ok 7 - keeps the direct environment password compatible when no file is configured
+  ---
+  duration_ms: 0.2671
+  type: 'test'
+  ...
+# Subtest: starts and authenticates when executed through a symlinked current release
+ok 8 - starts and authenticates when executed through a symlinked current release
+  ---
+  duration_ms: 160.929
+  type: 'test'
+  ...
+# Subtest: rejects missing and incorrect credentials without contacting upstream
+ok 9 - rejects missing and incorrect credentials without contacting upstream
+  ---
+  duration_ms: 14.3944
+  type: 'test'
+  ...
+# Subtest: redirects an authenticated root request to the nested demo path
+ok 10 - redirects an authenticated root request to the nested demo path
+  ---
+  duration_ms: 7.556
+  type: 'test'
+  ...
+# Subtest: proxies authenticated requests without forwarding the authorization secret
+ok 11 - proxies authenticated requests without forwarding the authorization secret
+  ---
+  duration_ms: 16.9523
+  type: 'test'
+  ...
+# Subtest: keeps absolute-form and scheme-relative request targets on the configured upstream
+ok 12 - keeps absolute-form and scheme-relative request targets on the configured upstream
+  ---
+  duration_ms: 10.9337
+  type: 'test'
+  ...
+# Subtest: rejects an authenticated malformed HTTP target and remains available
+ok 13 - rejects an authenticated malformed HTTP target and remains available
+  ---
+  duration_ms: 9.0834
+  type: 'test'
+  ...
+# Subtest: rejects unauthenticated websocket upgrades before contacting upstream
+ok 14 - rejects unauthenticated websocket upgrades before contacting upstream
+  ---
+  duration_ms: 7.3716
+  type: 'test'
+  ...
+# Subtest: proxies authenticated websocket upgrades to the fixed upstream without authorization
+ok 15 - proxies authenticated websocket upgrades to the fixed upstream without authorization
+  ---
+  duration_ms: 5.319
+  type: 'test'
+  ...
+# Subtest: rejects an authenticated malformed websocket target and remains available
+ok 16 - rejects an authenticated malformed websocket target and remains available
+  ---
+  duration_ms: 5.6548
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 418.8388
+COMMAND=npm run test:gateway START_UTC=2026-08-21T18:03:25.4792012Z END_UTC=2026-08-21T18:03:26.2061499Z EXIT_CODE=0

@@ -1,0 +1,23 @@
+UTC=2026-08-21T18:11:32Z
+FINAL_POINTER=a0c701d6a9f8737e787e607106da87185bf19319
+ROLLBACK_RELEASE=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91:PRESERVED
+SERVICES=active/enabled
+PARENT_GIT_DIRTY_COUNT=0
+SECRET_LEAK_COUNT=0
+FUNNEL_BEGIN
+
+# Funnel on:
+#     - https://00-new-world-gpu.tail645adc.ts.net
+
+https://00-new-world-gpu.tail645adc.ts.net (Funnel on)
+|-- / proxy http://127.0.0.1:4180
+
+https://00-new-world-gpu.tail645adc.ts.net:8443 (tailnet only)
+|-- / proxy http://127.0.0.1:8101
+
+http://00-new-world-gpu:8787 (tailnet only)
+http://00-new-world-gpu.tail645adc.ts.net:8787 (tailnet only)
+|-- / proxy http://127.0.0.1:8787
+
+FUNNEL_END
+OWN_TRANSIENT_CLEANUP=PASS

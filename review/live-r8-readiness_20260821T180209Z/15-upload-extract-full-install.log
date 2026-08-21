@@ -1,0 +1,10 @@
+REMOTE_ARCHIVE_SHA256=f4509967f5229e3e26c3e9405910dc35eb5bd72075f78b612bc1fb1820c1ee8d
+STAGING_CREATED=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/a0c701d6a9f8737e787e607106da87185bf19319.staging
+
+added 315 packages, and audited 316 packages in 2s
+
+87 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+STAGING_FULL_NPM_CI=PASS

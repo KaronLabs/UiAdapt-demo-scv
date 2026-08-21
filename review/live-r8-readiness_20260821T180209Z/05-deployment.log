@@ -1,0 +1,123 @@
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:deployment
+> node --test scripts/nwg-deployment-contract.test.mjs
+
+TAP version 13
+# Subtest: pins a non-SPA static server to the production loopback endpoint
+ok 1 - pins a non-SPA static server to the production loopback endpoint
+  ---
+  duration_ms: 14.6946
+  type: 'test'
+  ...
+# Subtest: defines hardened static and gateway systemd units for the exact current release
+ok 2 - defines hardened static and gateway systemd units for the exact current release
+  ---
+  duration_ms: 15.905
+  type: 'test'
+  ...
+# Subtest: runs deployment contracts in the Node 22 and Node 24 verification jobs
+ok 3 - runs deployment contracts in the Node 22 and Node 24 verification jobs
+  ---
+  duration_ms: 1.4352
+  type: 'test'
+  ...
+# Subtest: runs verification pushes only for main and the R8 remediation branch
+ok 4 - runs verification pushes only for main and the R8 remediation branch
+  ---
+  duration_ms: 2.4722
+  type: 'test'
+  ...
+# Subtest: README records the investor-stage contract and the complete safe verification order
+ok 5 - README records the investor-stage contract and the complete safe verification order
+  ---
+  duration_ms: 8.1841
+  type: 'test'
+  ...
+# Subtest: release runbook records version-addressed deployment, readiness, rollback, and measured live status
+ok 6 - release runbook records version-addressed deployment, readiness, rollback, and measured live status
+  ---
+  duration_ms: 18.4721
+  type: 'test'
+  ...
+# Subtest: documented switch and rollback poll bounded readiness after every restart
+ok 7 - documented switch and rollback poll bounded readiness after every restart
+  ---
+  duration_ms: 2031.5829
+  type: 'test'
+  ...
+# Subtest: documented automatic switch preserves the original failure after recovery
+ok 8 - documented automatic switch preserves the original failure after recovery
+  ---
+  duration_ms: 274.128
+  type: 'test'
+  ...
+# Subtest: documented auth helper enforces a total wall-clock deadline against trickle responses
+ok 9 - documented auth helper enforces a total wall-clock deadline against trickle responses
+  ---
+  duration_ms: 278.655
+  type: 'test'
+  ...
+# Subtest: tracked threat model states the enforced controls and accepted operational gaps
+ok 10 - tracked threat model states the enforced controls and accepted operational gaps
+  ---
+  duration_ms: 14.3508
+  type: 'test'
+  ...
+# Subtest: preserves the existing target when source validation or copying fails
+ok 11 - preserves the existing target when source validation or copying fails
+  ---
+  duration_ms: 8.7622
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration preserves the real project www tree
+ok 12 - behavior: canonical integration preserves the real project www tree
+  ---
+  duration_ms: 8480.7029
+  type: 'test'
+  ...
+# Subtest: project www preservation probe is read-only
+ok 13 - project www preservation probe is read-only
+  ---
+  duration_ms: 0.8682
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration rejects a project www staging mutation
+ok 14 - behavior: canonical integration rejects a project www staging mutation
+  ---
+  duration_ms: 1.8389
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration rejects an explicitly occupied dynamic static port
+ok 15 - behavior: canonical integration rejects an explicitly occupied dynamic static port
+  ---
+  duration_ms: 8246.7346
+  type: 'test'
+  ...
+# Subtest: behavior: canonical integration succeeds while port 5173 is externally occupied
+ok 16 - behavior: canonical integration succeeds while port 5173 is externally occupied
+  ---
+  duration_ms: 2946.9254
+  type: 'test'
+  ...
+# Subtest: canonical integration owns staging and cleanup below a temporary root
+ok 17 - canonical integration owns staging and cleanup below a temporary root
+  ---
+  duration_ms: 1.8371
+  type: 'test'
+  ...
+# Subtest: canonical build:nwg release is served through the static and gateway contracts
+ok 18 - canonical build:nwg release is served through the static and gateway contracts
+  ---
+  duration_ms: 2898.5993
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25327.0839
+COMMAND=npm run test:deployment START_UTC=2026-08-21T18:03:26.2139367Z END_UTC=2026-08-21T18:03:51.8526585Z EXIT_CODE=0
