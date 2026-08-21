@@ -4,7 +4,10 @@ import App from "./App";
 
 describe("adaptive storefront UI contract", () => {
   beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it("renders the canonical products and keeps diagnostics collapsed", () => {
     const { container } = render(<App />);
@@ -41,25 +44,48 @@ describe("adaptive storefront UI contract", () => {
     expect(screen.getByTestId("replay-status")).toHaveTextContent("동일한 행동 시퀀스를 재생하고 있습니다.");
   });
 
-  it("replays EXPLORE to COMPARE to FOCUS while preserving product data", () => {
+  it("exposes distribution evidence and telemetry status in Developer View", () => {
+    render(<App />);
+    fireEvent.click(screen.getByText("Developer View"));
+    expect(screen.getByText("Evidence window").nextElementSibling).toHaveTextContent("0 / 20");
+    expect(screen.getByText("Minimum evidence").nextElementSibling).toHaveTextContent("15");
+    expect(screen.getByText("Raw change score").nextElementSibling).toHaveTextContent("0.000");
+    expect(screen.getByTestId("distribution-readout")).toHaveTextContent("Reference");
+    expect(screen.getByTestId("distribution-readout")).toHaveTextContent("Current");
+    expect(screen.getByText("Detected / applied").nextElementSibling).toHaveTextContent("EXPLORE / EXPLORE");
+    expect(screen.getAllByText("Telemetry").at(-1)?.nextElementSibling).toHaveTextContent("HEALTHY");
+  });
+
+  it("keeps local transitions independent from telemetry fetch failures", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 503 })));
     const { container } = render(<App />);
     fireEvent.click(screen.getByTestId("live-demo-cta"));
-    act(() => vi.advanceTimersByTime(7_000));
+    await act(async () => {
+      vi.advanceTimersByTime(19_000);
+    });
+    expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("PURCHASE_INTENT");
+    expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT");
+  });
+
+  it("replays EXPLORE to COMPARE to PURCHASE_INTENT while preserving product data", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
+    act(() => vi.advanceTimersByTime(11_000));
     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("COMPARE");
     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "COMPARE");
-    act(() => vi.advanceTimersByTime(14_000));
-    expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("FOCUS");
-    expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "FOCUS");
+    act(() => vi.advanceTimersByTime(8_000));
+    expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("PURCHASE_INTENT");
+    expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT");
     expect(screen.getByRole("button", { name: "Aurora One 가격 확인" })).toHaveTextContent("₩329,000");
   });
 
-  it("detects FOCUS with Adaptive UI off but keeps EXPLORE presentation", () => {
+  it("detects PURCHASE_INTENT with Adaptive UI off but keeps EXPLORE presentation", () => {
     const { container } = render(<App />);
     const exploreDescription = container.querySelector(".storefront__heading > p")?.textContent;
     fireEvent.click(screen.getByRole("checkbox", { name: /Adaptive UI/i }));
     fireEvent.click(screen.getByTestId("live-demo-cta"));
     act(() => vi.advanceTimersByTime(21_000));
-    expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("FOCUS");
+    expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("PURCHASE_INTENT");
     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
     expect(container.querySelector(".storefront__heading > p")).toHaveTextContent(exploreDescription ?? "");
     expect(screen.getByText("선택에 필요한 정보를 가까이 모았습니다.")).toBeInTheDocument();
@@ -71,17 +97,17 @@ describe("adaptive storefront UI contract", () => {
     const priceButton = screen.getByRole("button", { name: "Aurora One 가격 확인" });
     priceButton.focus();
     expect(document.activeElement).toBe(priceButton);
-    act(() => vi.advanceTimersByTime(7_000));
+    act(() => vi.advanceTimersByTime(11_000));
     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("COMPARE");
     expect(document.activeElement).toBe(priceButton);
   });
 
-  it("keeps comparison inside the stable demo stage and hides it in FOCUS", () => {
+  it("keeps comparison inside the stable demo stage and hides it in PURCHASE_INTENT", () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByTestId("live-demo-cta"));
-    act(() => vi.advanceTimersByTime(7_000));
+    act(() => vi.advanceTimersByTime(11_000));
     expect(container.querySelector(".demo-stage .comparison-panel.is-visible")).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(14_000));
+    act(() => vi.advanceTimersByTime(8_000));
     expect(container.querySelector(".comparison-panel.is-visible")).not.toBeInTheDocument();
     expect(container.querySelector(".decision-support")).toBeInTheDocument();
   });

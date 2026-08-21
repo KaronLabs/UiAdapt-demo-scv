@@ -23,6 +23,19 @@ export interface DistributionEvaluation {
   changeScore: number;
 }
 
+export interface DistributionSnapshot {
+  eventCount: number;
+  windowSize: number;
+  counts: DistributionCounts;
+  current: Distribution;
+  reference: Distribution;
+  changeScore: number;
+  candidateState: DistributionState;
+  candidatePersistence: number;
+  detectedState: DistributionState;
+  appliedState: DistributionState;
+}
+
 export interface StateTransition {
   sequenceNo?: number;
   fromState: DistributionState;
@@ -84,6 +97,24 @@ export interface PresentationPolicy {
   focusedProductId: ProductId | null;
 }
 
+export type TelemetryStatus = "HEALTHY" | "DEGRADED" | "OVERFLOW";
+
+export interface TelemetrySession {
+  sessionId: string;
+  startedAtMs: number;
+  source: EventSource;
+  adaptiveEnabled: boolean;
+}
+
+export interface TelemetryFrame {
+  sessionId: string;
+  sequenceNo: number;
+  event: BehaviorEvent;
+  behaviorDimension: BehaviorDimension;
+  snapshot: DistributionSnapshot;
+  transition: StateTransition | null;
+}
+
 export type ReplayStatus =
   | "IDLE"
   | "RUNNING"
@@ -99,6 +130,7 @@ export interface RuntimeSnapshot {
   events: readonly BehaviorEvent[];
   features: FeatureSnapshot;
   distribution: DistributionEvaluation;
+  candidateState: DistributionState;
   detectedState: AdaptiveState;
   appliedState: AdaptiveState;
   focusedProductId: ProductId | null;
@@ -110,6 +142,7 @@ export interface RuntimeSnapshot {
   candidatePersistence: number;
   lastTransition: StateTransition | null;
   transitions: readonly StateTransition[];
+  telemetryStatus: TelemetryStatus;
   replayStatus: ReplayStatus;
   lastRejectedReason: string | null;
 }
@@ -117,6 +150,7 @@ export interface RuntimeSnapshot {
 export type RuntimeAction =
   | { type: "RECORD_EVENT"; event: BehaviorEvent; epoch: number }
   | { type: "SET_ADAPTIVE"; enabled: boolean }
+  | { type: "SET_TELEMETRY_STATUS"; status: TelemetryStatus }
   | { type: "SET_REPLAY_STATUS"; status: ReplayStatus; epoch: number }
   | { type: "RESET"; sessionId?: string }
   | { type: "RESET_FOR_REPLAY"; sessionId?: string };

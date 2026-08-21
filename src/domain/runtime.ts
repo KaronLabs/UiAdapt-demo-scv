@@ -8,6 +8,7 @@ import type {
   ProductId,
   RuntimeAction,
   RuntimeSnapshot,
+  TelemetryStatus,
 } from "./types";
 
 export { derivePolicy } from "./policy";
@@ -37,6 +38,7 @@ export function createInitialRuntime(adaptiveEnabled = true, sessionId = "sessio
     events: [],
     features: emptyFeatures(),
     distribution: evaluateDistribution([]),
+    candidateState: "EXPLORE",
     detectedState: "EXPLORE",
     appliedState: policy.appliedState,
     focusedProductId: null,
@@ -48,6 +50,7 @@ export function createInitialRuntime(adaptiveEnabled = true, sessionId = "sessio
     candidatePersistence: 0,
     lastTransition: null,
     transitions: [],
+    telemetryStatus: "HEALTHY",
     replayStatus: "IDLE",
     lastRejectedReason: null,
   };
@@ -130,6 +133,11 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
     };
   }
 
+  if (action.type === "SET_TELEMETRY_STATUS") {
+    const status: TelemetryStatus = action.status;
+    return { ...state, telemetryStatus: status };
+  }
+
   if (action.type === "SET_REPLAY_STATUS") {
     if (action.epoch !== state.sessionEpoch) return reject(state, "STALE_SESSION_EPOCH");
     return { ...state, replayStatus: action.status, lastRejectedReason: null };
@@ -168,6 +176,9 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
   const stateTransition = transition.transition
     ? { ...transition.transition, sequenceNo: state.sequenceNo + 1 }
     : null;
+  const candidatePersistence = stateTransition
+    ? stateTransition.persistenceCount
+    : transition.candidatePersistence;
   const manualTakeover =
     event.source === "USER" && (state.replayStatus === "RUNNING" || state.replayStatus === "PAUSED");
 
@@ -177,12 +188,13 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
     events,
     features,
     distribution,
+    candidateState: transition.candidateState,
     detectedState,
     appliedState: policy.appliedState,
     focusedProductId: policy.focusedProductId,
     pendingCandidate: transition.pendingCandidate,
-    candidatePersistence: transition.candidatePersistence,
-    lastTransition: stateTransition,
+    candidatePersistence,
+    lastTransition: stateTransition ?? state.lastTransition,
     transitions: stateTransition ? [...state.transitions, stateTransition] : state.transitions,
     lastTransitionAtMs: stateTransition ? event.atMs : state.lastTransitionAtMs,
     lastEventAtMs: event.atMs,

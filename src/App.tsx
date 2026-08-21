@@ -17,18 +17,18 @@ const stateCopy: Record<AdaptiveState, { label: string; title: string; descripti
     title: "차이점을 나란히 보여드립니다.",
     description: "가격, 배송, 배터리와 노이즈 제어처럼 판단에 필요한 차이를 먼저 정렬합니다.",
   },
-  FOCUS: {
-    label: "한 제품에 상호작용이 집중되고 있습니다",
+  PURCHASE_INTENT: {
+    label: "결정에 가까운 행동이 누적되었습니다",
     title: "선택에 필요한 정보를 가까이 모았습니다.",
-    description: "관심이 모인 제품의 배송, 색상, 재고와 구매 동작을 한 흐름으로 강화합니다.",
+    description: "반복해서 확인한 결정 정보와 구매 의도 동작을 한 흐름으로 강화합니다.",
   },
 };
 
-const stateOrder: AdaptiveState[] = ["EXPLORE", "COMPARE", "FOCUS"];
+const stateOrder: AdaptiveState[] = ["EXPLORE", "COMPARE", "PURCHASE_INTENT"];
 const stateMission: Record<AdaptiveState, string> = {
   EXPLORE: "발견",
   COMPARE: "비교",
-  FOCUS: "결정지원",
+  PURCHASE_INTENT: "결정지원",
 };
 
 function App() {
@@ -207,7 +207,7 @@ function App() {
               </div>
             </section>}
 
-            {state.appliedState === "FOCUS" && focusedProduct && <section className="decision-support" aria-label="집중 상품 결정 지원">
+            {state.appliedState === "PURCHASE_INTENT" && focusedProduct && <section className="decision-support" aria-label="집중 상품 결정 지원">
               <div className="decision-support__intro">
                 <p className="eyebrow">Decision support · {focusedProduct.name}</p>
                 <h2>선택에 필요한 정보를 한 흐름에 모았습니다.</h2>
@@ -253,10 +253,14 @@ function App() {
               <span className="summary-action">근거 보기</span>
             </summary>
             <div className="why-grid">
-              <div><span>Current state</span><strong>{state.detectedState}</strong></div>
-              <div><span>Product switches</span><strong>{state.features.switchCount}</strong></div>
-              <div><span>Dominant share</span><strong>{Math.round(state.features.dominantShare * 100)}%</strong></div>
-              <div><span>Policy</span><strong>{state.adaptiveEnabled ? `${state.appliedState} presentation` : "Suppressed"}</strong></div>
+              <div><span>Detected state</span><strong>{state.detectedState}</strong></div>
+              <div><span>Change score</span><strong>{state.distribution.changeScore.toFixed(3)}</strong></div>
+              <div><span>Evidence</span><strong>{state.distribution.eventCount} / 15</strong></div>
+              <div><span>Candidate</span><strong>{state.candidateState}</strong></div>
+              <div><span>Persistence</span><strong>{state.candidatePersistence} / 3</strong></div>
+              <div><span>Last transition</span><strong>{state.lastTransition ? `${state.lastTransition.fromState} → ${state.lastTransition.toState}` : "None"}</strong></div>
+              <div><span>Applied state</span><strong>{state.adaptiveEnabled ? state.appliedState : "EXPLORE (suppressed)"}</strong></div>
+              <div><span>Telemetry</span><strong>{state.telemetryStatus}</strong></div>
             </div>
             {!state.adaptiveEnabled && <p className="suppressed-note">상태는 감지했지만 적응형 화면 적용은 꺼져 있습니다.</p>}
           </details>
@@ -264,10 +268,20 @@ function App() {
           <details className="developer-view">
             <summary><span>Developer View</span><small>Demo-only explanatory policy</small></summary>
             <div className="developer-grid">
+              <div><span>Session</span><strong>{state.sessionId.slice(0, 8)}</strong></div>
               <div><span>Session epoch</span><strong>{state.sessionEpoch}</strong></div>
               <div><span>Events</span><strong data-testid="event-count">{state.events.length}</strong></div>
-              <div><span>Evidence window</span><strong>{state.features.windowSize} / 8</strong></div>
+              <div><span>Evidence window</span><strong>{state.distribution.windowSize} / 20</strong></div>
+              <div><span>Minimum evidence</span><strong>15</strong></div>
+              <div><span>Raw change score</span><strong>{state.distribution.changeScore.toFixed(3)}</strong></div>
+              <div><span>Candidate / persistence</span><strong>{state.candidateState} · {state.candidatePersistence} / 3</strong></div>
+              <div><span>Detected / applied</span><strong>{state.detectedState} / {state.appliedState}</strong></div>
+              <div><span>Telemetry</span><strong>{state.telemetryStatus}</strong></div>
               <div><span>Replay</span><strong>{state.replayStatus}</strong></div>
+            </div>
+            <div className="distribution-readout" data-testid="distribution-readout">
+              <div><span>Reference</span><strong>B {state.distribution.reference.BROWSE.toFixed(2)} · D {state.distribution.reference.DETAIL.toFixed(2)} · C {state.distribution.reference.COMPARE.toFixed(2)} · Dec {state.distribution.reference.DECISION.toFixed(2)} · Cart {state.distribution.reference.CART_INTENT.toFixed(2)}</strong></div>
+              <div><span>Current</span><strong>B {state.distribution.current.BROWSE.toFixed(2)} · D {state.distribution.current.DETAIL.toFixed(2)} · C {state.distribution.current.COMPARE.toFixed(2)} · Dec {state.distribution.current.DECISION.toFixed(2)} · Cart {state.distribution.current.CART_INTENT.toFixed(2)}</strong></div>
             </div>
             <ol className="event-ledger" aria-label="최근 행동 이벤트">
               {state.events.slice(-6).reverse().map((event) => (
