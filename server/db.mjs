@@ -5,6 +5,7 @@ import mysql from "mysql2/promise";
 import {
   assertTrajectoryConsistency,
   assertTrajectoryContinuity,
+  assertTrajectoryPolicy,
   canonicalizeTrajectory,
 } from "./validation.mjs";
 
@@ -201,11 +202,12 @@ export function createDbAdapter(pool) {
       assertTrajectoryConsistency(normalized);
       return withTransaction(pool, async (connection) => {
         const [sessionRows] = await connection.execute(
-          "SELECT session_id, event_source FROM uiadapt_sessions WHERE session_id = ? FOR UPDATE",
+          "SELECT session_id, event_source, adaptive_enabled FROM uiadapt_sessions WHERE session_id = ? FOR UPDATE",
           [normalized.sessionId],
         );
         if (sessionRows.length === 0) throw notFound();
         if (sessionRows[0].event_source !== normalized.event.source) throw inconsistentTrajectory();
+        assertTrajectoryPolicy(normalized, Boolean(sessionRows[0].adaptive_enabled));
 
         const existing = await findExisting(connection, normalized.sessionId, normalized.sequenceNo, normalized.event.id);
         if (existing) {

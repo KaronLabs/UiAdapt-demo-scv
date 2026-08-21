@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDbAdapter, createMysqlPool } from "./db.mjs";
-import { assertTrajectoryContinuity } from "./validation.mjs";
+import {
+  assertTrajectoryConsistency,
+  assertTrajectoryContinuity,
+  assertTrajectoryPolicy,
+} from "./validation.mjs";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -264,4 +268,57 @@ test("accepts a transition with the required preceding persistence frame", () =>
     candidate_state: "COMPARE",
     candidate_persistence: 2,
   }));
+});
+
+test("rejects a non-transition snapshot with impossible persistence", () => {
+  const payload = {
+    ...frame(),
+    snapshot: {
+      ...frame().snapshot,
+      candidateState: "PURCHASE_INTENT",
+      candidatePersistence: 3,
+      detectedState: "PURCHASE_INTENT",
+      appliedState: "PURCHASE_INTENT",
+    },
+  };
+
+  assert.throws(
+    () => assertTrajectoryConsistency(payload),
+    (error) => error.code === "TRAJECTORY_INCONSISTENT",
+  );
+});
+
+test("accepts an ineligible candidate with no pending persistence", () => {
+  const payload = {
+    ...frame(),
+    snapshot: {
+      ...frame().snapshot,
+      candidateState: "COMPARE",
+      candidatePersistence: 0,
+      detectedState: "EXPLORE",
+      appliedState: "EXPLORE",
+    },
+  };
+
+  assert.doesNotThrow(() => assertTrajectoryConsistency(payload));
+});
+
+test("enforces the applied state for the session Adaptive policy", () => {
+  const payload = {
+    ...frame(),
+    snapshot: {
+      ...frame().snapshot,
+      detectedState: "COMPARE",
+      appliedState: "PURCHASE_INTENT",
+    },
+  };
+
+  assert.throws(
+    () => assertTrajectoryPolicy(payload, true),
+    (error) => error.code === "TRAJECTORY_INCONSISTENT",
+  );
+  assert.doesNotThrow(() => assertTrajectoryPolicy({
+    ...payload,
+    snapshot: { ...payload.snapshot, appliedState: "EXPLORE" },
+  }, false));
 });

@@ -237,6 +237,18 @@ export function assertTrajectoryConsistency(payload) {
     semantic("TRAJECTORY_INCONSISTENT");
   }
 
+  if (
+    transition === null
+    && snapshot.candidatePersistence > 0
+    && (
+      snapshot.eventCount < MINIMUM_EVIDENCE
+      || snapshot.candidatePersistence >= REQUIRED_PERSISTENCE
+      || snapshot.candidateState === snapshot.detectedState
+    )
+  ) {
+    semantic("TRAJECTORY_INCONSISTENT");
+  }
+
   if (transition !== null) {
     if (
       transition.sequenceNo !== sequenceNo
@@ -248,6 +260,12 @@ export function assertTrajectoryConsistency(payload) {
       semantic("TRAJECTORY_INCONSISTENT");
     }
   }
+  return payload;
+}
+
+export function assertTrajectoryPolicy(payload, adaptiveEnabled) {
+  const expectedAppliedState = adaptiveEnabled ? payload.snapshot.detectedState : "EXPLORE";
+  if (payload.snapshot.appliedState !== expectedAppliedState) semantic("TRAJECTORY_INCONSISTENT");
   return payload;
 }
 

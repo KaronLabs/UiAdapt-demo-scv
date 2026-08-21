@@ -399,11 +399,15 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   const [verifyJob, runtimeContractJob] = workflow.split(/^ {2}runtime-contract:\s*$/m);
 
   assert.match(verifyJob, /node-version: 22[\s\S]*?npm run test:deployment/);
+  assert.match(verifyJob, /fetch-depth: 0/);
   assert.match(verifyJob, /npm run test:api/);
   assert.match(
     verifyJob,
     /npm run verify:build-bases[\s\S]*?run: npm run build\r?\n[\s\S]*?npm run build:nwg[\s\S]*?npm run test:e2e[\s\S]*?npm audit[\s\S]*?run: git diff --check/,
   );
+  assert.match(verifyJob, /BASE_SHA:/);
+  assert.match(verifyJob, /HEAD_SHA:/);
+  assert.match(verifyJob, /git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA"/);
   assert.ok(runtimeContractJob, "runtime-contract job must exist");
   assert.match(runtimeContractJob, /uses: actions\/checkout@v4/);
   assert.match(runtimeContractJob, /node-version: 24/);
