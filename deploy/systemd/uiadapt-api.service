@@ -1,0 +1,25 @@
+[Unit]
+Description=UIAdapt telemetry API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current
+ExecStart=/usr/bin/node /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/server/uiadapt-api.mjs
+LoadCredential=uiadapt-mysql-password:/etc/uiadapt-demo/mysql-password
+Environment=UIADAPT_MYSQL_PASSWORD_FILE=%d/uiadapt-mysql-password
+Environment=UIADAPT_DB_USER=uiadapt_demo_app
+Environment=UIADAPT_API_HOST=127.0.0.1
+Environment=UIADAPT_API_PORT=4181
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

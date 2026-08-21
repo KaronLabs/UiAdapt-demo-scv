@@ -1,7 +1,8 @@
 [Unit]
 Description=UIAdapt password gateway
 Requires=uiadapt-static.service
-After=uiadapt-static.service
+Wants=uiadapt-api.service
+After=uiadapt-static.service uiadapt-api.service
 
 [Service]
 Type=simple
@@ -14,6 +15,7 @@ Environment=UIADAPT_GATEWAY_PASSWORD_FILE=%d/uiadapt-password
 Environment=UIADAPT_GATEWAY_USER=reviewer
 Environment=UIADAPT_GATEWAY_PORT=4180
 Environment=UIADAPT_GATEWAY_UPSTREAM=http://127.0.0.1:5173
+Environment=UIADAPT_GATEWAY_API_UPSTREAM=http://127.0.0.1:4181
 Restart=on-failure
 RestartSec=2
 NoNewPrivileges=true

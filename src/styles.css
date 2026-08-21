@@ -209,6 +209,10 @@ main { width: min(1600px, 100%); margin: 0 auto; }
 .why-grid div, .developer-grid div { display: grid; gap: 7px; padding: 13px; background: var(--mineral); border-radius: 12px; }
 .why-grid span, .developer-grid span { color: #6b797e; font: 500 12px var(--mono); text-transform: uppercase; }
 .why-grid strong, .developer-grid strong { font-size: 14px; font-weight: 700; }
+.distribution-readout { display: grid; gap: 8px; margin: 0 20px 20px; padding-top: 1px; }
+.distribution-readout div { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 13px; border-top: 1px solid var(--soft-line); }
+.distribution-readout span { color: #6b797e; font: 500 11px var(--mono); text-transform: uppercase; }
+.distribution-readout strong { color: var(--carbon); font: 500 11px/1.6 var(--mono); overflow-wrap: anywhere; }
 .suppressed-note { margin: 0 20px 20px; color: var(--cobalt); font-size: 13px; }
 .developer-view summary span { font-size: 15px; font-weight: 700; }
 .developer-view summary small { color: #6f7d82; font: 500 12px var(--mono); }

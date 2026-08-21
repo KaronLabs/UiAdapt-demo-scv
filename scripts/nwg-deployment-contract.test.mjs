@@ -355,6 +355,7 @@ test("pins a non-SPA static server to the production loopback endpoint", async (
 test("defines hardened static and gateway systemd units for the exact current release", async () => {
   const staticService = await readProjectFile("deploy/systemd/uiadapt-static.service");
   const gatewayService = await readProjectFile("deploy/systemd/uiadapt-gateway.service");
+  const apiService = await readProjectFile("deploy/systemd/uiadapt-api.service");
 
   assertCommonServiceContract(staticService);
   assert.match(
@@ -366,7 +367,8 @@ test("defines hardened static and gateway systemd units for the exact current re
 
   assertCommonServiceContract(gatewayService);
   assert.match(gatewayService, /^Requires=uiadapt-static\.service$/m);
-  assert.match(gatewayService, /^After=uiadapt-static\.service$/m);
+  assert.match(gatewayService, /^Wants=uiadapt-api\.service$/m);
+  assert.match(gatewayService, /^After=uiadapt-static\.service uiadapt-api\.service$/m);
   assert.match(
     gatewayService,
     new RegExp(`^ExecStart=/usr/bin/node ${currentRoot}/scripts/password-gateway\\.mjs$`, "m"),
@@ -376,7 +378,17 @@ test("defines hardened static and gateway systemd units for the exact current re
   assert.match(gatewayService, /^Environment=UIADAPT_GATEWAY_USER=reviewer$/m);
   assert.match(gatewayService, /^Environment=UIADAPT_GATEWAY_PORT=4180$/m);
   assert.match(gatewayService, /^Environment=UIADAPT_GATEWAY_UPSTREAM=http:\/\/127\.0\.0\.1:5173$/m);
+  assert.match(gatewayService, /^Environment=UIADAPT_GATEWAY_API_UPSTREAM=http:\/\/127\.0\.0\.1:4181$/m);
   assert.doesNotMatch(gatewayService, /^Environment=UIADAPT_GATEWAY_PASSWORD=/m);
+
+  assertCommonServiceContract(apiService);
+  assert.match(apiService, new RegExp(`^ExecStart=/usr/bin/node ${currentRoot}/server/uiadapt-api\\.mjs$`, "m"));
+  assert.match(apiService, /^LoadCredential=uiadapt-mysql-password:\/etc\/uiadapt-demo\/mysql-password$/m);
+  assert.match(apiService, /^Environment=UIADAPT_MYSQL_PASSWORD_FILE=%d\/uiadapt-mysql-password$/m);
+  assert.match(apiService, /^Environment=UIADAPT_DB_USER=uiadapt_demo_app$/m);
+  assert.match(apiService, /^Environment=UIADAPT_API_HOST=127\.0\.0\.1$/m);
+  assert.match(apiService, /^Environment=UIADAPT_API_PORT=4181$/m);
+  assert.doesNotMatch(apiService, /UIADAPT_MYSQL_PASSWORD=/);
 
   const gatewaySource = await readProjectFile("scripts/password-gateway.mjs");
   assert.match(gatewaySource, /^const DEFAULT_HOST = "127\.0\.0\.1";$/m);
@@ -387,6 +399,7 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   const [verifyJob, runtimeContractJob] = workflow.split(/^ {2}runtime-contract:\s*$/m);
 
   assert.match(verifyJob, /node-version: 22[\s\S]*?npm run test:deployment/);
+  assert.match(verifyJob, /npm run test:api/);
   assert.ok(runtimeContractJob, "runtime-contract job must exist");
   assert.match(runtimeContractJob, /uses: actions\/checkout@v4/);
   assert.match(runtimeContractJob, /node-version: 24/);
@@ -399,6 +412,14 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
     assert.match(runtimeContractJob, new RegExp(`run: ${command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
   }
   assert.match(runtimeContractJob, /npm ci[\s\S]*?npm run test:gateway[\s\S]*?npm run test:deployment/);
+  const apiIntegrationJob = workflow.match(/^ {2}api-integration:[\s\S]*$/m)?.[0];
+  assert.ok(apiIntegrationJob, "api-integration job must exist");
+  assert.match(apiIntegrationJob, /image: mysql:8\.0/);
+  assert.match(apiIntegrationJob, /MYSQL_ROOT_PASSWORD: \$\{\{ secrets\.UIADAPT_CI_MYSQL_ROOT_PASSWORD \}\}/);
+  assert.match(apiIntegrationJob, /UIADAPT_CI_MYSQL_APP_PASSWORD/);
+  assert.match(apiIntegrationJob, /db\/001-uiadapt-demo\.sql/);
+  assert.match(apiIntegrationJob, /UIADAPT_INTEGRATION: "1"/);
+  assert.match(apiIntegrationJob, /npm run test:api-integration/);
   assert.doesNotMatch(workflow, /^\s*run: npm run build$/m);
   assert.match(workflow, /^permissions:\s*\r?\n {2}contents: read$/m);
   assert.doesNotMatch(workflow, /^\s*environment:/m);
@@ -434,6 +455,7 @@ test("README records the investor-stage contract and the complete safe verificat
     "npm ci",
     "npm run lint",
     "npm test",
+    "npm run test:api",
     "npm run test:gateway",
     "npm run test:deployment",
     "npm run verify:build-bases",

@@ -17,11 +17,14 @@
     "build:nwg": "npm run build && npm run stage:nwg",
     "serve:static": "serve --no-clipboard --no-port-switching --listen tcp://127.0.0.1:5173 www",
     "serve:password": "node scripts/password-gateway.mjs",
+    "test:api": "node --test server/*.test.mjs",
+    "test:api-integration": "node --test server/uiadapt-api.integration.test.mjs",
     "test:gateway": "node --test scripts/password-gateway.test.mjs",
     "test:deployment": "node --test scripts/nwg-deployment-contract.test.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
+    "mysql2": "^3.23.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "serve": "14.2.6",

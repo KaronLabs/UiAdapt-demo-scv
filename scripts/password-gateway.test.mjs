@@ -556,3 +556,60 @@ test("rejects an authenticated malformed websocket target and remains available"
   assert.match(healthyResponse, /upstream-tunnel/);
   assert.equal(upstreamUpgrades, 1);
 });
+
+test("routes authenticated API prefixes to fixed 4181 upstream and preserves static routing", async (t) => {
+  const { createPasswordGateway } = await loadGateway();
+  const staticPaths = [];
+  const apiRequests = [];
+  const staticUpstream = http.createServer((request, response) => {
+    staticPaths.push(request.url);
+    response.end("static-upstream");
+  });
+  const apiUpstream = http.createServer((request, response) => {
+    apiRequests.push({ path: request.url, authorization: request.headers.authorization ?? null });
+    response.end("api-upstream");
+  });
+  const staticPort = await listen(staticUpstream);
+  const apiPort = await listen(apiUpstream);
+  t.after(() => close(staticUpstream));
+  t.after(() => close(apiUpstream));
+
+  const gateway = createPasswordGateway({
+    password: "test-only-password-9f4a",
+    upstreamUrl: `http://127.0.0.1:${staticPort}`,
+    apiUpstreamUrl: `http://127.0.0.1:${apiPort}`,
+  });
+  const gatewayPort = await listen(gateway);
+  t.after(() => close(gateway));
+  const authorization = basicAuth("reviewer", "test-only-password-9f4a");
+
+  const apiResponse = await globalThis.fetch(`http://127.0.0.1:${gatewayPort}/api/uiadapt/health`, {
+    headers: { authorization },
+  });
+  assert.equal(apiResponse.status, 200);
+  assert.equal(await apiResponse.text(), "api-upstream");
+
+  const staticResponse = await globalThis.fetch(`http://127.0.0.1:${gatewayPort}/uiadapt_demo/`, {
+    headers: { authorization },
+  });
+  assert.equal(staticResponse.status, 200);
+  assert.equal(await staticResponse.text(), "static-upstream");
+
+  const absoluteApiResponse = await requestWithRawPath({
+    authorization,
+    path: "http://127.0.0.1:1/api/uiadapt/trajectory?source=external",
+    port: gatewayPort,
+  });
+  assert.equal(absoluteApiResponse.statusCode, 200);
+  absoluteApiResponse.resume();
+  await once(absoluteApiResponse, "end");
+
+  const unauthenticatedApiResponse = await globalThis.fetch(`http://127.0.0.1:${gatewayPort}/api/uiadapt/health`);
+  assert.equal(unauthenticatedApiResponse.status, 401);
+  assert.equal(apiRequests.length, 2);
+  assert.deepEqual(apiRequests.map(({ path, authorization: forwarded }) => ({ path, authorization: forwarded })), [
+    { path: "/api/uiadapt/health", authorization: null },
+    { path: "/api/uiadapt/trajectory?source=external", authorization: null },
+  ]);
+  assert.deepEqual(staticPaths, ["/uiadapt_demo/"]);
+});

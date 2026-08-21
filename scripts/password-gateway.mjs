@@ -10,6 +10,7 @@ import { fileURLToPath, URL } from "node:url";
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 4180;
 const DEFAULT_UPSTREAM = "http://127.0.0.1:5173";
+const DEFAULT_API_UPSTREAM = "http://127.0.0.1:4181";
 const DEFAULT_USERNAME = "reviewer";
 
 export function resolveGatewayPassword({ password, passwordFile } = {}) {
@@ -68,9 +69,13 @@ function rejectUnauthorized(response) {
   response.end("Authentication required");
 }
 
-function upstreamTarget(requestUrl, upstream) {
+function upstreamTarget(requestUrl, staticUpstream, apiUpstream) {
   try {
     const incoming = new URL(requestUrl ?? "/", "http://gateway.invalid");
+    const upstream = incoming.pathname === "/api/uiadapt"
+      || incoming.pathname.startsWith("/api/uiadapt/")
+      ? apiUpstream
+      : staticUpstream;
     return new URL(`${incoming.pathname}${incoming.search}`, upstream);
   } catch (error) {
     if (error?.code === "ERR_INVALID_URL") return null;
@@ -86,8 +91,8 @@ function rejectBadRequest(response) {
   response.end("Bad request");
 }
 
-function proxyRequest(request, response, upstream) {
-  const target = upstreamTarget(request.url, upstream);
+function proxyRequest(request, response, staticUpstream, apiUpstream) {
+  const target = upstreamTarget(request.url, staticUpstream, apiUpstream);
   if (!target) {
     rejectBadRequest(response);
     return;
@@ -146,8 +151,8 @@ function rejectBadRequestUpgrade(socket) {
   ].join("\r\n"));
 }
 
-function proxyUpgrade(request, clientSocket, clientHead, upstream) {
-  const target = upstreamTarget(request.url, upstream);
+function proxyUpgrade(request, clientSocket, clientHead, staticUpstream, apiUpstream) {
+  const target = upstreamTarget(request.url, staticUpstream, apiUpstream);
   if (!target) {
     rejectBadRequestUpgrade(clientSocket);
     return;
@@ -204,6 +209,7 @@ export function createPasswordGateway({
   password,
   username = DEFAULT_USERNAME,
   upstreamUrl = DEFAULT_UPSTREAM,
+  apiUpstreamUrl = DEFAULT_API_UPSTREAM,
 } = {}) {
   if (typeof password !== "string" || password.length === 0) {
     throw new Error("UIADAPT_GATEWAY_PASSWORD is required");
@@ -212,6 +218,10 @@ export function createPasswordGateway({
   const upstream = new URL(upstreamUrl);
   if (upstream.protocol !== "http:") {
     throw new Error("UIAdapt gateway upstream must use http://");
+  }
+  const apiUpstream = new URL(apiUpstreamUrl);
+  if (apiUpstream.protocol !== "http:") {
+    throw new Error("UIAdapt gateway API upstream must use http://");
   }
 
   const gateway = http.createServer((request, response) => {
@@ -229,7 +239,7 @@ export function createPasswordGateway({
       return;
     }
 
-    proxyRequest(request, response, upstream);
+    proxyRequest(request, response, upstream, apiUpstream);
   });
 
   gateway.on("upgrade", (request, socket, head) => {
@@ -238,7 +248,7 @@ export function createPasswordGateway({
       return;
     }
 
-    proxyUpgrade(request, socket, head, upstream);
+    proxyUpgrade(request, socket, head, upstream, apiUpstream);
   });
 
   return gateway;
@@ -266,6 +276,7 @@ if (isDirectExecution) {
     }),
     username: process.env.UIADAPT_GATEWAY_USER ?? DEFAULT_USERNAME,
     upstreamUrl: process.env.UIADAPT_GATEWAY_UPSTREAM ?? DEFAULT_UPSTREAM,
+    apiUpstreamUrl: process.env.UIADAPT_GATEWAY_API_UPSTREAM ?? DEFAULT_API_UPSTREAM,
   });
 
   gateway.listen(port, DEFAULT_HOST, () => {

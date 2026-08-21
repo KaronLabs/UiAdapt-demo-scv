@@ -7,10 +7,11 @@
 - `preview content`의 비공개성
 - Basic Auth credential
 - version-addressed `release integrity` 영수증과 `current` 선택
-- gateway/static availability
+- gateway/static/API availability
+- telemetry trajectory integrity without making MySQL a decision authority
 - 로그의 credential 비노출
 
-실제 결제, 개인정보, analytics, 데이터베이스와 production recommendation service는 존재하지 않습니다.
+실제 결제, 개인정보, analytics, production recommendation service와 live MySQL provisioning은 존재하지 않습니다. R9 source candidate에는 disposable/loopback telemetry API와 MySQL schema가 정의되어 있지만 이번 mission에서는 live에 설치·시작하지 않습니다.
 
 ## 2. 행위자와 신뢰 경계
 
@@ -22,10 +23,14 @@
 신뢰 경계는 정확히 다음입니다.
 
 ```text
-Internet → Tailscale daemon TLS → loopback gateway → static service
+Internet → Tailscale daemon TLS → loopback gateway
+                                      ├→ static service 127.0.0.1:5173
+                                      └→ telemetry API 127.0.0.1:4181 → private MySQL 127.0.0.1:3306
 ```
 
-Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전달합니다. gateway는 인증 후 고정 설정된 HTTP upstream `127.0.0.1:5173`으로 전달합니다. static service는 `current/www`만 제공합니다.
+The static preview path remains `Internet → Tailscale daemon TLS → loopback gateway → static service`.
+
+Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전달합니다. gateway는 인증 후 pathname prefix `/api/uiadapt/*`만 고정 API upstream `127.0.0.1:4181`로 전달하고, 나머지는 static upstream `127.0.0.1:5173`으로 전달합니다. API와 MySQL은 public bind하지 않습니다. static service는 `current/www`만 제공합니다.
 
 공식 참조:
 
@@ -42,10 +47,14 @@ Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전�
 - SHA-256 digest와 `timingSafeEqual`로 credential을 비교합니다.
 - 무인증/오인증 요청과 WebSocket upgrade는 upstream 접촉 전에 거부합니다.
 - absolute-form 및 scheme-relative request target도 configured upstream origin에 고정합니다.
+- API/static upstream 선택은 incoming host/port가 아니라 pathname prefix에 의해서만 결정됩니다.
 - upstream 전달 전 `Authorization` header만 명시적으로 제거합니다.
 - malformed HTTP/WebSocket target은 거부하고 gateway는 계속 동작합니다.
 - credential은 `root:root` `0600` source에서 systemd `LoadCredential`로 전달합니다.
 - units는 `NoNewPrivileges=true`, `PrivateTmp=true`, `ProtectSystem=strict`, `ProtectHome=true`를 적용합니다.
+- API unit은 MySQL credential을 `LoadCredential` 파일로만 받아 `127.0.0.1:4181`에 bind하며 public 3306을 열지 않습니다.
+- MySQL schema에는 네 개 InnoDB/utf8mb4 telemetry table만 있고 trigger/procedure/state decision SQL이 없습니다.
+- browser telemetry queue는 FIFO 128개로 bounded되고 retry exhaustion/overflow를 `DEGRADED`/`OVERFLOW`로 노출하며 local decision을 변경하지 않습니다.
 - `releases/<SHA>` version-addressed release와 원자적 `current` symlink가 추적·rollback 경계를 제공합니다.
 
 ## 4. 운영 통제
@@ -62,6 +71,7 @@ Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전�
 다음은 취약점 확정 진술이 아니라 현재 코드와 unit에 없는 hardening 경계입니다.
 
 - gateway에는 `no application-layer rate limiter`가 없습니다. brute-force 완화는 강한 credential, 제한된 공유, rotation과 외부 ingress 통제에 의존합니다.
+- API에는 `no public CORS surface`와 `no general proxy`를 의도적으로 유지하지만, API payload rate limit은 body limit와 bounded browser queue 수준으로만 제한됩니다.
 - gateway에는 `no explicit hop-by-hop header filtering`이 없습니다. 명시적으로 제거하는 값은 `Authorization`입니다.
 - gateway에는 `no explicitly pinned upstream idle timeout`이 없습니다.
 - gateway에는 `no explicitly pinned WebSocket idle timeout`이 없습니다.
@@ -78,6 +88,9 @@ Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전�
 | credential 노출 | LoadCredential, loopback upstream, Authorization stripping | 공유 범위 최소화, rotation, 로그 비노출 검사 |
 | brute-force | TLS와 Basic Auth | 앱 rate limit 없음; 강한 credential·외부 통제 필요 |
 | request-target SSRF | URL을 configured upstream origin에 재구성 | upstream 설정 변경은 운영자 신뢰 경계 |
+| API upstream 우회 | pathname prefix 고정 route, API도 Basic Auth 뒤에 위치 | live API service와 DB는 이번 source mission에서 미배포 |
+| telemetry payload 오염 | body 64 KiB, enum/UUID/range validation, parameterized SQL | schema/API integration은 CI disposable MySQL에서 fresh 실행 필요 |
+| DB 장애에 의한 화면 변조 | browser pure engine이 decision authority, queue failure는 status만 변경 | telemetry persistence loss는 `DEGRADED`로 공개하는 accepted risk |
 | WebSocket 인증 우회 | upgrade 전 동일 인증 | idle timeout 미고정 |
 | release 변조 | SHA release, manifest/hash, current symlink | 호스트 root는 신뢰 대상 |
 | 서비스 중단 | systemd restart, 이전 release rollback | Funnel·host·timeout·rate-limit 잔존 위험 |
@@ -87,6 +100,8 @@ Tailscale daemon이 public TLS를 종료하고 `127.0.0.1:4180` gateway로 전�
 
 - 현재 공유 credential 강도와 app rate limiter 부재는 단기 감사 preview의 accepted risk입니다. 외부 감사 후 credential을 rotate합니다.
 - 전용 `uiadapt` service account 전환은 별도 hardening backlog입니다.
+- MySQL application account의 실제 grant와 live socket/port 상태는 아직 검증하지 않았습니다. CI disposable schema에서만 grant/transaction/idempotency를 확인하고, live preflight 승인 전에는 접근하지 않습니다.
+- API request body/header/idle timeout의 명시적 운영 tuning은 별도 검토 대상입니다. 현재 source에는 body 64 KiB validation과 bounded queue가 있습니다.
 - hop-by-hop header allowlist/denylist와 request, header, body, upstream 및 WebSocket timeout의 명시적 고정은 별도 검토 후 구현합니다.
 - Funnel beta와 bandwidth limit, host reboot 미검증, 제품 명확성 미검증을 운영 보고서에 계속 공개합니다.
 - 이 문서는 현재 통제를 기술할 뿐, 침투시험·보안 인증 또는 무취약성을 주장하지 않습니다.

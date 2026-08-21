@@ -83,6 +83,11 @@ test.beforeEach(async ({ page }) => {
   evidencePage.__failedRequests = failedRequests;
   evidencePage.__assetResponses = assetResponses;
   evidencePage.__assetFailures = assetFailures;
+  await page.route("**/api/uiadapt/**", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ status: "ok" }),
+  }));
   await page.goto("/uiadapt_demo/");
   await expect(page.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeVisible();
 });
@@ -103,6 +108,17 @@ test("storefront is responsive, local-only, and diagnostics are collapsed", asyn
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: `test-results/${testInfo.project.name}-explore.png`, fullPage: true, animations: "disabled" });
   await page.screenshot({ path: `test-results/${testInfo.project.name}-explore-viewport.png`, animations: "disabled" });
+});
+
+test("Developer View exposes distribution evidence and policy status", async ({ page }) => {
+  await page.getByText("Developer View").click();
+  await expect(page.getByText("Evidence window").locator("..")).toContainText("0 / 20");
+  await expect(page.getByText("Minimum evidence").locator("..")).toContainText("15");
+  await expect(page.getByText("Raw change score").locator("..")).toContainText("0.000");
+  await expect(page.getByTestId("distribution-readout")).toContainText("Reference");
+  await expect(page.getByTestId("distribution-readout")).toContainText("Current");
+  await expect(page.getByText("Detected / applied").locator("..")).toContainText("EXPLORE / EXPLORE");
+  await expect(page.getByTestId("replay-status")).toContainText("직접 둘러보거나");
 });
 
 test("investor stage uses the local Wanted Sans type scale and causal thesis", async ({ page }) => {
@@ -186,7 +202,7 @@ test("reviewed layout keeps laptop cards balanced and mobile evidence controls i
   }
 });
 
-test("reviewed text contrast remains WCAG AA in inactive and FOCUS-muted states", async ({ page }) => {
+test("reviewed text contrast remains WCAG AA in inactive and PURCHASE_INTENT-muted states", async ({ page }) => {
   await page.clock.install();
   const contrastFor = (selector: string, backgroundSelector: string) => page.evaluate(
     ({ selector, backgroundSelector }) => {
@@ -243,7 +259,7 @@ test("nested deployment path loads assets, reloads, and runs the replay", async 
   expect((page as EvidencePage).__assetFailures ?? []).toEqual([]);
   await page.clock.install();
   await page.getByTestId("live-demo-cta").click();
-  await page.clock.fastForward(7_000);
+  await page.clock.fastForward(11_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
 });
 
@@ -271,7 +287,7 @@ test("the canonical replay changes presentation without changing product data", 
     expect(balance.widthRatio).toBeLessThanOrEqual(0.55);
   }
   await page.getByTestId("live-demo-cta").click();
-  await page.clock.fastForward(7_000);
+  await page.clock.fastForward(11_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "COMPARE");
   expect(await productContracts(page)).toEqual(expectedProducts);
@@ -288,19 +304,19 @@ test("the canonical replay changes presentation without changing product data", 
   }
   await page.screenshot({ path: `test-results/${testInfo.project.name}-compare.png`, fullPage: true, animations: "disabled" });
   await page.screenshot({ path: `test-results/${testInfo.project.name}-compare-viewport.png`, animations: "disabled" });
-  await page.clock.fastForward(14_000);
-  await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
-  await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "FOCUS");
+  await page.clock.fastForward(8_000);
+  await expect(page.locator('[data-current="true"] strong')).toHaveText("PURCHASE_INTENT");
+  await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT");
   expect((await page.locator(".product-card__price").allTextContents()).map((value) => value.trim())).toEqual(expectedPrices);
   expect(await productContracts(page)).toEqual(expectedProducts);
-  await page.screenshot({ path: `test-results/${testInfo.project.name}-focus.png`, fullPage: true, animations: "disabled" });
-  await page.screenshot({ path: `test-results/${testInfo.project.name}-focus-viewport.png`, animations: "disabled" });
+  await page.screenshot({ path: `test-results/${testInfo.project.name}-purchase-intent.png`, fullPage: true, animations: "disabled" });
+  await page.screenshot({ path: `test-results/${testInfo.project.name}-purchase-intent-viewport.png`, animations: "disabled" });
 });
 
-test("COMPARE is visible in the main stage and FOCUS becomes decision support", async ({ page }, testInfo) => {
+test("COMPARE is visible in the main stage and PURCHASE_INTENT becomes decision support", async ({ page }, testInfo) => {
   await page.clock.install();
   await page.getByTestId("live-demo-cta").click();
-  await page.clock.fastForward(7_000);
+  await page.clock.fastForward(11_000);
   const comparePanel = page.locator(".demo-stage .comparison-panel.is-visible");
   await expect(comparePanel).toBeVisible();
   const compareBox = await comparePanel.boundingBox();
@@ -308,7 +324,7 @@ test("COMPARE is visible in the main stage and FOCUS becomes decision support", 
   if (testInfo.project.name === "desktop-1440") {
     expect(compareBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(900);
   }
-  await page.clock.fastForward(14_000);
+  await page.clock.fastForward(8_000);
   await expect(page.locator(".comparison-panel.is-visible")).toHaveCount(0);
   await expect(page.locator(".decision-support")).toBeVisible();
   await expect(page.getByText("Aurora One").first()).toBeVisible();
@@ -328,7 +344,7 @@ test("Adaptive OFF keeps the same detected state but baseline presentation", asy
   await page.getByRole("checkbox", { name: /Adaptive UI/i }).uncheck();
   await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(21_000);
-  await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
+  await expect(page.locator('[data-current="true"] strong')).toHaveText("PURCHASE_INTENT");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
   await expect(page.locator(".storefront__heading > p")).toHaveText(exploreDescription ?? "");
   expect(await productContracts(page)).toEqual(expectedProducts);
@@ -340,7 +356,7 @@ test("active product control survives the comparison transition", async ({ page 
   const price = page.getByRole("button", { name: "Aurora One 가격 확인" });
   await price.focus();
   await expect(price).toBeFocused();
-  await page.clock.fastForward(7_000);
+  await page.clock.fastForward(11_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await expect(price).toBeFocused();
 });
@@ -375,13 +391,13 @@ test("keyboard-only path starts, pauses, resets, and records a product action", 
 test("Pause and Resume preserve virtual progress", async ({ page }) => {
   await page.clock.install();
   await page.getByTestId("live-demo-cta").click();
-  await page.clock.fastForward(7_000);
+  await page.clock.fastForward(11_000);
   await page.getByRole("button", { name: "Pause" }).click();
   await page.clock.fastForward(20_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await page.getByRole("button", { name: "Resume" }).click();
-  await page.clock.fastForward(14_000);
-  await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
+  await page.clock.fastForward(8_000);
+  await expect(page.locator('[data-current="true"] strong')).toHaveText("PURCHASE_INTENT");
 });
 
 test("Reset cancels every stale Replay timer", async ({ page }) => {
@@ -400,20 +416,22 @@ test("manual takeover cancels the remaining Replay timers", async ({ page }) => 
   await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(1_000);
   await page.getByRole("button", { name: "Aurora One 가격 확인" }).click();
-  await page.clock.fastForward(30_000);
   await page.getByText("Developer View").click();
-  await expect(page.getByTestId("event-count")).toHaveText("2");
+  const eventCountAfterTakeover = await page.getByTestId("event-count").textContent();
+  await page.clock.fastForward(30_000);
+  await expect(page.getByTestId("event-count")).toHaveText(eventCountAfterTakeover ?? "0");
   await expect(page.getByTestId("replay-status")).toContainText("직접 탐색을 시작해 데모 재생을 멈췄습니다");
 });
 
 test("Stop preserves state and cancels the remaining Replay timers", async ({ page }) => {
   await page.clock.install();
   await page.getByTestId("live-demo-cta").click();
-  await page.clock.fastForward(7_000);
+  await page.clock.fastForward(11_000);
   await page.getByRole("button", { name: "Stop" }).click();
-  await page.clock.fastForward(30_000);
   await page.getByText("Developer View").click();
-  await expect(page.getByTestId("event-count")).toHaveText("4");
+  const eventCountAfterStop = await page.getByTestId("event-count").textContent();
+  await page.clock.fastForward(30_000);
+  await expect(page.getByTestId("event-count")).toHaveText(eventCountAfterStop ?? "0");
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await expect(page.getByTestId("replay-status")).toContainText("현재 상태에서 데모를 멈췄습니다");
 });

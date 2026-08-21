@@ -16,6 +16,7 @@ Internet
 - active pointer: `/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current`
 - static unit: `uiadapt-static.service`
 - gateway unit: `uiadapt-gateway.service`
+- R9 source candidate API unit: `uiadapt-api.service` (not live-deployed by this mission)
 - 두 unit은 `User=ubuntu`, `Group=ubuntu`로 실행되고 loopback에만 bind합니다.
 - Funnel은 공용 HTTPS/TLS와 로컬 gateway 전달을 담당합니다. 애플리케이션 저장소는 외부 TLS 인증서나 Funnel 정책을 관리하지 않습니다.
 
@@ -34,6 +35,7 @@ Internet
 npm ci
 npm run lint
 npm test
+npm run test:api
 npm run test:gateway
 npm run test:deployment
 npm run verify:build-bases
@@ -44,6 +46,24 @@ npm audit --omit=dev --audit-level=high
 ```
 
 `npm run build:nwg`는 Vite nested build를 `www/uiadapt_demo/`에 stage합니다. 이 명령은 배포 패키지를 만드는 명령이지 운영 `current`에서 실행하는 in-place upgrade가 아닙니다.
+
+### R9 source candidate의 telemetry 경계
+
+이번 feature branch는 기존 live R8의 정적 경계를 보존하면서 다음 source-level 경계를 추가합니다.
+
+```text
+authenticated gateway 127.0.0.1:4180
+  ├─ /api/uiadapt/* → telemetry API 127.0.0.1:4181
+  │                    → MySQL 127.0.0.1:3306 (private record layer)
+  └─ everything else → static 127.0.0.1:5173
+```
+
+- API는 `server/uiadapt-api.mjs`와 `deploy/systemd/uiadapt-api.service`에 정의되며 public 4181/3306 bind를 하지 않습니다.
+- MySQL schema는 `db/001-uiadapt-demo.sql`의 네 개 telemetry table만 사용하고, 상태 판단은 브라우저 pure domain engine에 남습니다.
+- 운영 credential은 `/etc/uiadapt-demo/mysql-password`를 `LoadCredential`로 주입하는 계약이며 값은 저장소·argv·로그에 기록하지 않습니다.
+- API/DB 장애는 local state transition을 바꾸지 않고 Developer View telemetry status만 `DEGRADED` 또는 `OVERFLOW`로 표시합니다.
+- 로컬 Windows preflight에서 `mysql`, `mysqld`, MySQL service가 unavailable였으므로 이 mission에서는 install/start/provision/apply를 수행하지 않았습니다. MySQL integration은 GitHub Actions disposable MySQL 8 service에서만 실행합니다.
+- 이 section은 source contract이며 live `current`, Funnel mapping, live service restart, main merge, R9 deployment를 승인하지 않습니다.
 
 ### `test:deployment` 비파괴 계약
 
@@ -417,7 +437,7 @@ systemd의 `active`만으로 readiness를 선언하지 않습니다.
 
 1. static listener와 `/uiadapt_demo/`의 HTML·JS·CSS·WOFF2 HTTP 200을 확인합니다.
 2. gateway 무인증 및 잘못된 authentication은 401, 올바른 authentication은 nested HTML 200, 인증된 `/`은 302를 확인합니다.
-3. public smoke에서 HTTPS 200, Replay의 COMPARE/FOCUS, console error 0, failed/외부 runtime request 0을 확인합니다.
+3. public smoke에서 HTTPS 200, Replay의 COMPARE/PURCHASE_INTENT, console error 0, failed/외부 runtime request 0을 확인합니다.
 4. `current` symlink target과 검증한 Git SHA가 일치하는지 다시 확인합니다.
 
 ## 6. Rollback
