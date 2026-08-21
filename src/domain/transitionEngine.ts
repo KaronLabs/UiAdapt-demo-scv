@@ -6,7 +6,7 @@ import {
   REFERENCE_DISTRIBUTION,
 } from "./behaviorConfig";
 import { normalizedL1 } from "./distribution";
-import type { Distribution, DistributionState } from "./types";
+import type { Distribution, DistributionState, StateTransition } from "./types";
 
 export interface TransitionContext {
   detectedState: DistributionState;
@@ -14,12 +14,7 @@ export interface TransitionContext {
   candidatePersistence: number;
 }
 
-export interface TransitionRecord {
-  fromState: DistributionState;
-  toState: DistributionState;
-  changeScore: number;
-  persistenceCount: number;
-}
+export type TransitionRecord = StateTransition;
 
 export interface TransitionEvaluation {
   candidateState: DistributionState;

@@ -1,18 +1,65 @@
-import type { BehaviorEvent } from "./types";
+import type { BehaviorEvent, BehaviorEventType, ProductId } from "./types";
 
 export const REPLAY_DURATION_MS = 27_000;
 
-export const REPLAY_EVENTS = Object.freeze([
-  { id: "replay-01", atMs: 1_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-02", atMs: 3_000, type: "VIEW_PRODUCT", productId: "nova-pro", source: "REPLAY" },
-  { id: "replay-03", atMs: 5_000, type: "CHECK_PRICE", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-04", atMs: 7_000, type: "CHECK_REVIEWS", productId: "nova-pro", source: "REPLAY" },
-  { id: "replay-05", atMs: 10_000, type: "ADD_COMPARE", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-06", atMs: 12_000, type: "ADD_COMPARE", productId: "nova-pro", source: "REPLAY" },
-  { id: "replay-07", atMs: 15_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-08", atMs: 17_000, type: "OPEN_DETAILS", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-09", atMs: 19_000, type: "CHECK_REVIEWS", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-10", atMs: 21_000, type: "SELECT_COLOR", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-11", atMs: 23_000, type: "CHECK_SHIPPING", productId: "aurora-one", source: "REPLAY" },
-  { id: "replay-12", atMs: 25_000, type: "ADD_TO_CART", productId: "aurora-one", source: "REPLAY" },
-] satisfies readonly BehaviorEvent[]);
+type ReplayStep = { type: BehaviorEventType; productId: ProductId };
+
+const REPLAY_STEPS: readonly ReplayStep[] = [
+  { type: "VIEW_PRODUCT", productId: "aurora-one" },
+  { type: "VIEW_PRODUCT", productId: "nova-pro" },
+  { type: "VIEW_PRODUCT", productId: "halo-air" },
+  { type: "VIEW_PRODUCT", productId: "aurora-one" },
+  { type: "VIEW_PRODUCT", productId: "nova-pro" },
+  { type: "VIEW_PRODUCT", productId: "halo-air" },
+  { type: "VIEW_PRODUCT", productId: "aurora-one" },
+  { type: "OPEN_DETAILS", productId: "aurora-one" },
+  { type: "OPEN_DETAILS", productId: "nova-pro" },
+  { type: "OPEN_DETAILS", productId: "halo-air" },
+  { type: "OPEN_DETAILS", productId: "aurora-one" },
+  { type: "ADD_COMPARE", productId: "aurora-one" },
+  { type: "ADD_COMPARE", productId: "nova-pro" },
+  { type: "REMOVE_COMPARE", productId: "nova-pro" },
+  { type: "ADD_COMPARE", productId: "aurora-one" },
+  { type: "ADD_COMPARE", productId: "nova-pro" },
+  { type: "REMOVE_COMPARE", productId: "aurora-one" },
+  { type: "ADD_COMPARE", productId: "halo-air" },
+  { type: "ADD_COMPARE", productId: "aurora-one" },
+  { type: "ADD_COMPARE", productId: "nova-pro" },
+  { type: "REMOVE_COMPARE", productId: "halo-air" },
+  { type: "ADD_COMPARE", productId: "aurora-one" },
+  { type: "ADD_COMPARE", productId: "nova-pro" },
+  { type: "CHECK_PRICE", productId: "aurora-one" },
+  { type: "CHECK_REVIEWS", productId: "aurora-one" },
+  { type: "CHECK_SHIPPING", productId: "aurora-one" },
+  { type: "SELECT_COLOR", productId: "aurora-one" },
+  { type: "CHECK_PRICE", productId: "aurora-one" },
+  { type: "CHECK_REVIEWS", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+  { type: "CHECK_SHIPPING", productId: "aurora-one" },
+  { type: "SELECT_COLOR", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+  { type: "CHECK_REVIEWS", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+  { type: "CHECK_SHIPPING", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+  { type: "CHECK_PRICE", productId: "aurora-one" },
+  { type: "CHECK_REVIEWS", productId: "aurora-one" },
+  { type: "CHECK_SHIPPING", productId: "aurora-one" },
+  { type: "SELECT_COLOR", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+  { type: "CHECK_PRICE", productId: "aurora-one" },
+  { type: "CHECK_REVIEWS", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+  { type: "CHECK_SHIPPING", productId: "aurora-one" },
+  { type: "SELECT_COLOR", productId: "aurora-one" },
+  { type: "ADD_TO_CART", productId: "aurora-one" },
+];
+
+export const REPLAY_EVENTS = Object.freeze(
+  REPLAY_STEPS.map((step, index) => ({
+    ...step,
+    id: `replay-${String(index + 1).padStart(2, "0")}`,
+    atMs: (index + 1) * 500,
+    source: "REPLAY" as const,
+  })),
+) satisfies readonly BehaviorEvent[];

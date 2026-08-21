@@ -27,11 +27,11 @@ describe("canonical product contract", () => {
 describe("deterministic evidence and state policy", () => {
   it("derives COMPARE evidence from repeated product switching", () => {
     const features = deriveFeatures(REPLAY_EVENTS.slice(0, 4));
-    expect(features.distinctProducts).toBe(2);
+    expect(features.distinctProducts).toBe(3);
     expect(features.switchCount).toBe(3);
   });
 
-  it("reaches COMPARE and then FOCUS on the canonical replay", () => {
+  it("reaches COMPARE and then PURCHASE_INTENT on the canonical replay", () => {
     let state = createInitialRuntime();
     const transitions: string[] = [];
     for (const event of REPLAY_EVENTS) {
@@ -39,7 +39,7 @@ describe("deterministic evidence and state policy", () => {
       state = runtimeReducer(state, { type: "RECORD_EVENT", event, epoch: state.sessionEpoch });
       if (state.detectedState !== previous) transitions.push(`${event.atMs}:${state.detectedState}`);
     }
-    expect(transitions).toEqual(["7000:COMPARE", "21000:FOCUS"]);
+    expect(transitions).toEqual(["11000:COMPARE", "18500:PURCHASE_INTENT"]);
     expect(state.focusedProductId).toBe("aurora-one");
   });
 
@@ -48,9 +48,9 @@ describe("deterministic evidence and state policy", () => {
     const off = play(REPLAY_EVENTS, false);
     expect(off.events).toEqual(on.events);
     expect(off.features).toEqual(on.features);
-    expect(off.detectedState).toBe("FOCUS");
+    expect(off.detectedState).toBe("PURCHASE_INTENT");
     expect(off.appliedState).toBe("EXPLORE");
-    expect(on.appliedState).toBe("FOCUS");
+    expect(on.appliedState).toBe("PURCHASE_INTENT");
   });
 
   it("derives presentation policy without changing detected state", () => {
@@ -59,11 +59,11 @@ describe("deterministic evidence and state policy", () => {
       ["EXPLORE", true, { appliedState: "EXPLORE", showComparison: false, focusedProductId: null }],
       ["COMPARE", false, { appliedState: "EXPLORE", showComparison: false, focusedProductId: null }],
       ["COMPARE", true, { appliedState: "COMPARE", showComparison: true, focusedProductId: null }],
-      ["FOCUS", false, { appliedState: "EXPLORE", showComparison: false, focusedProductId: null }],
-      ["FOCUS", true, { appliedState: "FOCUS", showComparison: false, focusedProductId: "aurora-one" }],
+      ["PURCHASE_INTENT", false, { appliedState: "EXPLORE", showComparison: false, focusedProductId: null }],
+      ["PURCHASE_INTENT", true, { appliedState: "PURCHASE_INTENT", showComparison: false, focusedProductId: "aurora-one" }],
     ] as const;
     for (const [state, enabled, expected] of cases) {
-      expect(derivePolicy(state, enabled, state === "FOCUS" ? "aurora-one" : null)).toEqual(expected);
+      expect(derivePolicy(state, enabled, state === "PURCHASE_INTENT" ? "aurora-one" : null)).toEqual(expected);
     }
   });
 
@@ -123,7 +123,7 @@ describe("deterministic evidence and state policy", () => {
     expect(state.lastRejectedReason).toBe("STALE_SESSION_EPOCH");
   });
 
-  it("does not attribute Nova purchase evidence to an Aurora-dominant FOCUS", () => {
+  it("does not enter PURCHASE_INTENT before minimum evidence", () => {
     const events: BehaviorEvent[] = [
       { id: "negative-01", atMs: 1_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
       { id: "negative-02", atMs: 2_000, type: "OPEN_DETAILS", productId: "aurora-one", source: "USER" },
@@ -139,21 +139,16 @@ describe("deterministic evidence and state policy", () => {
     expect(features.dominantProduct).toBe("aurora-one");
     expect(features.dominantShare).toBe(0.75);
     expect(features.purchaseSupportSignalsByProduct).toEqual({ "aurora-one": 0, "nova-pro": 1, "halo-air": 0 });
-    expect(state.detectedState).not.toBe("FOCUS");
+    expect(state.detectedState).not.toBe("PURCHASE_INTENT");
   });
 
-  it("allows Aurora-owned purchase evidence to support Aurora FOCUS", () => {
-    const events: BehaviorEvent[] = [
-      { id: "positive-01", atMs: 1_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
-      { id: "positive-02", atMs: 2_000, type: "OPEN_DETAILS", productId: "aurora-one", source: "USER" },
-      { id: "positive-03", atMs: 3_000, type: "CHECK_PRICE", productId: "aurora-one", source: "USER" },
-      { id: "positive-04", atMs: 4_000, type: "CHECK_REVIEWS", productId: "aurora-one", source: "USER" },
-      { id: "positive-05", atMs: 5_000, type: "VIEW_PRODUCT", productId: "aurora-one", source: "USER" },
-      { id: "positive-06", atMs: 6_000, type: "SELECT_COLOR", productId: "aurora-one", source: "USER" },
-      { id: "positive-07", atMs: 7_000, type: "VIEW_PRODUCT", productId: "nova-pro", source: "USER" },
-      { id: "positive-08", atMs: 8_000, type: "VIEW_PRODUCT", productId: "nova-pro", source: "USER" },
-    ];
-    expect(play(events).detectedState).toBe("FOCUS");
+  it("enters PURCHASE_INTENT only after persistent purchase evidence", () => {
+    const state = play(REPLAY_EVENTS);
+    expect(state.detectedState).toBe("PURCHASE_INTENT");
+    expect(state.transitions.map(({ fromState, toState }) => `${fromState}->${toState}`)).toEqual([
+      "EXPLORE->COMPARE",
+      "COMPARE->PURCHASE_INTENT",
+    ]);
   });
 
   it("stops replay before accepting manual takeover", () => {

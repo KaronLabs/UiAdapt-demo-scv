@@ -1,51 +1,42 @@
+import { WINDOW_SIZE } from "./behaviorConfig";
+import { evaluateDistribution } from "./distribution";
+import { derivePolicy } from "./policy";
+import { evaluateTransition } from "./transitionEngine";
 import type {
-  AdaptiveState,
   BehaviorEvent,
   FeatureSnapshot,
-  PresentationPolicy,
   ProductId,
   RuntimeAction,
   RuntimeSnapshot,
 } from "./types";
 
+export { derivePolicy } from "./policy";
+
 const PRODUCT_IDS: readonly ProductId[] = ["aurora-one", "nova-pro", "halo-air"];
 const PURCHASE_SIGNALS = new Set(["SELECT_COLOR", "CHECK_SHIPPING", "ADD_TO_CART"]);
-const STATE_RANK: Record<AdaptiveState, number> = { EXPLORE: 0, COMPARE: 1, FOCUS: 2 };
-const EVIDENCE_WINDOW_SIZE = 8;
-const MIN_STATE_DWELL_MS = 3_000;
-
-export function derivePolicy(
-  detectedState: AdaptiveState,
-  adaptiveEnabled: boolean,
-  focusedProductId: ProductId | null,
-): PresentationPolicy {
-  const appliedState = adaptiveEnabled ? detectedState : "EXPLORE";
-  return {
-    appliedState,
-    showComparison: appliedState === "COMPARE",
-    focusedProductId: appliedState === "FOCUS" ? focusedProductId : null,
-  };
-}
 
 function emptyFeatures(): FeatureSnapshot {
   return {
-  windowSize: 0,
-  distinctProducts: 0,
-  switchCount: 0,
-  interactionsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
-  dominantProduct: null,
-  dominantShare: 0,
-  purchaseSupportSignals: 0,
-  purchaseSupportSignalsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
+    windowSize: 0,
+    distinctProducts: 0,
+    switchCount: 0,
+    interactionsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
+    dominantProduct: null,
+    dominantShare: 0,
+    purchaseSupportSignals: 0,
+    purchaseSupportSignalsByProduct: { "aurora-one": 0, "nova-pro": 0, "halo-air": 0 },
   };
 }
 
-export function createInitialRuntime(adaptiveEnabled = true): RuntimeSnapshot {
+export function createInitialRuntime(adaptiveEnabled = true, sessionId = "session-0"): RuntimeSnapshot {
   const policy = derivePolicy("EXPLORE", adaptiveEnabled, null);
   return {
+    sessionId,
     sessionEpoch: 0,
+    sequenceNo: 0,
     events: [],
     features: emptyFeatures(),
+    distribution: evaluateDistribution([]),
     detectedState: "EXPLORE",
     appliedState: policy.appliedState,
     focusedProductId: null,
@@ -53,13 +44,17 @@ export function createInitialRuntime(adaptiveEnabled = true): RuntimeSnapshot {
     lastTransitionAtMs: 0,
     lastEventAtMs: 0,
     compareTray: [],
+    pendingCandidate: null,
+    candidatePersistence: 0,
+    lastTransition: null,
+    transitions: [],
     replayStatus: "IDLE",
     lastRejectedReason: null,
   };
 }
 
 export function deriveFeatures(events: readonly BehaviorEvent[]): FeatureSnapshot {
-  const window = events.slice(-EVIDENCE_WINDOW_SIZE);
+  const window = events.slice(-WINDOW_SIZE);
   const interactionsByProduct: Record<ProductId, number> = {
     "aurora-one": 0,
     "nova-pro": 0,
@@ -104,41 +99,13 @@ export function deriveFeatures(events: readonly BehaviorEvent[]): FeatureSnapsho
   };
 }
 
-export function detectState(
-  current: AdaptiveState,
-  features: FeatureSnapshot,
-  compareTray: readonly string[],
-  nowMs: number,
-  lastTransitionAtMs: number,
-): AdaptiveState {
-  let candidate: AdaptiveState = "EXPLORE";
-  const dominantCount = features.dominantProduct
-    ? features.interactionsByProduct[features.dominantProduct]
-    : 0;
-
-  if (
-    features.windowSize >= 6 &&
-    dominantCount >= 6 &&
-    features.dominantShare >= 0.75 &&
-    features.dominantProduct !== null &&
-    features.purchaseSupportSignalsByProduct[features.dominantProduct] >= 1
-  ) {
-    candidate = "FOCUS";
-  } else if (
-    features.distinctProducts >= 2 &&
-    (features.switchCount >= 3 || compareTray.length >= 2)
-  ) {
-    candidate = "COMPARE";
-  }
-
-  if (STATE_RANK[candidate] <= STATE_RANK[current]) return current;
-  if (nowMs - lastTransitionAtMs < MIN_STATE_DWELL_MS) return current;
-  return candidate;
-}
-
-function resetRuntime(state: RuntimeSnapshot, replayStatus: RuntimeSnapshot["replayStatus"]): RuntimeSnapshot {
+function resetRuntime(
+  state: RuntimeSnapshot,
+  replayStatus: RuntimeSnapshot["replayStatus"],
+  sessionId?: string,
+): RuntimeSnapshot {
   return {
-    ...createInitialRuntime(state.adaptiveEnabled),
+    ...createInitialRuntime(state.adaptiveEnabled, sessionId ?? `session-${state.sessionEpoch + 1}`),
     sessionEpoch: state.sessionEpoch + 1,
     replayStatus,
   };
@@ -149,8 +116,8 @@ function reject(state: RuntimeSnapshot, reason: string): RuntimeSnapshot {
 }
 
 export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): RuntimeSnapshot {
-  if (action.type === "RESET") return resetRuntime(state, "IDLE");
-  if (action.type === "RESET_FOR_REPLAY") return resetRuntime(state, "RUNNING");
+  if (action.type === "RESET") return resetRuntime(state, "IDLE", action.sessionId);
+  if (action.type === "RESET_FOR_REPLAY") return resetRuntime(state, "RUNNING", action.sessionId);
 
   if (action.type === "SET_ADAPTIVE") {
     const policy = derivePolicy(state.detectedState, action.enabled, state.focusedProductId);
@@ -158,6 +125,7 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
       ...state,
       adaptiveEnabled: action.enabled,
       appliedState: policy.appliedState,
+      focusedProductId: policy.focusedProductId,
       lastRejectedReason: null,
     };
   }
@@ -184,27 +152,39 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
 
   const events = [...state.events, event];
   const features = deriveFeatures(events);
-  const detectedState = detectState(
-    state.detectedState,
-    features,
-    compareTray,
-    event.atMs,
-    state.lastTransitionAtMs,
+  const distribution = evaluateDistribution(events);
+  const transition = evaluateTransition(
+    {
+      detectedState: state.detectedState,
+      pendingCandidate: state.pendingCandidate,
+      candidatePersistence: state.candidatePersistence,
+    },
+    distribution.current,
+    distribution.eventCount,
   );
-  const stateChanged = detectedState !== state.detectedState;
+  const detectedState = transition.detectedState;
+  const focusedProductId = detectedState === "PURCHASE_INTENT" ? features.dominantProduct : null;
+  const policy = derivePolicy(detectedState, state.adaptiveEnabled, focusedProductId);
+  const stateTransition = transition.transition
+    ? { ...transition.transition, sequenceNo: state.sequenceNo + 1 }
+    : null;
   const manualTakeover =
     event.source === "USER" && (state.replayStatus === "RUNNING" || state.replayStatus === "PAUSED");
-  const focusedProductId = detectedState === "FOCUS" ? features.dominantProduct : state.focusedProductId;
-  const policy = derivePolicy(detectedState, state.adaptiveEnabled, focusedProductId);
 
   return {
     ...state,
+    sequenceNo: state.sequenceNo + 1,
     events,
     features,
+    distribution,
     detectedState,
     appliedState: policy.appliedState,
-    focusedProductId,
-    lastTransitionAtMs: stateChanged ? event.atMs : state.lastTransitionAtMs,
+    focusedProductId: policy.focusedProductId,
+    pendingCandidate: transition.pendingCandidate,
+    candidatePersistence: transition.candidatePersistence,
+    lastTransition: stateTransition,
+    transitions: stateTransition ? [...state.transitions, stateTransition] : state.transitions,
+    lastTransitionAtMs: stateTransition ? event.atMs : state.lastTransitionAtMs,
     lastEventAtMs: event.atMs,
     compareTray,
     replayStatus: manualTakeover ? "STOPPED_MANUAL_TAKEOVER" : state.replayStatus,

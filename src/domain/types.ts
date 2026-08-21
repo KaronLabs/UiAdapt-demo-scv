@@ -1,6 +1,6 @@
 export type ProductId = "aurora-one" | "nova-pro" | "halo-air";
-export type AdaptiveState = "EXPLORE" | "COMPARE" | "FOCUS";
 export type DistributionState = "EXPLORE" | "COMPARE" | "PURCHASE_INTENT";
+export type AdaptiveState = DistributionState;
 export type EventSource = "USER" | "REPLAY";
 export type BehaviorDimension = "BROWSE" | "DETAIL" | "COMPARE" | "DECISION" | "CART_INTENT";
 
@@ -21,6 +21,14 @@ export interface DistributionEvaluation {
   current: Distribution;
   reference: Distribution;
   changeScore: number;
+}
+
+export interface StateTransition {
+  sequenceNo?: number;
+  fromState: DistributionState;
+  toState: DistributionState;
+  changeScore: number;
+  persistenceCount: number;
 }
 
 export type BehaviorEventType =
@@ -85,9 +93,12 @@ export type ReplayStatus =
   | "COMPLETED";
 
 export interface RuntimeSnapshot {
+  sessionId: string;
   sessionEpoch: number;
+  sequenceNo: number;
   events: readonly BehaviorEvent[];
   features: FeatureSnapshot;
+  distribution: DistributionEvaluation;
   detectedState: AdaptiveState;
   appliedState: AdaptiveState;
   focusedProductId: ProductId | null;
@@ -95,6 +106,10 @@ export interface RuntimeSnapshot {
   lastTransitionAtMs: number;
   lastEventAtMs: number;
   compareTray: readonly ProductId[];
+  pendingCandidate: DistributionState | null;
+  candidatePersistence: number;
+  lastTransition: StateTransition | null;
+  transitions: readonly StateTransition[];
   replayStatus: ReplayStatus;
   lastRejectedReason: string | null;
 }
@@ -103,5 +118,5 @@ export type RuntimeAction =
   | { type: "RECORD_EVENT"; event: BehaviorEvent; epoch: number }
   | { type: "SET_ADAPTIVE"; enabled: boolean }
   | { type: "SET_REPLAY_STATUS"; status: ReplayStatus; epoch: number }
-  | { type: "RESET" }
-  | { type: "RESET_FOR_REPLAY" };
+  | { type: "RESET"; sessionId?: string }
+  | { type: "RESET_FOR_REPLAY"; sessionId?: string };
