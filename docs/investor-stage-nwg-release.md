@@ -154,25 +154,27 @@ smoke() {
 }
 
 rollback() {
+  local failure_status=$?
   trap - ERR
   set +e
   printf 'switch failed; restoring previous release\n' >&2
   if test -e "$DEPLOY_ROOT/current.rollback.new" || test -L "$DEPLOY_ROOT/current.rollback.new"; then
     printf 'rollback staging path unexpectedly exists\n' >&2
-    return 1
+    exit "$failure_status"
   fi
-  ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new" || return 1
-  test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET" || return 1
-  mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current" || return 1
-  systemctl daemon-reload
-  systemctl restart uiadapt-static.service uiadapt-gateway.service
-  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET"
-  systemctl is-active --quiet uiadapt-static.service
-  systemctl is-active --quiet uiadapt-gateway.service
+  ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new" || exit "$failure_status"
+  test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET" || exit "$failure_status"
+  mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
+  systemctl daemon-reload || exit "$failure_status"
+  systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET" || exit "$failure_status"
+  systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
+  systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
   curl --connect-timeout 3 --max-time 10 \
     --fail --silent --show-error \
     http://127.0.0.1:5173/uiadapt_demo/ \
-    --output /dev/null
+    --output /dev/null || exit "$failure_status"
+  exit "$failure_status"
 }
 
 trap 'rollback' ERR
@@ -262,30 +264,32 @@ test ! -e "$DEPLOY_ROOT/current.manual-recover.new"
 test ! -L "$DEPLOY_ROOT/current.manual-recover.new"
 
 manual_recover() {
+  local failure_status=$?
   trap - ERR
   set +e
   printf 'manual rollback failed; restoring original release\n' >&2
   if test -e "$DEPLOY_ROOT/current.manual-recover.new" || test -L "$DEPLOY_ROOT/current.manual-recover.new"; then
     printf 'manual recovery staging path unexpectedly exists\n' >&2
-    return 1
+    exit "$failure_status"
   fi
-  ln -s "$CURRENT_TARGET" "$DEPLOY_ROOT/current.manual-recover.new" || return 1
-  test "$(readlink -f "$DEPLOY_ROOT/current.manual-recover.new")" = "$CURRENT_TARGET" || return 1
-  mv -T "$DEPLOY_ROOT/current.manual-recover.new" "$DEPLOY_ROOT/current" || return 1
-  systemctl daemon-reload
-  systemctl restart uiadapt-static.service uiadapt-gateway.service
-  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$CURRENT_TARGET"
-  systemctl is-active --quiet uiadapt-static.service
-  systemctl is-active --quiet uiadapt-gateway.service
+  ln -s "$CURRENT_TARGET" "$DEPLOY_ROOT/current.manual-recover.new" || exit "$failure_status"
+  test "$(readlink -f "$DEPLOY_ROOT/current.manual-recover.new")" = "$CURRENT_TARGET" || exit "$failure_status"
+  mv -T "$DEPLOY_ROOT/current.manual-recover.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
+  systemctl daemon-reload || exit "$failure_status"
+  systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$CURRENT_TARGET" || exit "$failure_status"
+  systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
+  systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
   curl --connect-timeout 3 --max-time 10 \
     --fail --silent --show-error \
     http://127.0.0.1:5173/uiadapt_demo/ \
-    --output /dev/null
+    --output /dev/null || exit "$failure_status"
   test "$(curl --connect-timeout 3 --max-time 10 \
     --silent --output /dev/null --write-out '%{http_code}' \
-    http://127.0.0.1:4180/uiadapt_demo/)" = "401"
-  manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"
-  manual_auth_smoke "$PUBLIC_URL"
+    http://127.0.0.1:4180/uiadapt_demo/)" = "401" || exit "$failure_status"
+  manual_auth_smoke "http://127.0.0.1:4180/uiadapt_demo/" || exit "$failure_status"
+  manual_auth_smoke "$PUBLIC_URL" || exit "$failure_status"
+  exit "$failure_status"
 }
 
 trap 'manual_recover' ERR

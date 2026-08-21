@@ -51,7 +51,7 @@
 - Create: `docs/security/investor-preview-threat-model.md`
 
 - [ ] Document the full safe verification sequence.
-- [ ] Document immutable releases, `current`, systemd, credential metadata, health, rollback, and no-live-path test invariant.
+- [ ] Document version-addressed releases with deployment-time hash verification; no filesystem immutability enforcement, plus `current`, systemd, credential metadata, health, rollback, and the no-live-path test invariant.
 - [ ] Document Internet → Funnel TLS termination → loopback gateway → static service boundary.
 - [ ] Distinguish enforced controls, operational controls, accepted limits, and backlog.
 

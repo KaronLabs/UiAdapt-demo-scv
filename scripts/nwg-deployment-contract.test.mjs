@@ -498,6 +498,11 @@ test("release runbook records version-addressed deployment, readiness, rollback,
   assert.match(runbook, /ubuntu ownership is a residual risk/i);
   assert.doesNotMatch(runbook, /immutable (?:release|releases)/i);
 
+  const plan = await readProjectFile("docs/superpowers/plans/2026-08-21-uiadapt-r8-remediation.md");
+  assert.match(plan, /version-addressed releases with deployment-time hash verification/i);
+  assert.match(plan, /no filesystem immutability enforcement/i);
+  assert.doesNotMatch(plan, /Document immutable releases/i);
+
   for (const command of [
     'DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"',
     'PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"',
@@ -534,6 +539,8 @@ test("release runbook records version-addressed deployment, readiness, rollback,
   const automaticScripts = [...automaticSection.matchAll(/```bash\r?\n([\s\S]*?)```/g)];
   assert.equal(automaticScripts.length, 1, "switch, rollback trap, and smoke must share one Bash process");
   const automaticScript = automaticScripts[0][1];
+  assert.match(automaticScript, /rollback\(\) \{\r?\n\s+local failure_status=\$\?/);
+  assert.match(automaticScript, /rollback\(\)[\s\S]*exit "\$failure_status"/);
   const automaticCurlCount = (automaticScript.match(/\bcurl\b/g) ?? []).length;
   assert.ok(automaticCurlCount > 0);
   assert.equal(
@@ -569,6 +576,8 @@ test("release runbook records version-addressed deployment, readiness, rollback,
   const manualScripts = [...manualSection.matchAll(/```bash\r?\n([\s\S]*?)```/g)];
   assert.equal(manualScripts.length, 1, "manual rollback must be one self-contained Bash process");
   const manualScript = manualScripts[0][1];
+  assert.match(manualScript, /manual_recover\(\) \{\r?\n\s+local failure_status=\$\?/);
+  assert.match(manualScript, /manual_recover\(\)[\s\S]*exit "\$failure_status"/);
   const manualCurlCount = (manualScript.match(/\bcurl\b/g) ?? []).length;
   assert.ok(manualCurlCount > 0);
   assert.equal(
@@ -617,6 +626,63 @@ test("release runbook records version-addressed deployment, readiness, rollback,
       `${earlier} must precede ${later}`,
     );
   }
+});
+
+test("documented automatic switch preserves the original failure after recovery", { timeout: 10_000 }, async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const automaticSection = runbook.slice(
+    runbook.indexOf("### Automated fail-closed switch"),
+    runbook.indexOf("### Manual rollback"),
+  );
+  const scriptMatch = automaticSection.match(/```bash\r?\n([\s\S]*?)```/);
+  assert.ok(scriptMatch, "automatic switch recipe must be executable");
+  const rollbackMatch = scriptMatch[1].match(/rollback\(\) \{[\s\S]*?\r?\n\}\r?\n\r?\ntrap 'rollback' ERR/);
+  assert.ok(rollbackMatch, "automatic switch recipe must contain its rollback trap");
+
+  const oldSha = "b".repeat(40);
+  const newSha = "a".repeat(40);
+  const scenario = `
+set -Eeuo pipefail
+TEST_ROOT="$(mktemp -d)"
+OLD_SHA="${oldSha}"
+NEW_SHA="${newSha}"
+mkdir -p "$TEST_ROOT/releases/$OLD_SHA" "$TEST_ROOT/releases/$NEW_SHA"
+ln -s "releases/$NEW_SHA" "$TEST_ROOT/current"
+trap 'printf "FINAL_TARGET=%s\\n" "$(readlink -f "$TEST_ROOT/current")"; rm -rf "$TEST_ROOT"' EXIT
+
+DEPLOY_ROOT="$TEST_ROOT"
+PREVIOUS_TARGET="$TEST_ROOT/releases/$OLD_SHA"
+RESTART_CALLS=0
+systemctl() {
+  if test "\${1:-}" = "restart"; then
+    RESTART_CALLS=$((RESTART_CALLS + 1))
+    if test "$RESTART_CALLS" -eq 1; then return 42; fi
+  fi
+  return 0
+}
+curl() { return 0; }
+${rollbackMatch[0]}
+systemctl restart uiadapt-static.service uiadapt-gateway.service
+printf 'SWITCH_STATUS=PASS\\n'
+`;
+
+  const command = process.platform === "win32" ? "wsl.exe" : "bash";
+  const args = process.platform === "win32" ? ["-d", "Ubuntu", "--", "bash", "-s"] : ["-s"];
+  const child = spawn(command, args, {
+    cwd: projectRoot,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  const output = [];
+  child.stdout.on("data", (chunk) => output.push(chunk));
+  child.stderr.on("data", (chunk) => output.push(chunk));
+  child.stdin.end(scenario);
+  const [code, signal] = await once(child, "exit");
+  const combinedOutput = Buffer.concat(output).toString("utf8");
+
+  assert.equal(signal, null);
+  assert.notEqual(code, 0, `injected restart failure must survive recovery:\n${combinedOutput}`);
+  assert.doesNotMatch(combinedOutput, /SWITCH_STATUS=PASS/);
+  assert.match(combinedOutput, new RegExp(`FINAL_TARGET=.*${oldSha}$`, "m"));
 });
 
 test("documented auth helper enforces a total wall-clock deadline against trickle responses", { timeout: 5_000 }, async () => {
