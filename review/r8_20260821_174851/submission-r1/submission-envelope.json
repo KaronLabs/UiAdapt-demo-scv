@@ -1,0 +1,64 @@
+{
+  "schema_version": "uiadapt.r8.submission-envelope.v1",
+  "created_at_utc": "2026-08-21T09:29:36Z",
+  "correction_mode": "append_only",
+  "purpose": "Correct the temporal and finality defects identified after the original R8 evidence directory was sealed without rewriting the sealed evidence or final spec.",
+  "target": {
+    "repository": "KaronLabs/UiAdapt-demo-scv",
+    "branch": "codex/uiadapt-investor-r8-remediation",
+    "application_source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+    "comparison_base_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91"
+  },
+  "final_spec": {
+    "path": "review/spec_20260821_182018_uiadapt_investor_stage_nwg_release_r8.md",
+    "sha256": "9a1e163c60adfca2ebc8c79f7965c173fde5c3d9658776b95df8ce2a78f3ae28",
+    "fresh_lint_capture": "review/r8_20260821_174851/submission-r1/spec-lint-final.json",
+    "fresh_lint_capture_sha256": "f9880813b1a33d9191a857dd491b447bda68964e0417ce0b941d00934c664927",
+    "fresh_lint_captured_at_utc": "2026-08-21T09:29:14Z",
+    "fresh_lint_exit_code": 0,
+    "fresh_lint_result": "Evidence lint passed"
+  },
+  "sealed_evidence": {
+    "directory": "review/r8_20260821_174851/evidence",
+    "manifest_path": "review/r8_20260821_174851/evidence/SHA256SUMS",
+    "manifest_sha256": "7204096f40f2b1e90ef4a85101c4def3273bbe040c24f9aa7f29dca7aa08ec5d",
+    "manifest_entry_count": 27,
+    "self_excluding": true,
+    "fresh_verify_capture": "review/r8_20260821_174851/submission-r1/evidence-manifest-verify.json",
+    "fresh_verify_capture_sha256": "40513ca9f60d49f5ee07f59d675785433c8113f59a826edc0ae24bc7d8183f96",
+    "fresh_verify_captured_at_utc": "2026-08-21T09:29:31Z",
+    "fresh_verify_exit_code": 0,
+    "fresh_verify_result": "GREEN"
+  },
+  "supersession": {
+    "superseded_artifact": "review/r8_20260821_174851/evidence/integrity-receipt.json",
+    "superseded_claims": [
+      "Its created_at_utc value of 2026-08-21T09:20:18Z predates completion of independent-source-quality-review.json at 2026-08-21T09:20:49.3120825Z while its later content names that review. The timestamp/content ordering is therefore temporally contradictory.",
+      "It cannot serve as the final spec-lint receipt because the final spec was modified after the earlier lint capture to add the final manifest hash, entry count and completed companion-process statuses."
+    ],
+    "replacement_truth": [
+      "This envelope was authored only after the fresh final-spec lint completed at 2026-08-21T09:29:14Z with exit code 0.",
+      "This envelope binds the exact final spec SHA-256 9a1e163c60adfca2ebc8c79f7965c173fde5c3d9658776b95df8ce2a78f3ae28.",
+      "This envelope binds the unchanged original evidence manifest SHA-256 7204096f40f2b1e90ef4a85101c4def3273bbe040c24f9aa7f29dca7aa08ec5d and its fresh GREEN verification.",
+      "The original sealed evidence, its historical lint receipts and the final spec remain untouched; this correction is a separate append-only submission layer."
+    ]
+  },
+  "disclosures": [
+    "The final spec was modified after r8-spec-lint-rerun1.json to record the final evidence manifest hash/count and completed companion-process statuses.",
+    "The earlier lint capture remains historical evidence but is not used as proof for the final spec bytes.",
+    "The fresh lint capture in this submission is the authoritative lint receipt for the bound final spec SHA.",
+    "This envelope does not claim R8 deployment, merge to main or a completed human product-clarity test."
+  ],
+  "live_and_scope_status": {
+    "live_nwg_release": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "r8_deployed": false,
+    "main_merged": false,
+    "product_clarity": "NOT_VERIFIED"
+  },
+  "authority": {
+    "original_evidence_modified": false,
+    "original_spec_modified": false,
+    "code_or_docs_modified": false,
+    "git_stage_commit_push_or_deploy": false
+  }
+}

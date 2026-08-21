@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-21T09:29:14Z",
+  "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+  "command": "python E:\\03_AllWork\\grafana\\.agents\\skills\\evidence-quote-linter\\scripts\\lint_evidence.py review/spec_20260821_182018_uiadapt_investor_stage_nwg_release_r8.md",
+  "stdout": "Evidence lint passed: review\\spec_20260821_182018_uiadapt_investor_stage_nwg_release_r8.md\r\n",
+  "stderr": "",
+  "exit_code": 0
+}

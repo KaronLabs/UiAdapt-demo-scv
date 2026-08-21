@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-21T09:20:25Z",
+  "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+  "command": "pwsh -NoProfile -File review\\r8_20260821_174851\\evidence\\run-live-runtime-readonly.ps1",
+  "stdout": "captured_utc=2026-08-21T09:20:25Z\ncurrent=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nstatic_active=active\ngateway_active=active\nstatic_enabled=enabled\ngateway_enabled=enabled\ncredential_mode=600 owner=root group=root size=9\n",
+  "stderr": "",
+  "exit_code": 0
+}

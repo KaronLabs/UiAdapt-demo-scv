@@ -1,0 +1,58 @@
+{
+  "schema_version": "uiadapt.r8.integrity.v1",
+  "created_at_utc": "2026-08-21T09:20:18Z",
+  "repository": "KaronLabs/UiAdapt-demo-scv",
+  "branch": "codex/uiadapt-investor-r8-remediation",
+  "application_source_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "comparison_base": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+  "remote_branch_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "remote_ci": {
+    "run_id": 32466937260,
+    "head_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+    "verify": "success",
+    "runtime_contract": "success",
+    "artifact_name": "uiadapt-v4.1-verification-00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+    "artifact_sha256": "885a333e71ce2546e0d720f026b50f5f0eb48ffdcb8f18ad8b3662d142a2fbda"
+  },
+  "live_state": {
+    "nwg_release_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "r8_deployed": false,
+    "main_merged": false,
+    "product_clarity": "NOT_VERIFIED"
+  },
+  "append_only_failures_preserved": [
+    "source-gate.json",
+    "r3-manifest-reverify.json"
+  ],
+  "corrected_receipts": [
+    "source-gate-rerun2.json",
+    "sentinel-probation-rerun1.json",
+    "port-probation-rerun1.json",
+    "r3-manifest-reverify-rerun1.json",
+    "live-runtime-current-rerun1.json"
+  ],
+  "independent_reviews": [
+    {
+      "path": "independent-source-spec-review.json",
+      "verdict": "GO",
+      "critical": 0,
+      "important": 0
+    },
+    {
+      "path": "independent-source-quality-review.json",
+      "verdict": "GO",
+      "critical": 0,
+      "important": 0
+    }
+  ],
+  "spec_lint": {
+    "path": "r8-spec-lint-rerun1.json",
+    "exit_code": 0,
+    "result": "Evidence lint passed"
+  },
+  "integrity_model": {
+    "manifest": "SHA256SUMS",
+    "self_excluding": true,
+    "note": "The manifest binds package payload bytes. Git commit publication is a separate provenance layer and is not claimed by this pre-commit receipt."
+  }
+}

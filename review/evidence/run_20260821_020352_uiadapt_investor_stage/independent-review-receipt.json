@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "process": "independent-review",
+  "applicability": "APPLICABLE",
+  "status": "COMPLETED_WITH_DISCLOSED_CORRECTION",
+  "review_target": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+  "reviewer_relationship": "Public browser smoke and source-to-runtime provenance were executed by agents different from the implementation agent and from the spec author.",
+  "invocations": [
+    {
+      "command": "pwsh -NoProfile -File review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\run-independent-public-smoke.ps1",
+      "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+      "completed_at_utc": "2026-08-21T02:06:40Z",
+      "exit_code": 0,
+      "bounded_stdout": "Three viewports passed exact hero, CTA, causal trace, invariants, Wanted Sans load, COMPARE at 7000ms, FOCUS at 21000ms, zero overflow, zero console errors, zero failed requests, zero external requests and zero HTTP 4xx/5xx; verdict PUBLIC_SMOKE_PASS.",
+      "bounded_stderr": "",
+      "artifact": "independent-public-smoke.json"
+    },
+    {
+      "command": "Different-session read-only provenance audit recorded as receipt independent-provenance-20260821T111207Z; its commands array contains the exact bounded local and SSH invocations, streams, exit codes and timestamps.",
+      "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+      "completed_at_utc": "2026-08-21T02:12:07Z",
+      "exit_code": 0,
+      "bounded_stdout": "Source/tree exact; tracked 89 missing or mismatched 0; local and remote archive SHA-256 matched; local and remote 137-file path-ordered manifests matched; installed units matched; current release exact; services enabled/active with NRestarts=0.",
+      "bounded_stderr": "An initial read-only auditor sort-key defect produced a false mismatch and is preserved in the artifact; the corrected path-ordered rerun passed.",
+      "artifact": "independent-provenance.json"
+    }
+  ],
+  "provenance_result": "PASS_WITH_DISCLOSED_AUDITOR_CORRECTION",
+  "observation": "The independent evidence supports the public runtime and exact source-to-running-release chain. Product clarity and full-host reboot remain outside this completed review."
+}

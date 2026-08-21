@@ -1,0 +1,136 @@
+{
+  "schema_version": "uiadapt.independent-provenance.v1",
+  "receipt_id": "run_20260821_020352_uiadapt_investor_stage-independent-provenance",
+  "captured_at_utc": "2026-08-21T02:12:07.4413351+00:00",
+  "review_target": {
+    "source_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "source_tree": "8738e6e8cf3d4aa6e205b18a51a17b591a0ab218",
+    "local_worktree": "E:\\03_AllWork\\uiadapt-investor-verify",
+    "local_archive": "E:\\03_AllWork\\uiadapt-release-fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\\uiadapt-fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91.tar.gz",
+    "remote_host": "nwg",
+    "remote_archive": "/tmp/uiadapt-fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91.tar.gz",
+    "remote_release": "/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91"
+  },
+  "reviewer_relationship": "Independent provenance subagent. The reviewer did not implement the investor-stage change, create the deployment package, push the branch, switch the remote current symlink, install units, or restart services. This receipt adds only this JSON file and performs fresh read-only source and runtime inspection.",
+  "credential_handling": {
+    "content_read": false,
+    "content_hashed": false,
+    "allowed_metadata_observed": "path, mode, owner, group, size only",
+    "observation": "The credential was observed only as /etc/uiadapt-demo/password mode 0600 owner root:root size 9. No content or digest was requested or emitted."
+  },
+  "commands": [
+    {
+      "id": "local-source-to-archive-audit",
+      "command": "python -c <embedded read-only local provenance audit>",
+      "command_detail": {
+        "executable": "python",
+        "argv": ["-c", "<embedded read-only local provenance audit>"],
+        "script_sha256": "not_precomputed",
+        "operations": [
+          "git rev-parse exact source and tree",
+          "git status --short",
+          "compare all 89 tracked source blobs with archive bytes",
+          "hash local tar.gz",
+          "enumerate archive entries in memory without extraction",
+          "compare dist and www/uiadapt_demo byte-for-byte",
+          "scan duplicate, unsafe, link, unexpected-extra, and sensitive paths",
+          "hash critical deployment files"
+        ]
+      },
+      "started_at_utc": "2026-08-21T02:10:45.0537049+00:00",
+      "captured_at_utc": "2026-08-21T02:10:48.6940014+00:00",
+      "exit_code": 0,
+      "stdout": "{\"archive_member_count\": 166, \"archive_path\": \"E:\\\\03_AllWork\\\\uiadapt-release-fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\\\\uiadapt-fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91.tar.gz\", \"archive_regular_count\": 137, \"archive_sha256\": \"3cfbb11229cc529a3a00c28e63cfc99d4c082fa370a1176a0149c589343b5c32\", \"canonical_manifest_sha256\": \"55214d991c15fb12d965d86ea75cf6dc4b5f1b0fb8923f477dce29ac59ac8567\", \"critical\": {\"deploy/systemd/uiadapt-gateway.service\": {\"sha256\": \"1c87eff422caef8c527d47fdd4b14f3adb8318b0111bee4731e6d6e19ed5b999\", \"size\": 738}, \"deploy/systemd/uiadapt-static.service\": {\"sha256\": \"e1f93921024c72a4a150fb5c0940ad02d6e36355162e358e12051ad258fe6b04\", \"size\": 547}, \"package-lock.json\": {\"sha256\": \"393dbef189afc0ef706647f12548b0dcaf84c8851ac2120d14236cc92b459c23\", \"size\": 167927}, \"package.json\": {\"sha256\": \"980372fcbdb5f2dd116f2d3da404a7711d15e5af05f8a6190b34f64f289f8c6d\", \"size\": 1673}, \"www/uiadapt_demo/assets/WantedSansVariable-eIorJFXx.woff2\": {\"sha256\": \"4259e7e9a172e634c2cb419d793b84148990316341e910443e5d10965b2c8f16\", \"size\": 1289292}, \"www/uiadapt_demo/assets/index-DTUIrAxQ.css\": {\"sha256\": \"61d04ff5f610283a17106bb644cf915b082c4c961bc38ea2f3b991029989811f\", \"size\": 23429}, \"www/uiadapt_demo/assets/index-pTZi0Dzb.js\": {\"sha256\": \"e66200f99faab92ff9e8fa2b78f8d046ff30842d7c428c1727b8f272a1ac80df\", \"size\": 217600}, \"www/uiadapt_demo/index.html\": {\"sha256\": \"5877457cffbfde3076fac60d888b4ab6d48ddc75d99d3440b5588badba4ab4d5\", \"size\": 667}}, \"dist_count\": 24, \"dist_www_mismatch\": [], \"dist_www_missing\": [], \"duplicates\": [], \"extra_regular_count\": 48, \"links\": [], \"sensitive_paths\": [], \"source_sha\": \"fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\", \"source_tree\": \"8738e6e8cf3d4aa6e205b18a51a17b591a0ab218\", \"tracked_count\": 89, \"tracked_mismatch\": [], \"tracked_missing\": [], \"unexpected_extras\": [], \"unsafe_paths\": [], \"worktree_head\": \"fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\", \"worktree_status_short\": [], \"www_count\": 24}\r\n",
+      "stderr": "",
+      "observation": "All substantive local checks passed: exact source SHA/tree and clean detached worktree, 89 tracked files with zero missing or byte mismatch, archive SHA-256 3cfbb11229cc529a3a00c28e63cfc99d4c082fa370a1176a0149c589343b5c32, 137 regular files, dist/www each 24 files with no difference, and zero duplicate, unsafe, linked, sensitive, or unexpected extra paths. The emitted manifest digest 55214d... is not used for local/remote equality because this first audit sorted full manifest rows by leading file hash while the remote audit sorted by path. The discrepancy was disclosed and corrected in command local-path-ordered-manifest-reconciliation."
+    },
+    {
+      "id": "remote-archive-release-unit-runtime-audit",
+      "command": "pwsh -NoProfile -File C:\\Users\\Administrator\\.codex\\skills\\powershell-ssh-safe-quoting\\scripts\\Invoke-SafeSshScript.ps1 -HostName nwg -ScriptText <embedded read-only remote provenance audit>",
+      "command_detail": {
+        "transport": "Invoke-SafeSshScript.ps1",
+        "host": "nwg",
+        "remote_shell": "bash -se",
+        "operations": [
+          "hash retained /tmp archive",
+          "compute a path-ordered SHA-256 manifest for every release regular file excluding node_modules",
+          "compare release and installed systemd units with SHA-256 and cmp",
+          "read systemd enabled, active, MainPID, NRestarts, start time, WorkingDirectory, ExecStart, and FragmentPath",
+          "hash runtime index, Wanted Sans, CSS, and JavaScript",
+          "read Node and installed serve version",
+          "read credential metadata only",
+          "read parent repository HEAD and clean status"
+        ]
+      },
+      "started_at_utc": "2026-08-21T02:11:21.2421062+00:00",
+      "captured_at_utc": "2026-08-21T02:11:24.1260334+00:00",
+      "exit_code": 0,
+      "stdout": "captured_remote_utc=2026-08-21T02:11:25Z\nhostname=new-world-gpu\ncurrent_link=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\ncurrent_real=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nrelease_real=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nuploaded_archive_sha256=3cfbb11229cc529a3a00c28e63cfc99d4c082fa370a1176a0149c589343b5c32\nrelease_regular_count=137\nrelease_manifest_sha256=d6d019c04f740f7ea2f882af0a35b940581081d8197e9fc91ded678685418981\nrelease_unit_uiadapt-static.service_sha256=e1f93921024c72a4a150fb5c0940ad02d6e36355162e358e12051ad258fe6b04\ninstalled_unit_uiadapt-static.service_sha256=e1f93921024c72a4a150fb5c0940ad02d6e36355162e358e12051ad258fe6b04\nunit_uiadapt-static.service_byte_match=true\nunit_uiadapt-static.service_enabled=enabled\nunit_uiadapt-static.service_active=active\nunit_uiadapt-static.service.MainPID=442164\nunit_uiadapt-static.service.NRestarts=0\nunit_uiadapt-static.service.ExecMainStartTimestamp=Fri 2026-08-21 01:46:49 UTC\nunit_uiadapt-static.service.ExecStart={ path=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/node_modules/.bin/serve ; argv[]=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/node_modules/.bin/serve --no-clipboard --no-port-switching --listen tcp://127.0.0.1:5173 /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/www ; ignore_errors=no ; start_time=[Fri 2026-08-21 01:46:49 UTC] ; stop_time=[n/a] ; pid=442164 ; code=(null) ; status=0/0 }\nunit_uiadapt-static.service.WorkingDirectory=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current\nunit_uiadapt-static.service.FragmentPath=/etc/systemd/system/uiadapt-static.service\nrelease_unit_uiadapt-gateway.service_sha256=1c87eff422caef8c527d47fdd4b14f3adb8318b0111bee4731e6d6e19ed5b999\ninstalled_unit_uiadapt-gateway.service_sha256=1c87eff422caef8c527d47fdd4b14f3adb8318b0111bee4731e6d6e19ed5b999\nunit_uiadapt-gateway.service_byte_match=true\nunit_uiadapt-gateway.service_enabled=enabled\nunit_uiadapt-gateway.service_active=active\nunit_uiadapt-gateway.service.MainPID=442166\nunit_uiadapt-gateway.service.NRestarts=0\nunit_uiadapt-gateway.service.ExecMainStartTimestamp=Fri 2026-08-21 01:46:49 UTC\nunit_uiadapt-gateway.service.ExecStart={ path=/usr/bin/node ; argv[]=/usr/bin/node /mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current/scripts/password-gateway.mjs ; ignore_errors=no ; start_time=[Fri 2026-08-21 01:46:49 UTC] ; stop_time=[n/a] ; pid=442166 ; code=(null) ; status=0/0 }\nunit_uiadapt-gateway.service.WorkingDirectory=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/current\nunit_uiadapt-gateway.service.FragmentPath=/etc/systemd/system/uiadapt-gateway.service\nruntime_index_sha256=5877457cffbfde3076fac60d888b4ab6d48ddc75d99d3440b5588badba4ab4d5\nruntime_wanted_sha256=4259e7e9a172e634c2cb419d793b84148990316341e910443e5d10965b2c8f16\nruntime_css_sha256=61d04ff5f610283a17106bb644cf915b082c4c961bc38ea2f3b991029989811f\nruntime_js_sha256=e66200f99faab92ff9e8fa2b78f8d046ff30842d7c428c1727b8f272a1ac80df\nnode_version=v24.18.0\ninstalled_serve_version=14.2.6\ncredential_metadata=path:/etc/uiadapt-demo/password,mode:600,owner:root:root,size:9\nparent_repo_head=bf70034f8b4990c9c87df72e2105c5bb00562fca\nparent_repo_clean=true\n",
+      "stderr": "",
+      "observation": "Remote command passed with empty stderr. The retained remote archive SHA-256 equals the local archive. The release contains 137 non-node_modules regular files. Both installed units are byte-identical to their release copies, both services are enabled and active with zero restarts, and their WorkingDirectory and ExecStart resolve through the exact current symlink. Runtime critical hashes equal the local archive critical hashes."
+    },
+    {
+      "id": "local-path-ordered-manifest-reconciliation",
+      "command": "python -c <embedded corrected path-ordered manifest audit>",
+      "command_detail": {
+        "executable": "python",
+        "argv": ["-c", "<embedded corrected path-ordered manifest audit>"],
+        "ordering": "normalized POSIX path ascending",
+        "line_format": "sha256|size|path followed by LF"
+      },
+      "started_at_utc": "2026-08-21T02:11:41.9605863+00:00",
+      "captured_at_utc": "2026-08-21T02:11:42.1357516+00:00",
+      "exit_code": 0,
+      "stdout": "{\"canonical_manifest_sha256\": \"d6d019c04f740f7ea2f882af0a35b940581081d8197e9fc91ded678685418981\", \"ordering\": \"normalized POSIX path ascending\", \"regular_count\": 137}\r\n",
+      "stderr": "",
+      "observation": "This minimal rerun changed only the auditor's ordering rule. It confirmed that the local archive and remote release have the same path-ordered 137-file canonical manifest SHA-256 d6d019c04f740f7ea2f882af0a35b940581081d8197e9fc91ded678685418981. No product, source, Git, archive, release, service, or credential state was changed."
+    }
+  ],
+  "comparison": {
+    "source_to_local_archive": {
+      "tracked_count": 89,
+      "missing": 0,
+      "byte_mismatch": 0,
+      "result": "PASS"
+    },
+    "local_archive_to_remote_archive": {
+      "local_sha256": "3cfbb11229cc529a3a00c28e63cfc99d4c082fa370a1176a0149c589343b5c32",
+      "remote_sha256": "3cfbb11229cc529a3a00c28e63cfc99d4c082fa370a1176a0149c589343b5c32",
+      "result": "PASS"
+    },
+    "local_archive_to_remote_release": {
+      "local_regular_count": 137,
+      "remote_regular_count_excluding_node_modules": 137,
+      "ordering": "normalized POSIX path ascending",
+      "local_manifest_sha256": "d6d019c04f740f7ea2f882af0a35b940581081d8197e9fc91ded678685418981",
+      "remote_manifest_sha256": "d6d019c04f740f7ea2f882af0a35b940581081d8197e9fc91ded678685418981",
+      "result": "PASS"
+    },
+    "release_units_to_installed_units": {
+      "static_sha256": "e1f93921024c72a4a150fb5c0940ad02d6e36355162e358e12051ad258fe6b04",
+      "gateway_sha256": "1c87eff422caef8c527d47fdd4b14f3adb8318b0111bee4731e6d6e19ed5b999",
+      "byte_mismatch_count": 0,
+      "result": "PASS"
+    },
+    "installed_units_to_running_current": {
+      "current_release_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+      "services_enabled": 2,
+      "services_active": 2,
+      "service_restart_count": 0,
+      "working_directory_uses_current": true,
+      "exec_start_uses_current": true,
+      "result": "PASS"
+    }
+  },
+  "disclosed_failures": [
+    {
+      "severity": "informational",
+      "scope": "auditor only",
+      "description": "The first local canonical manifest digest sorted the complete row, whose leading field was the file hash, while the remote manifest sorted by path. This produced incomparable digests 55214d... and d6d019... despite the already successful per-path byte comparison.",
+      "resolution": "A minimal read-only local rerun sorted by normalized POSIX path. It produced 137 entries and digest d6d019..., exactly matching the remote release. The original output remains preserved above."
+    }
+  ],
+  "findings": [],
+  "result": "PASS_WITH_DISCLOSED_AUDITOR_CORRECTION",
+  "observation": "The evidence establishes an exact chain from Git source commit and tree to the local archive, retained remote archive, all 137 release regular files excluding installed node_modules, installed systemd units, and the enabled and active services running through the exact current release. Credential contents and hashes were not read. No material provenance defect was found."
+}

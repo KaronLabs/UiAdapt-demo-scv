@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-21T08:50:03Z",
+  "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+  "command": "pwsh -NoProfile -File review\\r8_20260821_174851\\evidence\\run-source-gate.ps1",
+  "stdout": "COMMAND_BEGIN=npm ci\r\n\nadded 315 packages, and audited 316 packages in 15s\n\n87 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\nCOMMAND_EXIT=0\r\nCOMMAND_BEGIN=npm run lint\r\n\n> uiadapt-adaptive-storefront-theater@4.1.0 lint\n> eslint .\n\n\nE:\\03_AllWork\\uiadapt-investor-stage\\review\\r8_20260821_174851\\evidence\\hold-5173.mjs\n  5:3   error  'process' is not defined  no-undef\n  9:3   error  'process' is not defined  no-undef\n  9:47  error  'process' is not defined  no-undef\n\n✖ 3 problems (3 errors, 0 warnings)\n\nCOMMAND_EXIT=1\r\n",
+  "stderr": "",
+  "exit_code": 1
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-21T02:08:09Z",
+  "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+  "command": "git hash-object review/evidence/run_20260821_020352_uiadapt_investor_stage/source.diff && git diff --numstat 91d73b45adeb97b86be97dba69f638ab910a06e9..fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+  "stdout": "89075eb97e54ed41ae0e4bcc800008b0c42991a5\n191\t19\te2e/storefront.spec.ts\n8\t21\tpackage-lock.json\n2\t3\tpackage.json\n29\t7\tsrc/App.test.tsx\n36\t22\tsrc/App.tsx\n1\t2\tsrc/main.tsx\n246\t137\tsrc/styles.css\n",
+  "stderr": "",
+  "exit_code": 0
+}

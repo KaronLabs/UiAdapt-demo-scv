@@ -1,0 +1,106 @@
+{
+  "receipt_version": "1.0",
+  "receipt_type": "independent_source_quality_review",
+  "reviewer": {
+    "session_role": "independent read-only source quality reviewer",
+    "relationship": "different subagent session; did not implement the reviewed changes, author the R8 source changes, push, deploy, or seal the evidence package",
+    "authority": "read-only review plus the explicitly requested append-only receipt write"
+  },
+  "review_scope": {
+    "repository": "E:/03_AllWork/uiadapt-investor-stage",
+    "comparison_base_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "target_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+    "focus": [
+      "rollback failure propagation",
+      "deployment-test path isolation",
+      "dynamic port behavior",
+      "runbook smoke deadlines",
+      "CI trigger and permission scope",
+      "lint exclusions"
+    ],
+    "excluded": [
+      "live deployment acceptance",
+      "remote CI acceptance",
+      "evidence package sealing",
+      "product clarity human testing"
+    ]
+  },
+  "verification": [
+    {
+      "command": "npm run lint",
+      "started_at_utc": "2026-08-21T09:19:58.5102235Z",
+      "ended_at_utc": "2026-08-21T09:20:01.2128703Z",
+      "exit_code": 0,
+      "output_summary": "eslint completed without findings"
+    },
+    {
+      "command": "npm run test:deployment",
+      "started_at_utc": "2026-08-21T09:20:01.2256369Z",
+      "ended_at_utc": "2026-08-21T09:20:18.5335228Z",
+      "exit_code": 0,
+      "output_summary": "17 tests; 17 passed; 0 failed; documented automatic switch failure-propagation regression passed"
+    },
+    {
+      "command": "git diff --check fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91..HEAD",
+      "started_at_utc": "2026-08-21T09:20:18.5345882Z",
+      "ended_at_utc": "2026-08-21T09:20:18.5846758Z",
+      "exit_code": 0,
+      "output_summary": "empty output, as expected for a clean diff check"
+    },
+    {
+      "command": "git rev-parse HEAD",
+      "observed_at_utc": "2026-08-21T09:20:18.5846758Z",
+      "exit_code": 0,
+      "output_summary": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b"
+    }
+  ],
+  "prior_counterexample": {
+    "affected_pre_fix_head": "52295325cdafdf37edd0e0d320fd7766dc454d06",
+    "description": "The former ERR trap handler disabled errexit with set +e and returned success after recovery. Bash therefore resumed after the failed smoke and printed a false PASS.",
+    "semantic_probe_command": "wsl.exe -e bash -c \"set -Eeuo pipefail; rollback(){ trap - ERR; set +e; echo ROLLBACK; true; }; smoke(){ false; echo SMOKE_CONTINUED; }; trap rollback ERR; smoke; trap - ERR; echo SWITCH_STATUS=PASS\"",
+    "started_at_utc": "2026-08-21T09:20:29.6497278Z",
+    "ended_at_utc": "2026-08-21T09:20:49.3120825Z",
+    "exit_code": 0,
+    "output": [
+      "ROLLBACK",
+      "SMOKE_CONTINUED",
+      "SWITCH_STATUS=PASS"
+    ],
+    "material_impact": "A failed switch or manual rollback could restore the previous release yet continue and emit a success marker."
+  },
+  "resolution": {
+    "source": "docs/investor-stage-nwg-release.md",
+    "change": "rollback and manual_recover capture the incoming status in failure_status, disable recursive ERR handling only for recovery, and terminate the shell with exit failure_status on every recovery outcome.",
+    "durable_regression": "scripts/nwg-deployment-contract.test.mjs executes the extracted automatic-switch rollback function with an injected restart failure and requires nonzero exit, absence of SWITCH_STATUS=PASS, and restoration of the old SHA target.",
+    "result": "The prior false-PASS counterexample does not apply to the target implementation."
+  },
+  "findings": {
+    "critical": [],
+    "important": [],
+    "minor": [
+      {
+        "title": "Sequential child cleanup can short-circuit",
+        "detail": "runCanonicalIntegration awaits gateway stop, static stop, and temporary cleanup sequentially; an exceptional first stop can skip later cleanup. This is confined to the test harness and does not target the live release tree."
+      },
+      {
+        "title": "Dynamic-port release and rebind has a TOCTOU window",
+        "detail": "The helper asks the OS for a loopback port, closes the reservation, and then launches the child. A competing process can acquire the port in between; failures remain bounded to the temporary integration run."
+      },
+      {
+        "title": "Credential metadata is documented but not rechecked by the switch preflight",
+        "detail": "The runbook records root:root mode 0600, while the switch recipe checks readability rather than asserting owner, group, and mode with stat."
+      }
+    ]
+  },
+  "evidence_limitations": [
+    "This receipt does not approve a live deployment or remote GitHub Actions run.",
+    "The untracked R1-R3 and R8 evidence files were not rewritten, deleted, staged, pushed, or sealed by this reviewer.",
+    "Residual minor findings are non-blocking for the declared R8 source-quality scope."
+  ],
+  "verdict": {
+    "decision": "GO",
+    "scope": "R8 exact-HEAD source quality",
+    "basis": "Critical 0, Important 0; the previously reproduced false-PASS defect is fixed and protected by an executable regression; fresh lint, deployment, and diff checks returned exit code 0.",
+    "issued_at_utc": "2026-08-21T09:20:49.3120825Z"
+  }
+}

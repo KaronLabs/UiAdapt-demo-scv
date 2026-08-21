@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "receipt_type": "independent_source_spec_review",
+  "review_completed_at_utc": "2026-08-21T09:20:09.1311364Z",
+  "authority": {
+    "mode": "read_only_review_with_explicit_append_only_receipt_write",
+    "source_or_docs_modified": false,
+    "git_write_performed": false,
+    "push_or_deploy_performed": false,
+    "manifest_sealed_by_reviewer": false
+  },
+  "reviewer_relationship": {
+    "reviewer_task": "/root/r8_final_source_spec_review",
+    "independent_from_implementation": true,
+    "implemented_candidate": false,
+    "authored_submitted_evidence": false,
+    "reviewed_existing_raw_evidence_and_current_source": true
+  },
+  "target": {
+    "repository": "E:/03_AllWork/uiadapt-investor-stage",
+    "branch": "codex/uiadapt-investor-r8-remediation",
+    "target_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+    "comparison_base_sha": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "target_confirmed_at_receipt_creation": true
+  },
+  "review_scope": [
+    "non-destructive deployment test staging and cleanup",
+    "dynamic ports and external 127.0.0.1:5173 occupation",
+    "README, NWG release runbook, and threat model",
+    "exact remediation-branch GitHub Actions trigger",
+    "generated and append-only evidence lint boundary",
+    "resolution of the prior specification contradiction and failed R3 manifest verification capture"
+  ],
+  "prior_remand": {
+    "verdict": "REMAND",
+    "findings": [
+      {
+        "severity": "Important",
+        "finding": "The implementation plan called version-addressed releases immutable while the runbook and threat model correctly denied filesystem immutability enforcement.",
+        "resolution": "docs/superpowers/plans/2026-08-21-uiadapt-r8-remediation.md now requires version-addressed releases with deployment-time hash verification and explicitly states that filesystem immutability is not enforced. A durable contract test rejects the former wording.",
+        "status": "RESOLVED"
+      },
+      {
+        "severity": "Important",
+        "finding": "r3-manifest-reverify.json recorded exit code 2 because the evidence finalizer was invoked with unsupported --evidence-dir syntax.",
+        "resolution": "The failed capture remains preserved. r3-manifest-reverify-rerun1.json uses the positional CLI contract, exits 0, verifies 40 files, and reports EVIDENCE_VERIFY_RESULT=GREEN.",
+        "status": "RESOLVED"
+      }
+    ]
+  },
+  "evidence_inspected": [
+    {
+      "path": "review/r8_20260821_174851/evidence/source-gate-rerun2.json",
+      "sha256": "ca74e5b108bfdf591081e604e850d7ca78ace49f93fdbb354c93093320d4dfd0",
+      "captured_at_utc": "2026-08-21T09:12:11Z",
+      "exit_code": 0,
+      "accepted_observations": [
+        "SOURCE_GATE=PASS",
+        "Vitest 19 passed",
+        "gateway 16 passed",
+        "Playwright 45 passed",
+        "production audit found 0 vulnerabilities",
+        "git diff --check exited 0"
+      ]
+    },
+    {
+      "path": "review/r8_20260821_174851/evidence/sentinel-probation-rerun1.json",
+      "sha256": "55bab6b69a4995a8d05f92b55ed93352efdf9c978f24ce3f49b83ec070bd44fe",
+      "captured_at_utc": "2026-08-21T09:12:36Z",
+      "exit_code": 0,
+      "accepted_observations": [
+        "deployment tests 17 passed and 0 failed",
+        "SENTINEL_PRESERVED=PASS",
+        "sentinel before and after SHA-256 values are equal"
+      ]
+    },
+    {
+      "path": "review/r8_20260821_174851/evidence/port-probation-rerun1.json",
+      "sha256": "3884ef2c2a632f1a92d543e2235f2a690ac06be123cc0ef720710d58f2eb45a1",
+      "captured_at_utc": "2026-08-21T09:13:02Z",
+      "exit_code": 0,
+      "accepted_observations": [
+        "DUMMY_5173=LISTENING",
+        "deployment tests 17 passed and 0 failed",
+        "PORT_ISOLATION=PASS"
+      ]
+    },
+    {
+      "path": "review/r8_20260821_174851/evidence/r3-manifest-reverify.json",
+      "sha256": "bdb148d5c8ffedcdd46efaa72f3a6637d618813c0c6854913334c618aaa7362a",
+      "captured_at_utc": "2026-08-21T08:56:56Z",
+      "exit_code": 2,
+      "accepted_observations": [
+        "failed attempt preserved",
+        "failure was unsupported --evidence-dir CLI syntax"
+      ]
+    },
+    {
+      "path": "review/r8_20260821_174851/evidence/r3-manifest-reverify-rerun1.json",
+      "sha256": "9ddfcc5d12b6f6723d0f4ba14c30b1e7dd41d4f36bbeae35c9d749cf49756255",
+      "captured_at_utc": "2026-08-21T09:00:46Z",
+      "exit_code": 0,
+      "accepted_observations": [
+        "EVIDENCE_FILE_COUNT=40",
+        "EVIDENCE_VERIFY_RESULT=GREEN"
+      ]
+    },
+    {
+      "path": "review/r8_20260821_174851/evidence/source-diff-rerun1.json",
+      "sha256": "bc529fe7a2d9f3f7514011fee0d56ee52321b7d006e4f3c46831e9cbc63c6675",
+      "captured_at_utc": "2026-08-21T09:13:10Z",
+      "exit_code": 0,
+      "accepted_observations": [
+        "captured stdout exactly equals a fresh git diff --binary comparison_base..target"
+      ]
+    }
+  ],
+  "independent_confirmation_commands": {
+    "started_at_utc": "2026-08-21T09:20:06.0220715Z",
+    "finished_at_utc": "2026-08-21T09:20:09.1311364Z",
+    "results": [
+      {
+        "command": "git diff --check fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91..00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+        "exit_code": 0
+      },
+      {
+        "command": "npm run lint",
+        "exit_code": 0
+      },
+      {
+        "command": "node --test --test-name-pattern='release runbook|documented automatic switch preserves|project www preservation probe|canonical integration owns staging' scripts/nwg-deployment-contract.test.mjs",
+        "exit_code": 0,
+        "test_count": 4,
+        "passed": 4,
+        "failed": 0
+      }
+    ]
+  },
+  "findings": {
+    "critical": [],
+    "important": [],
+    "minor": [
+      {
+        "location": "scripts/nwg-deployment-contract.test.mjs:35-42,222-224",
+        "finding": "The integration discovers a dynamic port by binding to port 0, closes the reservation, and then starts the child process, leaving a bounded test-only time-of-check/time-of-use race.",
+        "impact": "Possible intermittent test failure under extreme parallel port contention; no production-path mutation or silent success.",
+        "blocking": false
+      },
+      {
+        "location": "scripts/nwg-deployment-contract.test.mjs:307-311",
+        "finding": "Sequential child shutdown means an exception while stopping the first child can prevent the second shutdown and temporary-root cleanup.",
+        "impact": "Possible test-process or temporary-directory residue after an abnormal child termination; no project www deletion.",
+        "blocking": false
+      }
+    ]
+  },
+  "limitations": [
+    "This receipt clears the declared source-remediation scope only.",
+    "It does not claim a new live deployment, full host reboot, product-clarity human test, remote GitHub Actions success, or final R8 package sealing.",
+    "The append-only evidence manifest must be sealed and verified after this receipt is added."
+  ],
+  "verdict": "GO",
+  "court_readiness_for_declared_source_scope": "READY",
+  "verdict_basis": "Both prior Important findings are resolved, the exact target diff is reproduced, the source gate and both probation runs are exit 0, and no unresolved material finding remains in the declared source scope."
+}

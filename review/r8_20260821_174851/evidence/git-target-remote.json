@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-21T09:19:07Z",
+  "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+  "command": "git rev-parse HEAD && git branch --show-current && git ls-remote origin refs/heads/codex/uiadapt-investor-r8-remediation refs/heads/main && git status --short --branch",
+  "stdout": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b\ncodex/uiadapt-investor-r8-remediation\n00c4c47a63f859d33b4264f6e6ddb3c5ef71913b\trefs/heads/codex/uiadapt-investor-r8-remediation\n68ac3a8abc1dfda26aa004d9d6d8e8db179b17d0\trefs/heads/main\n## codex/uiadapt-investor-r8-remediation...origin/codex/uiadapt-investor-r8-remediation\n?? review/evidence-lint-r3.json\n?? review/evidence/\n?? review/pre-court-final-review-r2.json\n?? review/pre-court-final-review-r3.json\n?? review/r8_20260821_174851/\n?? review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md\n?? review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md\n?? review/spec_20260821_113808_uiadapt_investor_stage_nwg_release_r3.md\n?? review/visual-review-final.json\n",
+  "stderr": "",
+  "exit_code": 0
+}

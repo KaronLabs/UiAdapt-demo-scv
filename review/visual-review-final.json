@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "review_kind": "independent_visual_review",
+  "reviewed_at_utc": "2026-08-21T02:28:42.2546461Z",
+  "reviewer": {
+    "identity": "/root/investor_stage_visual_review",
+    "role": "independent read-only visual reviewer",
+    "relationship_to_implementation": "Separate subagent from the implementation agent. This reviewer did not implement the investor-stage UI, generate the evidence run, commit, push, or deploy it.",
+    "relationship_to_requesting_agent": "Dispatched by /root solely to inspect the sealed screenshot evidence and write this receipt."
+  },
+  "scope": {
+    "evidence_run_path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage",
+    "screenshots_path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots",
+    "inventory_path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshot-inventory.json",
+    "inventory_location_note": "The inventory is a sibling of the screenshots directory, not a child of it.",
+    "inventory_sha256": "8af6211252df2b8e9f1bff66934805a6697a073211a5b415844116f30c6bef77",
+    "expected_png_count": 18,
+    "observed_png_count": 18,
+    "inventory_entry_count": 18,
+    "all_png_bytes_and_sha256_match_inventory": true,
+    "matrix": {
+      "viewports": [
+        "1440x900",
+        "1024x768",
+        "390x844"
+      ],
+      "states": [
+        "EXPLORE",
+        "COMPARE",
+        "FOCUS"
+      ],
+      "capture_modes": [
+        "viewport",
+        "full_page"
+      ],
+      "complete": true
+    },
+    "inspection_method": [
+      "Opened and visually inspected every one of the 18 PNG files from the exact sealed evidence path.",
+      "Compared each viewport capture with its full-page counterpart for the same viewport and state.",
+      "Recomputed every PNG byte length and SHA-256 hash and compared them with screenshot-inventory.json.",
+      "Read image dimensions directly and confirmed the nine viewport captures are exactly 1440x900, 1024x768, or 390x844 as named."
+    ]
+  },
+  "inspected_artifacts": [
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\desktop-1440-compare-viewport.png",
+      "sha256": "c2ce447520c215b8a76a4360c16563e554e1f54076393f4fbf0a2e8aae74b41c",
+      "bytes": 302166,
+      "width": 1440,
+      "height": 900,
+      "viewport": "desktop-1440",
+      "state": "COMPARE",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\desktop-1440-compare.png",
+      "sha256": "f24afa844e9404c0076c58aabb7f214a8046917f6174ae7dfe19f2e21d6790c8",
+      "bytes": 538591,
+      "width": 1440,
+      "height": 2387,
+      "viewport": "desktop-1440",
+      "state": "COMPARE",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\desktop-1440-explore-viewport.png",
+      "sha256": "12a4bbe7e83261f7a09ffbe705cfe01308352f7b4474204e72790db21046a5a3",
+      "bytes": 158088,
+      "width": 1440,
+      "height": 900,
+      "viewport": "desktop-1440",
+      "state": "EXPLORE",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\desktop-1440-explore.png",
+      "sha256": "c681dc207765ba94162cea3ab16be6fe17454789f198b8c9477b40849f31fdc4",
+      "bytes": 512071,
+      "width": 1440,
+      "height": 2069,
+      "viewport": "desktop-1440",
+      "state": "EXPLORE",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\desktop-1440-focus-viewport.png",
+      "sha256": "5bfce294bc284c05a8243e53bb739bac9c839d302e181612cfa2aeceff121a4e",
+      "bytes": 442623,
+      "width": 1440,
+      "height": 900,
+      "viewport": "desktop-1440",
+      "state": "FOCUS",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\desktop-1440-focus.png",
+      "sha256": "464a1723263c2295233fae29d71c29e38c65283671427f35d531e985fa60afca",
+      "bytes": 685662,
+      "width": 1440,
+      "height": 2373,
+      "viewport": "desktop-1440",
+      "state": "FOCUS",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\laptop-1024-compare-viewport.png",
+      "sha256": "e70275943cce49b3bca1e226ffe6e634d69241b48a4c473f82fea657bcfa5a7a",
+      "bytes": 57508,
+      "width": 1024,
+      "height": 768,
+      "viewport": "laptop-1024",
+      "state": "COMPARE",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\laptop-1024-compare.png",
+      "sha256": "68b83441e11cecd01efebdca8209bf9994d1970da78a99296a9b7614d224715d",
+      "bytes": 593551,
+      "width": 1024,
+      "height": 3754,
+      "viewport": "laptop-1024",
+      "state": "COMPARE",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\laptop-1024-explore-viewport.png",
+      "sha256": "75d6f7e8a7f63dcde822a615ed0e97a65319d9ba984160017622ded0bff2a57e",
+      "bytes": 131204,
+      "width": 1024,
+      "height": 768,
+      "viewport": "laptop-1024",
+      "state": "EXPLORE",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\laptop-1024-explore.png",
+      "sha256": "fb6f2ccd7ca499cb7681bfadce73cc9e87d8b5086e2df14d4c922f6ceea9b1e9",
+      "bytes": 566864,
+      "width": 1024,
+      "height": 3301,
+      "viewport": "laptop-1024",
+      "state": "EXPLORE",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\laptop-1024-focus-viewport.png",
+      "sha256": "efe0d2f16d0b64ff3d51c34b7ba0e41500d0a34db7ad34f71362c6d1a3ce52e7",
+      "bytes": 213944,
+      "width": 1024,
+      "height": 768,
+      "viewport": "laptop-1024",
+      "state": "FOCUS",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\laptop-1024-focus.png",
+      "sha256": "b5b1624f68245ad05cfd1962dd0e915748eb880c47550251af54dad20b509a7f",
+      "bytes": 698332,
+      "width": 1024,
+      "height": 3279,
+      "viewport": "laptop-1024",
+      "state": "FOCUS",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\mobile-390-compare-viewport.png",
+      "sha256": "966be81cbf984355a6025dc3cba7f56e70b0e324ab36a6cd401112439d95359a",
+      "bytes": 66613,
+      "width": 390,
+      "height": 844,
+      "viewport": "mobile-390",
+      "state": "COMPARE",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\mobile-390-compare.png",
+      "sha256": "6a59b8e150da92715fb5642a8bc2ab5cef776c859bc0827874c4ebf4b3f543d4",
+      "bytes": 504153,
+      "width": 390,
+      "height": 4906,
+      "viewport": "mobile-390",
+      "state": "COMPARE",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\mobile-390-explore-viewport.png",
+      "sha256": "c3dccc57ce78671c2940aeba170174cb0058956d9800f889a9214f946ddefae2",
+      "bytes": 81084,
+      "width": 390,
+      "height": 844,
+      "viewport": "mobile-390",
+      "state": "EXPLORE",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\mobile-390-explore.png",
+      "sha256": "12f52da693c8c5091ae03ab99c3228e0d2c4de3a221448fd13d744a63403a472",
+      "bytes": 477896,
+      "width": 390,
+      "height": 4463,
+      "viewport": "mobile-390",
+      "state": "EXPLORE",
+      "capture_mode": "full_page"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\mobile-390-focus-viewport.png",
+      "sha256": "554758eb2df5f22cfbaeef592bf09400e2189f61302b35f6a0720aaf70f44591",
+      "bytes": 132684,
+      "width": 390,
+      "height": 844,
+      "viewport": "mobile-390",
+      "state": "FOCUS",
+      "capture_mode": "viewport"
+    },
+    {
+      "path": "E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\screenshots\\mobile-390-focus.png",
+      "sha256": "b90fb7173a203ef12c03d86d27cdfc9477c8af4dd3d15d6e8ce22d24924cfb79",
+      "bytes": 575383,
+      "width": 390,
+      "height": 4958,
+      "viewport": "mobile-390",
+      "state": "FOCUS",
+      "capture_mode": "full_page"
+    }
+  ],
+  "findings": {
+    "critical": [],
+    "important": [],
+    "minor": []
+  },
+  "visual_assessment": {
+    "message_clarity": "The hero, invariant statement, and Behavior-to-State-to-Policy-to-Interface causal trace present UIAdapt as adaptive UI infrastructure rather than a generic store.",
+    "state_differentiation": "EXPLORE keeps equal discovery emphasis, COMPARE visibly introduces a side-by-side comparison surface, and FOCUS introduces decision support while emphasizing Aurora One.",
+    "responsive_layout": "No visual overlap, clipping, horizontal overflow, or orphaned 1024px third-product layout was observed. Halo Air is centered beneath the first two products at 1024px in EXPLORE and COMPARE.",
+    "mobile_layout": "The 390px comparison table and focus decision-support surface remain readable. The Why-panel action remains on one line.",
+    "brand_separation": "UIAdapt remains the primary technology brand while Atelier Audio is explicitly presented as the sample store.",
+    "new_visual_regressions_observed": false
+  },
+  "verdict": "PASS",
+  "verdict_basis": "All 18 sealed PNGs were opened and visually reviewed. Their byte lengths and SHA-256 hashes match the supplied inventory, the 3x3x2 evidence matrix is complete, prior visual remand issues are absent, and no new Critical, Important, or Minor visual defect was observed.",
+  "limitations": [
+    "This receipt evaluates static captured pixels only; it does not independently execute Replay, buttons, scrolling, focus movement, reduced-motion behavior, keyboard navigation, or screen-reader announcements.",
+    "Static screenshots cannot establish console-error count, request failures, external network activity, font loading provenance, performance, or runtime determinism.",
+    "No human product-clarity study was performed by this reviewer.",
+    "The inventory file was found at the evidence-run root as a sibling of screenshots, despite the request wording placing it under screenshots; this path difference did not affect the 18-of-18 hash match.",
+    "The receipt does not adjudicate source code, Git provenance, deployment correctness, security, or production availability beyond what is visible in the supplied PNGs."
+  ]
+}

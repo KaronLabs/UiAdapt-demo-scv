@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "receipt_id": "pre-court-independent-review-20260821T022420Z",
+  "created_at_utc": "2026-08-21T02:24:20.1743185Z",
+  "authority_mode": "read_only",
+  "reviewer_relationship": {
+    "reviewer": "independent pre-court subagent /root/investor_stage_quality_review",
+    "implementation_author": "different agent",
+    "deployment_operator": "different root agent",
+    "spec_author": "different root agent",
+    "prior_quality_reviewer": "this task identity previously reviewed the code diff, but did not implement, deploy, author the submitted spec, or author the submitted evidence package",
+    "mutation_authority": "Only this pre-court-independent-review.json receipt was authorized. Product source, Git state, deployment, specification, and all pre-existing evidence were read-only."
+  },
+  "review_scope": {
+    "spec": "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md",
+    "evidence_directory": "review/evidence/run_20260821_020352_uiadapt_investor_stage",
+    "review_target": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "comparison_base": "91d73b45adeb97b86be97dba69f638ab910a06e9",
+    "included": [
+      "required spec inputs and sections",
+      "evidence quote to capture equality",
+      "Git target, base, diff, remote branch, and provenance binding",
+      "failure-history disclosure",
+      "threat model and residual risk consistency",
+      "companion-process receipts",
+      "package sealing and reproducibility",
+      "secret-exposure scan",
+      "success-claim sufficiency"
+    ],
+    "excluded": [
+      "source remediation",
+      "Git mutation",
+      "deployment or service mutation",
+      "specification mutation",
+      "live credential retrieval",
+      "human product-clarity experiment",
+      "full host reboot"
+    ]
+  },
+  "package_completeness": {
+    "status": "PARTIAL",
+    "file_count_before_this_receipt": 35,
+    "total_bytes_before_this_receipt": 6884222,
+    "zero_byte_artifacts": 0,
+    "spec_present": true,
+    "source_diff_present": true,
+    "source_diff_sha256": "0cf119de60753e3ab70bac9541c64a60eb28512dd83684b05c1542664db33087",
+    "source_diff_git_blob": "89075eb97e54ed41ae0e4bcc800008b0c42991a5",
+    "evidence_quote_count": 9,
+    "evidence_quote_stream_mismatch_count": 0,
+    "screenshot_count": 18,
+    "screenshot_inventory_mismatch_count": 0,
+    "sha256_manifest_present_before_this_receipt": false,
+    "independent_visual_verdict_receipt_present": false,
+    "reason": "Core source, automated, runtime, public-smoke, screenshot, and provenance artifacts are present and internally consistent. Court package sealing and two required companion-receipt records are incomplete, and the claimed independent visual verdict has no verdict artifact."
+  },
+  "required_input_matrix": [
+    {"input": "review target", "status": "PRESENT", "evidence": "meta.review_target plus sanitized Git receipt"},
+    {"input": "comparison base", "status": "PRESENT", "evidence": "meta.comparison_base plus sanitized Git receipt"},
+    {"input": "included and excluded scope", "status": "PRESENT", "evidence": "meta.scope"},
+    {"input": "changed files or reproducible diff", "status": "PRESENT", "evidence": "source.diff, exact seven-path diff, regenerated Git blob match"},
+    {"input": "constitution paths", "status": "PRESENT", "evidence": "meta.constitution_paths"},
+    {"input": "claims and test perimeter", "status": "PRESENT_WITH_LIMITATION", "evidence": "summary, implementation, impact, tests; manual visual verdict receipt is absent"},
+    {"input": "evidence package and timestamps", "status": "PRESENT_WITH_LIMITATION", "evidence": "nine bound captures and independent provenance; no SHA256SUMS sealing manifest"},
+    {"input": "known risks and missing items", "status": "PRESENT", "evidence": "meta.evidence_package.known_missing_items and risks"},
+    {"input": "reviewer access assumption", "status": "PRESENT", "evidence": "meta.reviewer_access_assumption"},
+    {"input": "explicit verification authority matrix", "status": "MISSING_FROM_SPEC", "evidence": "Current caller separately authorized read-only review and this JSON write, but the self-contained spec does not classify local reads, writes, Git, network/provider, service, deployment, payment, and runtime authority."},
+    {"input": "companion-process receipts", "status": "INCOMPLETE", "evidence": "Evidence linter receipt is complete; verification-before-completion and independent-review records omit required exact invocation/bounded output/UTC receipt fields."}
+  ],
+  "applicability_matrix": [
+    {"check": "source and Git provenance", "state": "APPLICABLE", "result": "PASS"},
+    {"check": "evidence quote stream equality", "state": "APPLICABLE", "result": "PASS"},
+    {"check": "evidence package sealing", "state": "APPLICABLE", "result": "FAIL"},
+    {"check": "automated and runtime evidence review", "state": "APPLICABLE", "result": "PASS_WITH_DECLARED_LIMITATIONS"},
+    {"check": "independent visual verdict receipt", "state": "APPLICABLE", "result": "UNAVAILABLE"},
+    {"check": "secret exposure", "state": "APPLICABLE", "result": "PASS_WITH_RESIDUAL_METADATA_DISCLOSURE"},
+    {"check": "human product clarity", "state": "UNAVAILABLE", "result": "PRODUCT_CLARITY=NOT_VERIFIED"},
+    {"check": "full host reboot recovery", "state": "UNAVAILABLE", "result": "NOT_EXECUTED_AND_EXCLUDED"},
+    {"check": "source, Git, spec, or deployment remediation", "state": "BLOCKED", "result": "FORBIDDEN_BY_READ_ONLY_AUTHORITY"}
+  ],
+  "claim_to_evidence_matrix": [
+    {
+      "claim": "The declared target, base, branch, and source diff are exact.",
+      "evidence": ["git-target.json", "source.diff", "source-diff-receipt.json", "independent sanitized Git commands in this receipt"],
+      "evidence_type": "static",
+      "freshness": "2026-08-21T02:21:45Z to 2026-08-21T02:22:14Z independent recomputation",
+      "contradictions": [],
+      "verdict": "SUPPORTED"
+    },
+    {
+      "claim": "The final target passes the declared lint, unit, gateway, deployment, build, E2E, and production audit perimeter.",
+      "evidence": ["automated-verification.json"],
+      "evidence_type": "automated",
+      "freshness": "2026-08-21T02:06:27Z",
+      "contradictions": [],
+      "verdict": "SUPPORTED_BY_CAPTURE"
+    },
+    {
+      "claim": "The exact target SHA is the running nwg release and the public nested URL passes auth, font, state, asset, overflow, console, and network checks.",
+      "evidence": ["runtime-verification.json", "independent-public-smoke.json", "independent-provenance.json"],
+      "evidence_type": "runtime_and_live",
+      "freshness": "2026-08-21T02:06:29Z to 2026-08-21T02:12:07Z",
+      "contradictions": [],
+      "verdict": "SUPPORTED_WITH_DISCLOSED_AUDITOR_CORRECTION"
+    },
+    {
+      "claim": "Known deployment, SCP, PowerShell, Git caret, and provenance-auditor failures were not hidden.",
+      "evidence": ["implementation.exception_history", "known_missing_items", "risks", "git-target-attempt1-failed.json", "deployment-history.json", "independent-provenance.json"],
+      "evidence_type": "repro_and_author_disclosure",
+      "freshness": "current package",
+      "contradictions": [],
+      "verdict": "SUPPORTED_WITH_EXPLICIT_RAW_LOG_GAPS"
+    },
+    {
+      "claim": "An independent visual review found no Critical, Important, or Minor issue.",
+      "evidence": ["screenshot-inventory.json"],
+      "evidence_type": "manual_claim_with_inventory_only",
+      "freshness": "2026-08-21T02:09:18Z inventory",
+      "contradictions": ["The referenced artifact contains only filename, size, and SHA-256 rows; it does not contain reviewer identity, inspected screenshot set, findings, or verdict."],
+      "verdict": "NOT_PROVEN"
+    },
+    {
+      "claim": "The evidence directory contains a manifest and is ready for another reviewer to verify by digest.",
+      "evidence": ["spec lines 238-241 and 465", "evidence directory inventory", "finalize_evidence.py verify output"],
+      "evidence_type": "package_integrity",
+      "freshness": "2026-08-21T02:23:11Z",
+      "contradictions": ["SHA256SUMS is absent and finalize_evidence.py verify exits 1."],
+      "verdict": "CONTRADICTED"
+    },
+    {
+      "claim": "PRODUCT_CLARITY is verified.",
+      "evidence": ["meta.scope.excluded", "known_missing_items", "risks"],
+      "evidence_type": "unavailable",
+      "freshness": "current package",
+      "contradictions": [],
+      "verdict": "NOT_CLAIMED; PRODUCT_CLARITY=NOT_VERIFIED"
+    }
+  ],
+  "findings": {
+    "Critical": [],
+    "High": [],
+    "Medium": [
+      {
+        "id": "PC-M1",
+        "title": "The package claims a digest manifest that does not exist",
+        "evidence": "Spec lines 238-241 describe the evidence directory as containing a manifest, line 465 asks the reviewer to recompute its digest, and line 506 declares success. A recursive inventory found 35 pre-review files and no SHA256SUMS. `finalize_evidence.py verify` exited 1 with `ERROR: cannot read manifest ... SHA256SUMS`.",
+        "violated_requirement": "Pre-court package completeness, reproducibility, and the evidence-quote-linter sealing workflow require a self-excluding SHA-256 manifest when the package claims one.",
+        "impact": "The untracked evidence package is mutable and cannot be verified as the exact frozen package reviewed. The direct manifest claim is false, so status=success is not Court-ready.",
+        "exact_location": ["review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:238", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:240", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:465", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:506", "review/evidence/run_20260821_020352_uiadapt_investor_stage/SHA256SUMS (absent)"],
+        "required_correction": "After all final receipts, including this review, are frozen, use an explicitly authorized sealing session to run `finalize_evidence.py seal <evidence-dir>`, preserve the command/streams/RC/UTC receipt, then run `finalize_evidence.py verify <evidence-dir>`. Update the spec only through the authorized append-only/new-spec workflow so it names the manifest digest rather than merely claiming one.",
+        "verification_required": "Fresh manifest verification RC 0, evidence quote lint RC 0, and a new independent pre-court pass over the sealed bytes."
+      },
+      {
+        "id": "PC-M2",
+        "title": "Two mandatory companion-process records are author summaries rather than complete receipts",
+        "evidence": "Spec lines 486-504 mark verification_before_completion and independent_review COMPLETED, but omit required completed_at_utc and bounded_output fields; their invocation text is a prose description rather than the exact command/invocation. Referenced artifacts are useful evidence, but the companion records do not bind the claimed process completion to a complete receipt.",
+        "violated_requirement": "The governing pre-court skill requires applicability, status, exact command or invocation, bounded output, UTC timestamp, and artifact location for every applicable companion process; an author statement is not a receipt.",
+        "impact": "A different reviewer cannot establish when or exactly how the mandatory completion gates ran, so Court clearance lacks required process provenance.",
+        "exact_location": ["review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:486", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:489", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:495", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:498"],
+        "required_correction": "Create digest-bound companion receipts for verification-before-completion and independent review. Each must record exact invocation, full bounded stdout/stderr, exit code, UTC start/completion, reviewer relationship, and artifact path. Then reference those receipts from a new append-only spec revision.",
+        "verification_required": "Schema inspection confirms every mandatory field; receipt artifact digests are covered by the final SHA256SUMS; independent re-review confirms timestamps do not precede the work they attest."
+      },
+      {
+        "id": "PC-M3",
+        "title": "The asserted independent visual-review verdict is not evidenced by its cited capture",
+        "evidence": "Spec lines 306-310 claim an independent visual review found no Critical, Important, or Minor issue, but screenshot-inventory.json contains only 18 filename/size/SHA-256 rows. It has no reviewer relationship, screenshots inspected, visual findings, or verdict.",
+        "violated_requirement": "Every material manual claim must identify the reviewer, scope, observations, timestamp, and artifact; author narrative cannot be substituted for an independent review receipt.",
+        "impact": "The core investor-stage visual-quality clearance is not reproducible from the submitted package even though screenshot integrity itself is valid.",
+        "exact_location": ["review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:306", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:309", "review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md:310", "review/evidence/run_20260821_020352_uiadapt_investor_stage/screenshot-inventory.json"],
+        "required_correction": "Add the actual different-session visual-review receipt with reviewer relationship, exact 18 screenshot hashes/paths inspected, viewport/state coverage, findings, verdict, UTC timestamp, and limitations; otherwise relabel the statement as unverified and remove the no-finding claim.",
+        "verification_required": "A new reviewer can bind the receipt to the exact 18 screenshot hashes and reproduce the declared visual-review scope."
+      }
+    ],
+    "Low": []
+  },
+  "evidence_limitations": [
+    "No live credential or SSH access was assumed for this pre-court reviewer; live claims were audited from redacted independent captures.",
+    "No full test suite was rerun because this review's declared purpose was package adjudication, and source/runtime mutation was forbidden.",
+    "No human three-person product-clarity experiment was performed; the spec correctly retains PRODUCT_CLARITY=NOT_VERIFIED.",
+    "No full host reboot was performed; the spec correctly excludes that evidence level.",
+    "The first silent SCP anomaly, one auxiliary PowerShell syntax error, and historical RED outputs have no raw package capture; these gaps are disclosed.",
+    "This reviewer had two disclosed auxiliary command-construction failures: one environment-clearing attempt left empty Git environment variables and semantically failed despite wrapper RC 0; one cmd-quoted diff pipeline returned the empty-blob hash despite wrapper RC 0. A later native sanitized pipeline produced the correct matching blob. One quote-comparison command had a PowerShell parser error and was rerun successfully."
+  ],
+  "residual_risks": [
+    {"risk": "Short shared Basic Auth credential and prior conversational exposure", "severity": "medium", "spec_consistency": "disclosed and handled by rotation plan"},
+    {"risk": "Tailscale Funnel and host availability", "severity": "low", "spec_consistency": "disclosed and accepted unresolved"},
+    {"risk": "Host reboot recovery not observed", "severity": "medium", "spec_consistency": "disclosed and excluded"},
+    {"risk": "Credential file size metadata is present in provenance evidence", "severity": "low", "spec_consistency": "contents and digest were not exposed; no secret literal found"},
+    {"risk": "Complete Wanted Sans asset is approximately 1.29 MB", "severity": "low", "spec_consistency": "disclosed; no comparative performance claim made"}
+  ],
+  "secret_scan": {
+    "text_files_scanned": ["json", "ps1", "mjs", "diff", "md", "txt"],
+    "private_key_header_hits": 0,
+    "authorization_header_hits": 0,
+    "credential_in_uri_hits": 0,
+    "token_or_api_key_assignment_hits": 0,
+    "basic_authorization_literal_hits": 0,
+    "actual_password_literal_hits": 0,
+    "code_literal_for_deliberately_incorrect_credential_hits": 1,
+    "result": "PASS_WITH_NO_SECRET_CONTENT_FOUND"
+  },
+  "companion_process_matrix": [
+    {"process": "evidence_quote_linter", "applicability": "APPLICABLE", "status": "COMPLETED", "receipt": "evidence-lint.json", "independent_recheck": "RC 0 at 2026-08-21T02:19:02Z"},
+    {"process": "verification_before_completion", "applicability": "APPLICABLE", "status": "INCOMPLETE_RECEIPT", "receipt": "automated-verification.json and runtime-verification.json are referenced but the spec's companion record lacks exact invocation, bounded output, and UTC completion"},
+    {"process": "independent_review", "applicability": "APPLICABLE", "status": "INCOMPLETE_RECEIPT", "receipt": "independent-public-smoke.json and independent-provenance.json are substantive but the spec's companion record lacks an exact invocation, bounded output, and UTC completion"},
+    {"process": "evidence_package_sealing", "applicability": "APPLICABLE", "status": "MISSING", "receipt": "SHA256SUMS absent; verify RC 1"}
+  ],
+  "commands": [
+    {
+      "id": "evidence-quote-linter-recheck",
+      "command": "python E:/03_AllWork/grafana/.agents/skills/evidence-quote-linter/scripts/lint_evidence.py E:/03_AllWork/uiadapt-investor-stage/review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md",
+      "utc_start": "2026-08-21T02:19:02.2745513Z",
+      "utc_end": "2026-08-21T02:19:02.4131821Z",
+      "stdout": "Evidence lint passed: E:\\03_AllWork\\uiadapt-investor-stage\\review\\spec_20260821_021401_uiadapt_investor_stage_nwg_release.md\r\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "evidence-manifest-verify",
+      "command": "python E:/03_AllWork/grafana/.agents/skills/evidence-quote-linter/scripts/finalize_evidence.py verify E:/03_AllWork/uiadapt-investor-stage/review/evidence/run_20260821_020352_uiadapt_investor_stage",
+      "utc_start": "2026-08-21T02:19:08.5060759Z",
+      "utc_end": "2026-08-21T02:19:08.6188503Z",
+      "stdout": "",
+      "stderr": "ERROR: cannot read manifest: [Errno 2] No such file or directory: 'E:\\\\03_AllWork\\\\uiadapt-investor-stage\\\\review\\\\evidence\\\\run_20260821_020352_uiadapt_investor_stage\\\\SHA256SUMS'\r\n",
+      "exit_code": 1
+    },
+    {
+      "id": "sanitized-git-target-and-status",
+      "command": "Remove Git repository-selection/object/config override environment entries; set GIT_CONFIG_NOSYSTEM=1 and GIT_CONFIG_GLOBAL=NUL; run git --no-replace-objects -C E:/03_AllWork/uiadapt-investor-stage rev-parse/status/shallow checks; restore environment",
+      "utc_start": "2026-08-21T02:21:45.2282563Z",
+      "utc_end": "2026-08-21T02:21:45.5270659Z",
+      "stdout": "REPO_ROOT=E:/03_AllWork/uiadapt-investor-stage\nCAPTURE_CWD=E:\\03_AllWork\\uiadapt-investor-stage\nHEAD=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nBASE=91d73b45adeb97b86be97dba69f638ab910a06e9\nTARGET=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nTARGET_TREE=8738e6e8cf3d4aa6e205b18a51a17b591a0ab218\nSTATUS=branch tracks origin; only review/spec and review/evidence files are untracked\nREPLACEMENTS_DISABLED=true\nSHALLOW=false\nSOURCE_DIFF_BLOB=89075eb97e54ed41ae0e4bcc800008b0c42991a5\n",
+      "stderr": "",
+      "exit_code": 0,
+      "note": "The cmd-quoted diff sub-pipeline in this compound attempt produced the empty-blob hash and is not accepted as diff evidence; the next native pipeline is the accepted diff receipt."
+    },
+    {
+      "id": "sanitized-native-diff-digest",
+      "command": "Sanitized native byte-preserving pipeline: git --no-replace-objects -C E:/03_AllWork/uiadapt-investor-stage diff --no-ext-diff --binary <base> <target> | git hash-object --stdin; compare to source.diff blob",
+      "utc_start": "2026-08-21T02:22:00.4691904Z",
+      "utc_end": "2026-08-21T02:22:00.5569289Z",
+      "stdout": "REGENERATED_DIFF_BLOB=89075eb97e54ed41ae0e4bcc800008b0c42991a5\nSOURCE_DIFF_BLOB=89075eb97e54ed41ae0e4bcc800008b0c42991a5\nMATCH=True\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "sanitized-remote-branch",
+      "command": "Sanitized git --no-replace-objects ls-remote git@github-karonlabs:KaronLabs/UiAdapt-demo-scv.git refs/heads/codex/uiadapt-investor-stage",
+      "utc_start": "2026-08-21T02:22:11.6875080Z",
+      "utc_end": "2026-08-21T02:22:14.0639413Z",
+      "stdout": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\trefs/heads/codex/uiadapt-investor-stage\nEXPECTED_MATCH=True\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "evidence-quote-exact-stream-comparison",
+      "command": "Compare all nine spec evidence quotes to referenced capture command/stdout/stderr/exit_code and timestamp->captured_at_utc",
+      "utc_start": "2026-08-21T02:23:31.2336911Z",
+      "utc_end": "2026-08-21T02:23:31.2804605Z",
+      "stdout": "QUOTE_COUNT=9\nMATCH_COUNT=9\nMISMATCH_COUNT=0\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "screenshot-inventory-recheck",
+      "command": "Parse screenshot-inventory.json stdout and recompute current screenshot size and SHA-256 for all entries",
+      "utc_start": "2026-08-21T02:23:02.9201112Z",
+      "utc_end": "2026-08-21T02:23:02.9373028Z",
+      "stdout": "INVENTORY_COUNT=18\nACTUAL_PNG_COUNT=18\nMISMATCH_COUNT=0\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "evidence-package-inventory",
+      "command": "Recursive read-only evidence inventory; count files and bytes; detect zero-byte artifacts, SHA256SUMS, and prior pre-court receipt",
+      "utc_start": "2026-08-21T02:23:11.3953903Z",
+      "utc_end": "2026-08-21T02:23:11.4758161Z",
+      "stdout": "FILE_COUNT=35\nTOTAL_BYTES=6884222\nZERO_BYTE_COUNT=0\nSHA256SUMS_EXISTS=False\nPRECOURT_REVIEW_EXISTS=False\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "secret-exposure-scan",
+      "command": "Scan evidence text artifacts for private-key headers, Authorization headers, credential-bearing URIs, token/API-key assignments, Basic literals, and password literals; report categories and locations without reproducing values",
+      "utc_start": "2026-08-21T02:20:17.1586639Z",
+      "utc_end": "2026-08-21T02:20:17.2369689Z",
+      "stdout": "private-key-header=0\nauthorization-header=0\nuri-credential=0\ntoken-assignment=0\nbasic-literal=0\npassword-assignment=1 at independent-public-smoke.mjs:51, confirmed to be the literal deliberately-incorrect-credential used for the negative auth test\nactual-secret-content=0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  ],
+  "reviewer_command_failures": [
+    {
+      "id": "reviewer-git-sanitization-attempt-1",
+      "utc_start": "2026-08-21T02:21:29.3700152Z",
+      "utc_end": "2026-08-21T02:21:29.6372486Z",
+      "exit_code": 0,
+      "semantic_result": "FAILED_NOT_ACCEPTED",
+      "stderr": "fatal: not a git repository: '' repeated because environment variables were set to empty strings instead of removed",
+      "resolution": "Reran after removing the environment entries; target checks passed. The wrapper's RC 0 is disclosed and was not treated as evidence."
+    },
+    {
+      "id": "reviewer-cmd-quoted-diff-subpipeline",
+      "utc_start": "2026-08-21T02:21:45.2282563Z",
+      "utc_end": "2026-08-21T02:21:45.5270659Z",
+      "exit_code": 0,
+      "semantic_result": "FAILED_NOT_ACCEPTED",
+      "stdout": "REGENERATED_DIFF_BLOB=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "resolution": "Replaced cmd quoting with a native byte-preserving PowerShell pipeline; regenerated and source diff blobs both became 89075eb97e54ed41ae0e4bcc800008b0c42991a5."
+    },
+    {
+      "id": "reviewer-evidence-quote-compare-parser-attempt",
+      "captured_at_utc": "2026-08-21T02:23:24Z",
+      "exit_code": 1,
+      "semantic_result": "FAILED_NOT_ACCEPTED",
+      "stderr": "PowerShell ParserError: variable reference was not valid before a colon",
+      "resolution": "Used ${i} delimiting and reran. All nine quotes matched."
+    }
+  ],
+  "verdict": "NOT_READY_FOR_COURT",
+  "verdict_basis": "No Critical or High source/runtime defect was found, and the target, diff, captures, screenshots, public smoke, and provenance are substantively strong. Verdict precedence nevertheless requires NOT_READY_FOR_COURT because PC-M1 directly contradicts the package's manifest/success claim and PC-M2/PC-M3 are unresolved material verification defects inside the declared source/deployment/live review scope.",
+  "next_actions": [
+    "Preserve this receipt unchanged as part of the current failed-to-clear review history.",
+    "Add complete verification-before-completion and independent-review companion receipts, and add or withdraw the independent visual-review verdict claim.",
+    "After every final artifact is frozen, seal the evidence directory with a self-excluding SHA256SUMS and capture seal/verify command, streams, RC, and UTC.",
+    "Create a new append-only spec revision that references the exact receipts and manifest digest; do not rewrite this submitted spec in place.",
+    "Run evidence quote lint, manifest verify, and a fresh different-session pre-court review over the newly sealed package."
+  ]
+}

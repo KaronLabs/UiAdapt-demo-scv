@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "receipt_id": "pre-court-final-review-r3-20260821T024011Z",
+  "created_at_utc": "2026-08-21T02:40:11.9150701Z",
+  "authority_mode": "read_only",
+  "reviewer_relationship": {
+    "reviewer": "/root/investor_stage_quality_review",
+    "role": "fresh final independent pre-Court reviewer",
+    "implementation_author": "different agent",
+    "deployment_operator": "different root agent",
+    "r3_spec_author": "different root agent",
+    "evidence_sealer": "different root agent",
+    "mutation_authority": "No existing spec, evidence, product, Git, or deployment mutation. Only this external R3 final-review receipt was authorized."
+  },
+  "review_scope": {
+    "spec_path": "review/spec_20260821_113808_uiadapt_investor_stage_nwg_release_r3.md",
+    "spec_sha256": "ef038bfa0b3edb1936f9d57dd576ad41a9c5de0ab9f24087826f6a855006b154",
+    "r3_linter_receipt_path": "review/evidence-lint-r3.json",
+    "r3_linter_receipt_sha256": "e463b0b755e40aae5d47cf4dc0c42a84867e9d31715d018941e255aa4c73e1e8",
+    "sealed_evidence_directory": "review/evidence/run_20260821_020352_uiadapt_investor_stage",
+    "manifest_path": "review/evidence/run_20260821_020352_uiadapt_investor_stage/SHA256SUMS",
+    "manifest_sha256": "6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33",
+    "review_target": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "comparison_base": "91d73b45adeb97b86be97dba69f638ab910a06e9"
+  },
+  "r2_m1_correction": {
+    "status": "RESOLVED",
+    "checks": [
+      {
+        "field": "meta.spec_revision",
+        "expected": 3,
+        "actual": 3,
+        "result": "PASS"
+      },
+      {
+        "field": "meta.supersedes",
+        "expected": "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md",
+        "actual": "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md",
+        "result": "PASS"
+      },
+      {
+        "field": "meta.revised_at_utc",
+        "expected": "present UTC timestamp",
+        "actual": "2026-08-21T02:38:08Z",
+        "result": "PASS"
+      },
+      {
+        "field": "meta.evidence_package.spec_file_path",
+        "expected": "review/spec_20260821_113808_uiadapt_investor_stage_nwg_release_r3.md",
+        "actual": "review/spec_20260821_113808_uiadapt_investor_stage_nwg_release_r3.md",
+        "result": "PASS"
+      },
+      {
+        "field": "meta.evidence_package.manifest.path",
+        "expected": "review/evidence/run_20260821_020352_uiadapt_investor_stage/SHA256SUMS",
+        "actual": "review/evidence/run_20260821_020352_uiadapt_investor_stage/SHA256SUMS",
+        "result": "PASS"
+      },
+      {
+        "field": "meta.evidence_package.manifest.sha256",
+        "expected": "6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33",
+        "actual": "6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33",
+        "result": "PASS"
+      },
+      {
+        "field": "meta.evidence_package.manifest.entry_count",
+        "expected": 40,
+        "actual": 40,
+        "result": "PASS"
+      },
+      {
+        "field": "meta.evidence_package.manifest.self_excluding",
+        "expected": true,
+        "actual": true,
+        "result": "PASS"
+      },
+      {
+        "field": "meta.evidence_package.manifest.verification_result",
+        "expected": "GREEN",
+        "actual": "GREEN",
+        "result": "PASS"
+      }
+    ]
+  },
+  "verification_results": {
+    "direct_r3_lint": {
+      "result": "PASS",
+      "exit_code": 0,
+      "quote_count": 9,
+      "quote_capture_mismatch_count": 0
+    },
+    "r3_linter_receipt": {
+      "result": "PASS",
+      "exit_code": 0,
+      "stderr_length": 0,
+      "captured_at_utc": "2026-08-21T02:38:20Z",
+      "spec_path_bound": true
+    },
+    "manifest_verify": {
+      "result": "GREEN",
+      "exit_code": 0,
+      "entry_count": 40,
+      "manifest_sha256_match": true
+    },
+    "secret_scan": {
+      "r3_secret_pattern_hits": 0,
+      "result": "PASS"
+    },
+    "risk_and_status_consistency": {
+      "status": "success",
+      "product_clarity": "NOT_VERIFIED and not promoted",
+      "full_host_reboot": "NOT_EXECUTED and not promoted",
+      "result": "PASS"
+    },
+    "prior_remediation_chain": {
+      "pc_m1": "RESOLVED by sealed manifest plus R3 identity binding",
+      "pc_m2": "RESOLVED by mandatory companion receipts",
+      "pc_m3": "RESOLVED by 18-image independent visual receipt",
+      "r2_m1": "RESOLVED by R3 self path, manifest metadata, and revised_at_utc"
+    }
+  },
+  "claim_to_evidence_matrix": [
+    {
+      "claim": "R3 is the exact submitted append-only specification revision.",
+      "evidence": "R3 path, SHA-256, revision=3, supersedes=R2, revised_at_utc",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "R3 names the exact sealed evidence package.",
+      "evidence": "evidence_package.manifest path/digest/count/self-excluding/GREEN",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "The sealed evidence package remains intact.",
+      "evidence": "Fresh finalize_evidence.py verify RC 0 over all 40 entries",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "R3 evidence quotes match raw captures.",
+      "evidence": "Direct lint RC 0 plus independent nine-quote comparison",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "The R3 linter receipt describes the R3 lint execution.",
+      "evidence": "evidence-lint-r3.json command/stdout/stderr/RC/UTC",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "Human product clarity and full-host reboot are proven.",
+      "evidence": "R3 risks and exclusions",
+      "result": "NOT_CLAIMED; limitations remain explicit"
+    }
+  ],
+  "findings": {
+    "Critical": [],
+    "High": [],
+    "Medium": [],
+    "Low": []
+  },
+  "commands": [
+    {
+      "id": "r3-identity-audit",
+      "command": "Parse R3 and inspect exact self/manifest/revision correction fields and artifact existence",
+      "utc_start": "2026-08-21T02:39:03.1797752Z",
+      "utc_end": "2026-08-21T02:39:23.5386468Z",
+      "stdout": "SPEC_SHA256=ef038bfa0b3edb1936f9d57dd576ad41a9c5de0ab9f24087826f6a855006b154\nSPEC_REVISION=3\nSUPERSEDES=review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md\nREVISED_AT_UTC=2026-08-21T02:38:08Z\nPACKAGE_SPEC_PATH=review/spec_20260821_113808_uiadapt_investor_stage_nwg_release_r3.md\nMANIFEST_PATH_MATCH=True\nMANIFEST_SHA_MATCH=True\nMANIFEST_COUNT_MATCH=True\nMANIFEST_SELF_EXCLUDING=True\nMANIFEST_RESULT=GREEN\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "direct-r3-lint-and-manifest-verify",
+      "command": "python lint_evidence.py <R3 spec>; python finalize_evidence.py verify <sealed evidence dir>",
+      "utc_start": "2026-08-21T02:39:34.1331287Z",
+      "utc_end": "2026-08-21T02:39:34.3759968Z",
+      "stdout": "Evidence lint passed for R3; LINT_RC=0. All 40 manifest entries OK; EVIDENCE_VERIFY_RESULT=GREEN; VERIFY_RC=0; MANIFEST_SHA256=6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33.",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "r3-linter-receipt-audit",
+      "command": "Inspect review/evidence-lint-r3.json command/stdout/stderr/RC/UTC and bind it to R3",
+      "utc_start": "2026-08-21T02:39:43.1268048Z",
+      "utc_end": "2026-08-21T02:39:54.7004512Z",
+      "stdout": "Receipt SHA256=e463b0b755e40aae5d47cf4dc0c42a84867e9d31715d018941e255aa4c73e1e8; R3 path present; stdout says lint passed; stderr empty; RC 0; captured_at_utc=2026-08-21T02:38:20Z; R3 companion record exact values PASS.",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "r3-final-quote-risk-secret-audit",
+      "command": "Compare nine R3 evidence quotes to captures and scan R3 for secret patterns; check unverified risks remain explicit",
+      "utc_start": "2026-08-21T02:40:11.8559806Z",
+      "utc_end": "2026-08-21T02:40:11.9150701Z",
+      "stdout": "QUOTE_COUNT=9\nQUOTE_MISMATCH_COUNT=0\nR3_SECRET_PATTERN_MATCH=False\nSTATUS=success\nPRODUCT_CLARITY_RISK_PRESENT=True\nHOST_REBOOT_RISK_PRESENT=True\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  ],
+  "verdict": "READY_FOR_COURT",
+  "verdict_basis": "R3 closes the sole R2 material finding by correctly identifying itself and the unchanged sealed evidence manifest. Direct lint and manifest verification both return RC 0, the R3 linter receipt is valid, all nine evidence quotes remain capture-exact, prior PC-M1 through PC-M3 and R2-M1 are resolved, limitations remain explicitly scoped, and no Critical, High, Medium, or Low finding remains.",
+  "residual_nonblocking_limitations": [
+    "PRODUCT_CLARITY remains NOT_VERIFIED because no actual three-person non-developer experiment was performed.",
+    "Full-host reboot recovery remains NOT_EXECUTED and outside the success claim.",
+    "The short shared Basic Auth credential remains a disclosed operational risk pending rotation.",
+    "READY_FOR_COURT applies only to the exact R3 spec SHA-256 and unchanged manifest SHA-256 named in this receipt."
+  ]
+}

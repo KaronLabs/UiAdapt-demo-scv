@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "captured_at_utc": "2026-08-21T02:06:29Z",
+  "cwd": "E:\\03_AllWork\\uiadapt-investor-stage",
+  "command": "pwsh -NoProfile -File review\\evidence\\run_20260821_020352_uiadapt_investor_stage\\runtime-check.ps1",
+  "stdout": "RUNTIME_UTC=2026-08-21T02:06:31Z\nCURRENT=/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo/releases/fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nSTATIC=enabled/active\nGATEWAY=enabled/active\nLOCAL_UNAUTH=401\nLOCAL_AUTH=200\nPUBLIC_UNAUTH=401\nPUBLIC_AUTH=200\nPUBLIC_ROOT=302\nPUBLIC_LOCATION=/uiadapt_demo/\nPARENT_DIRTY_COUNT=0\nCREDENTIAL_META=600:root:root:9\n\n# Funnel on:\n#     - https://00-new-world-gpu.tail645adc.ts.net\n\nhttps://00-new-world-gpu.tail645adc.ts.net (Funnel on)\n|-- / proxy http://127.0.0.1:4180\n\nhttps://00-new-world-gpu.tail645adc.ts.net:8443 (tailnet only)\n|-- / proxy http://127.0.0.1:8101\n\nhttp://00-new-world-gpu:8787 (tailnet only)\nhttp://00-new-world-gpu.tail645adc.ts.net:8787 (tailnet only)\n|-- / proxy http://127.0.0.1:8787\nRUNTIME_GATE=PASS\n",
+  "stderr": "",
+  "exit_code": 0
+}

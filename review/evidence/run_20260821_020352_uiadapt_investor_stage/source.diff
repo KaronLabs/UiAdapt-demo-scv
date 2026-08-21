@@ -1,0 +1,1076 @@
+diff --git a/e2e/storefront.spec.ts b/e2e/storefront.spec.ts
+index 8ead2fb..296e87e 100644
+--- a/e2e/storefront.spec.ts
++++ b/e2e/storefront.spec.ts
+@@ -27,6 +27,35 @@ type EvidencePage = Page & {
+   __assetFailures?: string[];
+ };
+ 
++async function wantedFontEvidence(page: Page) {
++  await page.evaluate(() => document.fonts.ready);
++  return page.evaluate(() => {
++    const family = "Wanted Sans Variable";
++    const normalize = (value: string) => value.replace(/["']/g, "").trim();
++    const cssRuleFound = Array.from(document.styleSheets).some((sheet) =>
++      Array.from(sheet.cssRules).some(
++        (rule) => rule instanceof CSSFontFaceRule && normalize(rule.style.fontFamily) === family,
++      ),
++    );
++    const loadedFace = Array.from(document.fonts.values()).find(
++      (face) => normalize(face.family) === family,
++    );
++    return { cssRuleFound, status: loadedFace?.status ?? "missing" };
++  });
++}
++
++async function productGridBalance(page: Page) {
++  return page.evaluate(() => {
++    const grid = document.querySelector<HTMLElement>(".product-grid")!.getBoundingClientRect();
++    const cards = Array.from(document.querySelectorAll<HTMLElement>(".product-card"));
++    const last = cards.at(-1)!.getBoundingClientRect();
++    return {
++      centerDelta: Math.abs(last.left + last.width / 2 - (grid.left + grid.width / 2)),
++      widthRatio: last.width / grid.width,
++    };
++  });
++}
++
+ test.beforeEach(async ({ page }) => {
+   const consoleErrors: string[] = [];
+   const externalRequests: string[] = [];
+@@ -55,7 +84,7 @@ test.beforeEach(async ({ page }) => {
+   evidencePage.__assetResponses = assetResponses;
+   evidencePage.__assetFailures = assetFailures;
+   await page.goto("/uiadapt_demo/");
+-  await expect(page.getByRole("heading", { name: "같은 상품, 달라지는 무대." })).toBeVisible();
++  await expect(page.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeVisible();
+ });
+ 
+ test.afterEach(async ({ page }) => {
+@@ -73,26 +102,147 @@ test("storefront is responsive, local-only, and diagnostics are collapsed", asyn
+   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+   expect(overflow).toBeLessThanOrEqual(0);
+   await page.screenshot({ path: `test-results/${testInfo.project.name}-explore.png`, fullPage: true, animations: "disabled" });
++  await page.screenshot({ path: `test-results/${testInfo.project.name}-explore-viewport.png`, animations: "disabled" });
++});
++
++test("investor stage uses the local Wanted Sans type scale and causal thesis", async ({ page }) => {
++  await settleVisualEvidence(page);
++  await expect(page.getByTestId("product-invariants")).toContainText("Same catalog");
++  await expect(page.getByTestId("causal-trace")).toContainText("Behavior");
++  await expect(page.getByTestId("causal-trace")).toContainText("Interface");
++  expect(await wantedFontEvidence(page)).toEqual({ cssRuleFound: true, status: "loaded" });
++  expect(
++    ((page as EvidencePage).__assetResponses ?? []).some(
++      ({ url, status }) => /WantedSansVariable[^/]*\.woff2(?:\?|$)/.test(url) && status === 200,
++    ),
++  ).toBe(true);
++
++  const typeScale = await page.evaluate(() => {
++    const px = (selector: string, property: "fontSize" | "lineHeight" = "fontSize") => {
++      const node = document.querySelector<HTMLElement>(selector);
++      if (!node) throw new Error(`Missing typography contract node: ${selector}`);
++      return Number.parseFloat(getComputedStyle(node)[property]);
++    };
++    return {
++      hero: px(".hero h1"),
++      heroLine: px(".hero h1", "lineHeight"),
++      section: px(".storefront__heading h2"),
++      product: px(".product-card h2"),
++      price: px(".product-card__price .text-action"),
++      body: px(".hero__lead"),
++      spec: px(".product-card__specs dd"),
++      button: px(".product-card__actions .button"),
++      bodyFamily: getComputedStyle(document.body).fontFamily,
++      heroFamily: getComputedStyle(document.querySelector<HTMLElement>(".hero h1")!).fontFamily,
++      buttonFamily: getComputedStyle(document.querySelector<HTMLElement>(".button--watch")!).fontFamily,
++      diagnosticFamily: getComputedStyle(document.querySelector<HTMLElement>(".causal-trace span")!).fontFamily,
++    };
++  });
++  expect(typeScale.hero).toBeGreaterThanOrEqual(52);
++  expect(typeScale.heroLine / typeScale.hero).toBeGreaterThanOrEqual(1.07);
++  expect(typeScale.heroLine / typeScale.hero).toBeLessThanOrEqual(1.09);
++  expect(typeScale.section).toBeGreaterThanOrEqual(36);
++  expect(typeScale.section).toBeLessThanOrEqual(48);
++  expect(typeScale.product).toBeGreaterThanOrEqual(26);
++  expect(typeScale.product).toBeLessThanOrEqual(30);
++  expect(typeScale.price).toBeGreaterThanOrEqual(20);
++  expect(typeScale.price).toBeLessThanOrEqual(22);
++  expect(typeScale.body).toBeGreaterThanOrEqual(15);
++  expect(typeScale.body).toBeLessThanOrEqual(17);
++  expect(typeScale.spec).toBeGreaterThanOrEqual(13);
++  expect(typeScale.spec).toBeLessThanOrEqual(14);
++  expect(typeScale.button).toBeGreaterThanOrEqual(13);
++  expect(typeScale.button).toBeLessThanOrEqual(14);
++  expect(typeScale.bodyFamily).toContain("Wanted Sans Variable");
++  expect(typeScale.heroFamily).toContain("Wanted Sans Variable");
++  expect(typeScale.buttonFamily).toContain("Wanted Sans Variable");
++  expect(typeScale.diagnosticFamily).toContain("IBM Plex Mono");
++
++  const heroRegionsOverlap = await page.evaluate(() => {
++    const first = document.querySelector<HTMLElement>(".hero__copy")!.getBoundingClientRect();
++    const second = document.querySelector<HTMLElement>(".hero__console")!.getBoundingClientRect();
++    return first.left < second.right && first.right > second.left && first.top < second.bottom && first.bottom > second.top;
++  });
++  expect(heroRegionsOverlap).toBe(false);
++
++  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
++  expect(overflow).toBeLessThanOrEqual(0);
++});
++
++test("reviewed layout keeps laptop cards balanced and mobile evidence controls intact", async ({ page }, testInfo) => {
++  await settleVisualEvidence(page);
++  if (testInfo.project.name === "laptop-1024") {
++    const balance = await productGridBalance(page);
++    expect(balance.centerDelta).toBeLessThanOrEqual(1);
++    expect(balance.widthRatio).toBeGreaterThanOrEqual(0.45);
++    expect(balance.widthRatio).toBeLessThanOrEqual(0.55);
++  }
++  if (testInfo.project.name === "mobile-390") {
++    const summaryAction = await page.locator(".why-panel .summary-action").evaluate((node) => {
++      const style = getComputedStyle(node);
++      return { whiteSpace: style.whiteSpace, flexShrink: style.flexShrink };
++    });
++    expect(summaryAction).toEqual({ whiteSpace: "nowrap", flexShrink: "0" });
++  }
++});
++
++test("reviewed text contrast remains WCAG AA in inactive and FOCUS-muted states", async ({ page }) => {
++  await page.clock.install();
++  const contrastFor = (selector: string, backgroundSelector: string) => page.evaluate(
++    ({ selector, backgroundSelector }) => {
++      const node = document.querySelector<HTMLElement>(selector)!;
++      const background = document.querySelector<HTMLElement>(backgroundSelector)!;
++      const channels = (value: string) => (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
++      const foreground = channels(getComputedStyle(node).color);
++      const backgroundColor = channels(getComputedStyle(background).backgroundColor);
++      let opacity = 1;
++      for (let current: HTMLElement | null = node; current; current = current.parentElement) {
++        opacity *= Number.parseFloat(getComputedStyle(current).opacity);
++      }
++      const effective = foreground.map((channel, index) => channel * opacity + backgroundColor[index] * (1 - opacity));
++      const luminance = (rgb: number[]) => rgb
++        .map((channel) => channel / 255)
++        .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
++        .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
++      const light = Math.max(luminance(effective), luminance(backgroundColor));
++      const dark = Math.min(luminance(effective), luminance(backgroundColor));
++      return (light + 0.05) / (dark + 0.05);
++    },
++    { selector, backgroundSelector },
++  );
++
++  const inactiveStateContrast = await contrastFor(
++    ".state-step:not(.is-current):not(.is-past) strong",
++    ":root",
++  );
++  await page.getByTestId("live-demo-cta").click();
++  await page.clock.fastForward(21_000);
++  const mutedBodyContrast = await contrastFor(
++    ".product-card--muted .product-card__detail",
++    ".product-card--muted",
++  );
++  expect.soft(inactiveStateContrast).toBeGreaterThanOrEqual(4.5);
++  expect.soft(mutedBodyContrast).toBeGreaterThanOrEqual(4.5);
+ });
+ 
+ test("nested deployment path loads assets, reloads, and runs the replay", async ({ page }) => {
+   await page.goto("/uiadapt_demo/");
+-  await expect(page.getByRole("heading", { name: "같은 상품, 달라지는 무대." })).toBeVisible();
++  await expect(page.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeVisible();
+   const scriptSource = await page.locator('script[type="module"]').getAttribute("src");
+   expect(scriptSource).toMatch(/^\/uiadapt_demo\//);
+   const stylesheetSource = await page.locator('link[rel="stylesheet"]').getAttribute("href");
+   expect(stylesheetSource).toMatch(/^\/uiadapt_demo\//);
+   await settleVisualEvidence(page);
+-  expect(await page.evaluate(() => document.fonts.check("16px Manrope"))).toBe(true);
++  expect(await wantedFontEvidence(page)).toEqual({ cssRuleFound: true, status: "loaded" });
+   await page.reload();
+   await settleVisualEvidence(page);
+   const assetResponses = (page as EvidencePage).__assetResponses ?? [];
+   expect(assetResponses.some(({ url }) => url.endsWith(".js"))).toBe(true);
+   expect(assetResponses.some(({ url }) => url.endsWith(".css"))).toBe(true);
+-  expect(assetResponses.some(({ url }) => /\.woff2?$/.test(url))).toBe(true);
++  expect(assetResponses.some(({ url, status }) => /WantedSansVariable[^/]*\.woff2(?:\?|$)/.test(url) && status === 200)).toBe(true);
+   expect((page as EvidencePage).__assetFailures ?? []).toEqual([]);
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(7_000);
+   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
+ });
+@@ -103,23 +253,42 @@ test("the canonical replay changes presentation without changing product data",
+   const initialPrices = await page.locator(".product-card__price").allTextContents();
+   expect(initialPrices.map((value) => value.trim())).toEqual(expectedPrices);
+   expect(await productContracts(page)).toEqual(expectedProducts);
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  if (testInfo.project.name === "laptop-1024") {
++    const balance = await productGridBalance(page);
++    expect(balance.centerDelta).toBeLessThanOrEqual(1);
++    expect(balance.widthRatio).toBeGreaterThanOrEqual(0.45);
++    expect(balance.widthRatio).toBeLessThanOrEqual(0.55);
++  }
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(7_000);
+   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
+   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "COMPARE");
+   expect(await productContracts(page)).toEqual(expectedProducts);
++  if (testInfo.project.name === "laptop-1024") {
++    const balance = await productGridBalance(page);
++    expect(balance.centerDelta).toBeLessThanOrEqual(1);
++  }
++  if (testInfo.project.name === "desktop-1440") {
++    const comparePanel = page.locator(".comparison-panel.is-visible");
++    const box = await comparePanel.boundingBox();
++    const viewportHeight = page.viewportSize()!.height;
++    const visibleHeight = box ? Math.max(0, Math.min(viewportHeight, box.y + box.height) - Math.max(0, box.y)) : 0;
++    expect(visibleHeight).toBeGreaterThanOrEqual(Math.min(240, (box?.height ?? 0) * 0.6));
++  }
+   await page.screenshot({ path: `test-results/${testInfo.project.name}-compare.png`, fullPage: true, animations: "disabled" });
++  await page.screenshot({ path: `test-results/${testInfo.project.name}-compare-viewport.png`, animations: "disabled" });
+   await page.clock.fastForward(14_000);
+   await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
+   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "FOCUS");
+   expect((await page.locator(".product-card__price").allTextContents()).map((value) => value.trim())).toEqual(expectedPrices);
+   expect(await productContracts(page)).toEqual(expectedProducts);
+   await page.screenshot({ path: `test-results/${testInfo.project.name}-focus.png`, fullPage: true, animations: "disabled" });
++  await page.screenshot({ path: `test-results/${testInfo.project.name}-focus-viewport.png`, animations: "disabled" });
+ });
+ 
+ test("COMPARE is visible in the main stage and FOCUS becomes decision support", async ({ page }, testInfo) => {
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(7_000);
+   const comparePanel = page.locator(".demo-stage .comparison-panel.is-visible");
+   await expect(comparePanel).toBeVisible();
+@@ -134,16 +303,19 @@ test("COMPARE is visible in the main stage and FOCUS becomes decision support",
+   await expect(page.getByText("Aurora One").first()).toBeVisible();
+ });
+ 
+-test("merchant and adaptive technology layers are named separately", async ({ page }) => {
+-  await expect(page.getByRole("link", { name: "Atelier Audio storefront 홈" })).toBeVisible();
+-  await expect(page.locator(".demo-stage__header .powered-by")).toHaveText("Powered by UIAdapt");
++test("UIAdapt and the sample merchant are named separately", async ({ page }) => {
++  await expect(page.getByRole("link", { name: "UIAdapt 홈" })).toBeVisible();
++  await expect(page.locator(".site-header")).toContainText("Adaptive UI Infrastructure");
++  await expect(page.locator(".site-header .cart-button")).toHaveCount(0);
++  await expect(page.locator(".demo-stage__header")).toContainText("샘플 상점 · Atelier Audio");
++  await expect(page.locator(".demo-stage .cart-button")).toBeVisible();
+ });
+ 
+ test("Adaptive OFF keeps the same detected state but baseline presentation", async ({ page }) => {
+   await page.clock.install();
+   const exploreDescription = await page.locator(".storefront__heading > p").textContent();
+   await page.getByRole("checkbox", { name: /Adaptive UI/i }).uncheck();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(21_000);
+   await expect(page.locator('[data-current="true"] strong')).toHaveText("FOCUS");
+   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
+@@ -153,7 +325,7 @@ test("Adaptive OFF keeps the same detected state but baseline presentation", asy
+ 
+ test("active product control survives the comparison transition", async ({ page }) => {
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   const price = page.getByRole("button", { name: "Aurora One 가격 확인" });
+   await price.focus();
+   await expect(price).toBeFocused();
+@@ -164,8 +336,8 @@ test("active product control survives the comparison transition", async ({ page
+ 
+ test("keyboard-only path starts, pauses, resets, and records a product action", async ({ page }) => {
+   await page.emulateMedia({ reducedMotion: "reduce" });
+-  for (let index = 0; index < 4; index += 1) await page.keyboard.press("Tab");
+-  await expect(page.getByRole("button", { name: /Watch UIAdapt/i })).toBeFocused();
++  for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
++  await expect(page.getByTestId("live-demo-cta")).toBeFocused();
+   await page.keyboard.press("Enter");
+   await expect(page.getByTestId("replay-status")).toContainText("동일한 행동 시퀀스");
+   await page.keyboard.press("Tab");
+@@ -175,7 +347,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action",
+   await expect(page.locator(".product-card").first()).toHaveCSS("transition-duration", "0s");
+ 
+   await page.goto("/uiadapt_demo/");
+-  for (let index = 0; index < 4; index += 1) await page.keyboard.press("Tab");
++  for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
+   await page.keyboard.press("Enter");
+   for (let index = 0; index < 3; index += 1) await page.keyboard.press("Tab");
+   await expect(page.getByRole("button", { name: "Reset" })).toBeFocused();
+@@ -191,7 +363,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action",
+ 
+ test("Pause and Resume preserve virtual progress", async ({ page }) => {
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(7_000);
+   await page.getByRole("button", { name: "Pause" }).click();
+   await page.clock.fastForward(20_000);
+@@ -203,7 +375,7 @@ test("Pause and Resume preserve virtual progress", async ({ page }) => {
+ 
+ test("Reset cancels every stale Replay timer", async ({ page }) => {
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(3_000);
+   await page.getByRole("button", { name: "Reset" }).click();
+   await page.clock.fastForward(30_000);
+@@ -214,7 +386,7 @@ test("Reset cancels every stale Replay timer", async ({ page }) => {
+ 
+ test("manual takeover cancels the remaining Replay timers", async ({ page }) => {
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(1_000);
+   await page.getByRole("button", { name: "Aurora One 가격 확인" }).click();
+   await page.clock.fastForward(30_000);
+@@ -225,7 +397,7 @@ test("manual takeover cancels the remaining Replay timers", async ({ page }) =>
+ 
+ test("Stop preserves state and cancels the remaining Replay timers", async ({ page }) => {
+   await page.clock.install();
+-  await page.getByRole("button", { name: /Watch UIAdapt/i }).click();
++  await page.getByTestId("live-demo-cta").click();
+   await page.clock.fastForward(7_000);
+   await page.getByRole("button", { name: "Stop" }).click();
+   await page.clock.fastForward(30_000);
+diff --git a/package-lock.json b/package-lock.json
+index d4f1352..e12cbb6 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -8,12 +8,11 @@
+       "name": "uiadapt-adaptive-storefront-theater",
+       "version": "4.1.0",
+       "dependencies": {
+-        "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+-        "@fontsource-variable/manrope": "^5.3.0",
+         "@fontsource/ibm-plex-mono": "^5.3.0",
+         "react": "^19.2.8",
+         "react-dom": "^19.2.8",
+-        "serve": "14.2.6"
++        "serve": "14.2.6",
++        "wanted-sans": "1.0.3"
+       },
+       "devDependencies": {
+         "@eslint/js": "^10.0.1",
+@@ -642,24 +641,6 @@
+         }
+       }
+     },
+-    "node_modules/@fontsource-variable/bricolage-grotesque": {
+-      "version": "5.3.0",
+-      "resolved": "https://registry.npmjs.org/@fontsource-variable/bricolage-grotesque/-/bricolage-grotesque-5.3.0.tgz",
+-      "integrity": "sha512-TLi9Q4hJjS2UvoTMRSS2nHu6c4R56lAw60NR9QYtVRCHn0XtsFpiEhNffZ8Glsoxu6wEEwLKBP8lb94J52PNBA==",
+-      "license": "OFL-1.1",
+-      "funding": {
+-        "url": "https://github.com/sponsors/ayuhito"
+-      }
+-    },
+-    "node_modules/@fontsource-variable/manrope": {
+-      "version": "5.3.0",
+-      "resolved": "https://registry.npmjs.org/@fontsource-variable/manrope/-/manrope-5.3.0.tgz",
+-      "integrity": "sha512-6D5dgokHsWDDMtmXHznKa0hK229NN+1a4BLPmUCLqcO1Pw5EEhWY5RFt0AcXnVRAljFFPfRtLkJePQj6LSsV6g==",
+-      "license": "OFL-1.1",
+-      "funding": {
+-        "url": "https://github.com/sponsors/ayuhito"
+-      }
+-    },
+     "node_modules/@fontsource/ibm-plex-mono": {
+       "version": "5.3.0",
+       "resolved": "https://registry.npmjs.org/@fontsource/ibm-plex-mono/-/ibm-plex-mono-5.3.0.tgz",
+@@ -4611,6 +4592,12 @@
+         "node": ">=18"
+       }
+     },
++    "node_modules/wanted-sans": {
++      "version": "1.0.3",
++      "resolved": "https://registry.npmjs.org/wanted-sans/-/wanted-sans-1.0.3.tgz",
++      "integrity": "sha512-YU+mQRJMc97zMGFmxFjOvjdrF5Hi2zagc69bNP9n//i77Dlf9AWGfziZWYKdhQzPK5tw+e0iHcjLrZXDatxRTQ==",
++      "license": "OFL-1.1"
++    },
+     "node_modules/webidl-conversions": {
+       "version": "8.0.1",
+       "resolved": "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-8.0.1.tgz",
+diff --git a/package.json b/package.json
+index 6b69fdb..b5ac2c0 100644
+--- a/package.json
++++ b/package.json
+@@ -21,12 +21,11 @@
+     "test:deployment": "node --test scripts/nwg-deployment-contract.test.mjs"
+   },
+   "dependencies": {
+-    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+-    "@fontsource-variable/manrope": "^5.3.0",
+     "@fontsource/ibm-plex-mono": "^5.3.0",
+     "react": "^19.2.8",
+     "react-dom": "^19.2.8",
+-    "serve": "14.2.6"
++    "serve": "14.2.6",
++    "wanted-sans": "1.0.3"
+   },
+   "devDependencies": {
+     "@eslint/js": "^10.0.1",
+diff --git a/src/App.test.tsx b/src/App.test.tsx
+index 0e8d9e2..4980505 100644
+--- a/src/App.test.tsx
++++ b/src/App.test.tsx
+@@ -8,8 +8,11 @@ describe("adaptive storefront UI contract", () => {
+ 
+   it("renders the canonical products and keeps diagnostics collapsed", () => {
+     const { container } = render(<App />);
+-    expect(screen.getByRole("link", { name: "Atelier Audio storefront 홈" })).toBeInTheDocument();
+-    expect(container.querySelector("header .powered-by")).toHaveTextContent("Powered by UIAdapt");
++    expect(screen.getByRole("link", { name: "UIAdapt 홈" })).toBeInTheDocument();
++    expect(container.querySelector(".site-header")).toHaveTextContent("Adaptive UI Infrastructure");
++    expect(container.querySelector(".site-header .cart-button")).not.toBeInTheDocument();
++    expect(container.querySelector(".demo-stage .cart-button")).toBeInTheDocument();
++    expect(container.querySelector(".demo-stage__header")).toHaveTextContent("샘플 상점 · Atelier Audio");
+     expect(screen.getByRole("heading", { name: "Aurora One" })).toBeInTheDocument();
+     expect(screen.getByRole("heading", { name: "Nova Pro" })).toBeInTheDocument();
+     expect(screen.getByRole("heading", { name: "Halo Air" })).toBeInTheDocument();
+@@ -19,9 +22,28 @@ describe("adaptive storefront UI contract", () => {
+     expect(screen.getByText("Developer View").closest("details")).not.toHaveAttribute("open");
+   });
+ 
++  it("presents the patent-pending investor thesis and causal contract", () => {
++    render(<App />);
++    expect(screen.getByText("특허 출원 기반 적응형 UI 인프라")).toBeInTheDocument();
++    expect(screen.getByRole("heading", { name: "같은 상품을, 더 나은 판단으로." })).toBeInTheDocument();
++    expect(screen.getByText("추천은 WHAT을 결정합니다. UIAdapt는 HOW를 조율합니다.")).toBeInTheDocument();
++    expect(screen.getByTestId("product-invariants")).toHaveTextContent(
++      "Same catalogSame behaviorDifferent presentation",
++    );
++    expect(screen.getByTestId("causal-trace")).toHaveAccessibleName(
++      "Behavior → State → Policy → Interface",
++    );
++  });
++
++  it("starts the canonical replay from the investor-stage CTA", () => {
++    render(<App />);
++    fireEvent.click(screen.getByTestId("live-demo-cta"));
++    expect(screen.getByTestId("replay-status")).toHaveTextContent("동일한 행동 시퀀스를 재생하고 있습니다.");
++  });
++
+   it("replays EXPLORE to COMPARE to FOCUS while preserving product data", () => {
+     const { container } = render(<App />);
+-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
++    fireEvent.click(screen.getByTestId("live-demo-cta"));
+     act(() => vi.advanceTimersByTime(7_000));
+     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("COMPARE");
+     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "COMPARE");
+@@ -35,7 +57,7 @@ describe("adaptive storefront UI contract", () => {
+     const { container } = render(<App />);
+     const exploreDescription = container.querySelector(".storefront__heading > p")?.textContent;
+     fireEvent.click(screen.getByRole("checkbox", { name: /Adaptive UI/i }));
+-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
++    fireEvent.click(screen.getByTestId("live-demo-cta"));
+     act(() => vi.advanceTimersByTime(21_000));
+     expect(container.querySelector('[data-current="true"] strong')).toHaveTextContent("FOCUS");
+     expect(container.querySelector(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
+@@ -45,7 +67,7 @@ describe("adaptive storefront UI contract", () => {
+ 
+   it("does not remove the active product control during adaptation", () => {
+     const { container } = render(<App />);
+-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
++    fireEvent.click(screen.getByTestId("live-demo-cta"));
+     const priceButton = screen.getByRole("button", { name: "Aurora One 가격 확인" });
+     priceButton.focus();
+     expect(document.activeElement).toBe(priceButton);
+@@ -56,7 +78,7 @@ describe("adaptive storefront UI contract", () => {
+ 
+   it("keeps comparison inside the stable demo stage and hides it in FOCUS", () => {
+     const { container } = render(<App />);
+-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
++    fireEvent.click(screen.getByTestId("live-demo-cta"));
+     act(() => vi.advanceTimersByTime(7_000));
+     expect(container.querySelector(".demo-stage .comparison-panel.is-visible")).toBeInTheDocument();
+     act(() => vi.advanceTimersByTime(14_000));
+@@ -66,7 +88,7 @@ describe("adaptive storefront UI contract", () => {
+ 
+   it("stops the scripted replay when the user takes over", () => {
+     render(<App />);
+-    fireEvent.click(screen.getByRole("button", { name: /Watch UIAdapt/i }));
++    fireEvent.click(screen.getByTestId("live-demo-cta"));
+     fireEvent.click(screen.getByRole("button", { name: "Aurora One 가격 확인" }));
+     expect(screen.getByTestId("replay-status")).toHaveTextContent("직접 탐색을 시작해 데모 재생을 멈췄습니다.");
+   });
+diff --git a/src/App.tsx b/src/App.tsx
+index 2a16b22..d29ed56 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -25,6 +25,11 @@ const stateCopy: Record<AdaptiveState, { label: string; title: string; descripti
+ };
+ 
+ const stateOrder: AdaptiveState[] = ["EXPLORE", "COMPARE", "FOCUS"];
++const stateMission: Record<AdaptiveState, string> = {
++  EXPLORE: "발견",
++  COMPARE: "비교",
++  FOCUS: "결정지원",
++};
+ 
+ function App() {
+   const {
+@@ -81,12 +86,11 @@ function App() {
+   return (
+     <div className={`app app--${state.appliedState.toLowerCase()}`}>
+       <header className="site-header">
+-        <a className="brand" href="#main-content" aria-label="Atelier Audio storefront 홈">
++        <a className="brand" href="#main-content" aria-label="UIAdapt 홈">
+           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
+-          <span>Atelier Audio</span>
++          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure</small></span>
+         </a>
+-        <span className="powered-by">Powered by UIAdapt</span>
+-        <p className="header-story"><strong>WHAT</strong>은 그대로. <strong>HOW</strong>는 지금의 행동에 맞게.</p>
++        <p className="header-story">Behavior-aware presentation layer</p>
+         <div className="header-tools">
+           <label className="adaptive-toggle">
+             <span>Adaptive UI</span>
+@@ -98,30 +102,39 @@ function App() {
+             <span className="toggle-track" aria-hidden="true"><span /></span>
+             <strong>{state.adaptiveEnabled ? "ON" : "OFF"}</strong>
+           </label>
+-          <button type="button" className="cart-button" aria-label={`장바구니, 상품 ${cartCount}개`}>
+-            Bag <span>{cartCount}</span>
+-          </button>
+         </div>
+       </header>
+ 
+       <main id="main-content">
+         <section className="hero" aria-labelledby="hero-title">
+           <div className="hero__copy">
+-            <p className="eyebrow">Adaptive storefront theater · Live product demo</p>
+-            <h1 id="hero-title">같은 상품,<br /><span>달라지는 무대.</span></h1>
++            <p className="eyebrow">특허 출원 기반 적응형 UI 인프라</p>
++            <h1 id="hero-title" aria-label="같은 상품을, 더 나은 판단으로.">같은 상품을,<br /><span>더 나은 판단으로.</span></h1>
+             <p className="hero__lead">
+-              추천 결과는 바꾸지 않습니다. 관찰된 행동에 맞춰 같은 상품을 탐색하고,
+-              비교하고, 선택하는 방식을 다시 조율합니다.
++              추천은 WHAT을 결정합니다. UIAdapt는 HOW를 조율합니다.
+             </p>
++            <div className="product-invariants" data-testid="product-invariants" aria-label="데모 불변식">
++              <span>Same catalog</span><i aria-hidden="true" />
++              <span>Same behavior</span><i aria-hidden="true" />
++              <strong>Different presentation</strong>
++            </div>
+           </div>
+           <div className="hero__console" aria-label="UIAdapt 데모 제어">
+-            <div className="demo-thesis">
+-              <span>Recommendation</span><strong>decides WHAT.</strong>
+-              <span>UIAdapt</span><strong>decides HOW.</strong>
++            <div className="causal-system">
++              <SignalRibbon state={state.appliedState} />
++              <div className="causal-trace" data-testid="causal-trace" aria-label="Behavior → State → Policy → Interface">
++                <div><span>01</span><strong>Behavior</strong><small>관찰 행동</small></div>
++                <b aria-hidden="true">→</b>
++                <div><span>02</span><strong>State</strong><small>{state.detectedState}</small></div>
++                <b aria-hidden="true">→</b>
++                <div><span>03</span><strong>Policy</strong><small>{state.adaptiveEnabled ? "Applied" : "Suppressed"}</small></div>
++                <b aria-hidden="true">→</b>
++                <div><span>04</span><strong>Interface</strong><small>{state.appliedState}</small></div>
++              </div>
+             </div>
+             <div className="replay-controls">
+-              <button type="button" className="button button--watch" onClick={startReplay}>
+-                <span aria-hidden="true">▶</span> Watch UIAdapt
++              <button type="button" className="button button--watch" onClick={startReplay} data-testid="live-demo-cta">
++                <span aria-hidden="true">▶</span> 27초 라이브 데모
+               </button>
+               {state.replayStatus === "RUNNING" ? (
+                 <button type="button" className="icon-button" onClick={pauseReplay}>Pause</button>
+@@ -147,7 +160,7 @@ function App() {
+             {stateOrder.map((item, index) => (
+               <div key={item} data-current={state.detectedState === item} className={`state-step${state.detectedState === item ? " is-current" : ""}${stateOrder.indexOf(state.detectedState) > index ? " is-past" : ""}`}>
+                 <span>{String(index + 1).padStart(2, "0")}</span>
+-                <strong>{item}</strong>
++                <div><strong>{item}</strong><em>{stateMission[item]}</em></div>
+               </div>
+             ))}
+           </div>
+@@ -160,10 +173,12 @@ function App() {
+         <section className="demo-stage" ref={demoStageRef} aria-labelledby="storefront-title">
+           <div className="demo-stage__header">
+             <div>
+-              <p className="eyebrow">Atelier Audio · Adaptive storefront</p>
+-              <span className="demo-stage__label">The merchant stage, reshaped by observed behavior</span>
++              <p className="eyebrow">샘플 상점 · Atelier Audio</p>
++              <span className="demo-stage__label">동일한 상품과 행동으로 검증하는 적응형 상점 무대</span>
+             </div>
+-            <span className="powered-by">Powered by UIAdapt</span>
++            <button type="button" className="cart-button" aria-label={`장바구니, 상품 ${cartCount}개`}>
++              Bag <span>{cartCount}</span>
++            </button>
+           </div>
+ 
+           <div className="demo-stage__adaptive-surface">
+@@ -209,7 +224,6 @@ function App() {
+           </div>
+ 
+           <section className="storefront" aria-labelledby="storefront-title">
+-            <SignalRibbon state={state.appliedState} />
+             <div className="storefront__heading">
+               <div>
+                 <p className="eyebrow">Curated wireless listening</p>
+@@ -266,7 +280,7 @@ function App() {
+       </main>
+ 
+       <footer>
+-        <span>Atelier Audio storefront · Powered by UIAdapt</span>
++        <span>UIAdapt · Adaptive UI Infrastructure</span>
+         <p>실제 결제는 수행되지 않습니다. 모든 상품과 행동 데이터는 이 데모 안에만 존재합니다.</p>
+       </footer>
+ 
+diff --git a/src/main.tsx b/src/main.tsx
+index c7052bf..a7d7496 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -1,7 +1,6 @@
+ import React from "react";
+ import ReactDOM from "react-dom/client";
+-import "@fontsource-variable/bricolage-grotesque/wght.css";
+-import "@fontsource-variable/manrope/wght.css";
++import "wanted-sans/fonts/webfonts/variable/complete/WantedSansVariable.css";
+ import "@fontsource/ibm-plex-mono/400.css";
+ import "@fontsource/ibm-plex-mono/500.css";
+ import App from "./App";
+diff --git a/src/styles.css b/src/styles.css
+index e670f4e..de4901b 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -1,191 +1,300 @@
+ :root {
+-  font-family: "Manrope Variable", "Segoe UI Variable", sans-serif;
+-  color: #182126;
+-  background: #f2f4f3;
++  font-family: "Wanted Sans Variable", "Segoe UI Variable", sans-serif;
++  color: #142126;
++  background: #f1f4f3;
+   font-synthesis: none;
+   text-rendering: optimizeLegibility;
+-  --canvas: #f2f4f3;
+-  --paper: #fbfcfb;
+-  --ink: #182126;
+-  --graphite: #344047;
+-  --alloy: #c7aa7a;
+-  --cobalt: #2667a8;
+-  --ice: #dce9f2;
+-  --line: rgba(24, 33, 38, 0.14);
+-  --soft-line: rgba(24, 33, 38, 0.08);
+-  --shadow: 0 24px 70px rgba(31, 48, 56, 0.09);
+-  --display: "Bricolage Grotesque Variable", "Arial Narrow", sans-serif;
++  --mineral: #f1f4f3;
++  --paper: #fcfdfc;
++  --carbon: #142126;
++  --graphite: #4f5e64;
++  --cobalt: #075eb8;
++  --cobalt-soft: #dcecf9;
++  --signal: #5faaf1;
++  --alloy: #d2b98c;
++  --line: rgba(20, 33, 38, 0.16);
++  --soft-line: rgba(20, 33, 38, 0.09);
++  --shadow: 0 22px 65px rgba(22, 41, 49, 0.08);
++  --sans: "Wanted Sans Variable", "Segoe UI Variable", sans-serif;
+   --mono: "IBM Plex Mono", Consolas, monospace;
+ }
+ 
+ * { box-sizing: border-box; }
+ html { scroll-behavior: smooth; }
+-body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--canvas); }
++body {
++  margin: 0;
++  min-width: 320px;
++  min-height: 100vh;
++  background:
++    linear-gradient(rgba(20, 33, 38, 0.025) 1px, transparent 1px) 0 0 / 100% 48px,
++    var(--mineral);
++  font-family: var(--sans);
++  font-size: 16px;
++  line-height: 1.62;
++  word-break: keep-all;
++}
+ button, input { font: inherit; }
+ button { color: inherit; }
+ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
+   outline: 3px solid var(--cobalt);
+-  outline-offset: 3px;
++  outline-offset: 4px;
+ }
+ 
+ .app { min-height: 100vh; overflow: hidden; }
+ .site-header {
+-  min-height: 76px;
++  min-height: 82px;
+   display: grid;
+-  grid-template-columns: auto auto 1fr auto;
++  grid-template-columns: 1fr auto 1fr;
+   align-items: center;
+   gap: 32px;
+   padding: 0 4.5vw;
+   border-bottom: 1px solid var(--line);
+-  background: rgba(242, 244, 243, 0.9);
++  background: rgba(241, 244, 243, 0.92);
+   backdrop-filter: blur(18px);
+   position: relative;
+   z-index: 20;
+ }
+-.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; font: 650 17px var(--display); }
+-.powered-by { color: var(--cobalt); font: 500 10px var(--mono); letter-spacing: .04em; white-space: nowrap; }
+-.brand__mark { display: flex; align-items: end; gap: 3px; width: 25px; height: 25px; padding: 4px; border: 1px solid var(--ink); border-radius: 50%; }
+-.brand__mark i { display: block; width: 3px; background: var(--cobalt); border-radius: 4px; }
+-.brand__mark i:nth-child(1) { height: 7px; }.brand__mark i:nth-child(2) { height: 14px; }.brand__mark i:nth-child(3) { height: 10px; }
+-.header-story { justify-self: center; margin: 0; color: #5e6c72; font-size: 13px; letter-spacing: -.01em; }
+-.header-story strong { color: var(--ink); }
+-.header-tools { display: flex; align-items: center; gap: 20px; }
+-.adaptive-toggle { display: flex; align-items: center; gap: 9px; font-size: 12px; cursor: pointer; position: relative; }
++.brand { display: inline-flex; align-items: center; gap: 13px; color: var(--carbon); text-decoration: none; justify-self: start; }
++.brand__mark { display: flex; align-items: end; gap: 3px; width: 31px; height: 31px; padding: 6px; border: 1px solid var(--carbon); border-radius: 50%; }
++.brand__mark i { display: block; width: 4px; background: var(--cobalt); border-radius: 4px; }
++.brand__mark i:nth-child(1) { height: 8px; }
++.brand__mark i:nth-child(2) { height: 17px; }
++.brand__mark i:nth-child(3) { height: 12px; }
++.brand__lockup { display: grid; line-height: 1.1; }
++.brand__lockup strong { font-size: 20px; font-weight: 760; letter-spacing: -0.02em; }
++.brand__lockup small { margin-top: 4px; color: var(--graphite); font: 500 12px var(--mono); }
++.header-story { margin: 0; color: var(--graphite); font: 500 12px var(--mono); letter-spacing: 0.02em; }
++.header-tools { display: flex; align-items: center; justify-self: end; gap: 18px; }
++.adaptive-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 650; cursor: pointer; position: relative; }
+ .adaptive-toggle input { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+-.toggle-track { width: 42px; height: 24px; padding: 3px; border-radius: 999px; background: #aeb7ba; transition: background 220ms ease; }
+-.toggle-track span { display: block; width: 18px; height: 18px; background: white; border-radius: 50%; box-shadow: 0 2px 7px rgba(0,0,0,.18); transition: transform 220ms ease; }
++.toggle-track { width: 46px; height: 26px; padding: 3px; border-radius: 999px; background: #9eaaae; transition: background 180ms ease; }
++.toggle-track span { display: block; width: 20px; height: 20px; background: white; border-radius: 50%; box-shadow: 0 2px 7px rgba(0, 0, 0, 0.18); transition: transform 180ms ease; }
+ .adaptive-toggle input:checked + .toggle-track { background: var(--cobalt); }
+-.adaptive-toggle input:checked + .toggle-track span { transform: translateX(18px); }
+-.adaptive-toggle input:focus-visible + .toggle-track { outline: 3px solid var(--cobalt); outline-offset: 3px; }
+-.adaptive-toggle strong { width: 24px; font: 500 11px var(--mono); }
+-.cart-button { border: 0; background: var(--ink); color: white; padding: 10px 13px; border-radius: 999px; cursor: pointer; }
+-.cart-button span { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 6px; border-radius: 50%; color: var(--ink); background: var(--alloy); font: 500 11px var(--mono); }
++.adaptive-toggle input:checked + .toggle-track span { transform: translateX(20px); }
++.adaptive-toggle input:focus-visible + .toggle-track { outline: 3px solid var(--cobalt); outline-offset: 4px; }
++.adaptive-toggle strong { width: 27px; font: 500 12px var(--mono); }
+ 
+-main { width: min(1520px, 100%); margin: 0 auto; }
+-.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(370px, .75fr); gap: 7vw; padding: 88px 5vw 64px; align-items: end; }
+-.eyebrow { margin: 0 0 16px; color: var(--cobalt); font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+-.hero h1 { max-width: 760px; margin: 0; font: 560 clamp(56px, 7.4vw, 112px)/.98 var(--display); letter-spacing: -.075em; }
++main { width: min(1600px, 100%); margin: 0 auto; }
++.hero {
++  min-height: 530px;
++  display: grid;
++  grid-template-columns: minmax(0, 1.12fr) minmax(520px, 0.88fr);
++  gap: clamp(40px, 5vw, 86px);
++  padding: 68px 5vw 42px;
++  align-items: center;
++}
++.eyebrow { margin: 0 0 17px; color: var(--cobalt); font-size: 14px; font-weight: 720; letter-spacing: 0.015em; }
++.hero h1 { max-width: 790px; margin: 0; font: 720 clamp(52px, 5.6vw, 76px)/1.08 var(--sans); letter-spacing: -0.035em; }
+ .hero h1 span { color: var(--cobalt); }
+-.hero__lead { max-width: 620px; margin: 34px 0 0; color: #59676d; font-size: clamp(16px, 1.4vw, 20px); line-height: 1.75; word-break: keep-all; }
+-.hero__console { border-left: 1px solid var(--line); padding: 10px 0 12px 40px; }
+-.demo-thesis { display: grid; grid-template-columns: 110px 1fr; gap: 5px 18px; margin-bottom: 28px; }
+-.demo-thesis span { color: #748086; font: 400 10px var(--mono); text-transform: uppercase; }
+-.demo-thesis strong { font: 540 17px var(--display); }
+-.replay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+-.button, .icon-button { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 11px 16px; cursor: pointer; transition: transform 180ms ease, background 180ms ease, border-color 180ms ease; }
+-.button:hover, .icon-button:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(38,103,168,.5); }
+-.button--watch { padding: 15px 23px; border: 0; background: var(--cobalt); color: white; font-weight: 700; box-shadow: 0 12px 28px rgba(38,103,168,.22); }
+-.icon-button { padding: 10px 12px; font-size: 11px; }
+-.icon-button:disabled { opacity: .35; cursor: not-allowed; }
+-.replay-status { min-height: 40px; margin: 18px 0 0; color: #748086; font-size: 12px; line-height: 1.6; }
++.hero__lead { max-width: 680px; margin: 27px 0 0; color: var(--graphite); font-size: 17px; line-height: 1.65; }
++.product-invariants { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 30px; color: var(--graphite); font: 500 13px var(--mono); }
++.product-invariants i { width: 20px; height: 1px; background: var(--line); }
++.product-invariants strong { color: var(--cobalt); font-weight: 500; }
++.hero__console { min-width: 0; padding: 28px; border-radius: 28px; background: var(--carbon); color: white; box-shadow: 0 26px 70px rgba(20, 33, 38, 0.2); }
++.causal-system { min-height: 245px; display: grid; place-items: center; position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; background: linear-gradient(145deg, rgba(7, 94, 184, 0.16), rgba(255, 255, 255, 0.02)); }
++.signal-ribbon { position: absolute; inset: 12px -10% auto; height: 210px; opacity: 0.7; pointer-events: none; }
++.signal-ribbon svg { width: 100%; height: 100%; overflow: visible; }
++.signal-line { fill: none; stroke: var(--signal); stroke-width: 1.4; vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 240ms ease; }
++.signal-line--compare { stroke-dasharray: 7 10; }
++.signal-line--focus { stroke-width: 2.4; }
++.signal-ribbon--explore .signal-line--explore,
++.signal-ribbon--compare .signal-line--compare,
++.signal-ribbon--focus .signal-line--focus { opacity: 0.58; }
++.causal-trace { width: calc(100% - 36px); display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; align-items: center; gap: 9px; position: relative; z-index: 1; }
++.causal-trace > div { min-width: 0; display: grid; gap: 4px; padding: 17px 9px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 14px; background: rgba(20, 33, 38, 0.83); text-align: center; }
++.causal-trace span { color: var(--signal); font: 500 12px var(--mono); }
++.causal-trace strong { font-size: 15px; font-weight: 720; }
++.causal-trace small { min-height: 18px; overflow: hidden; color: #a8b8bf; font: 500 12px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
++.causal-trace b { color: var(--signal); font: 400 18px var(--mono); }
++.replay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 20px; }
++.button, .icon-button { min-height: 42px; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 10px 16px; font-family: var(--sans); font-size: 14px; font-weight: 670; cursor: pointer; transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
++.button:hover, .icon-button:hover:not(:disabled) { transform: translateY(-2px); border-color: rgba(7, 94, 184, 0.55); }
++.button--watch { min-height: 50px; padding: 13px 23px; border: 0; background: var(--cobalt); color: white; box-shadow: 0 12px 28px rgba(7, 94, 184, 0.3); }
++.icon-button { padding: 9px 13px; border-color: rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.06); color: white; font-size: 13px; }
++.icon-button:disabled { opacity: 0.35; cursor: not-allowed; }
++.replay-status { min-height: 24px; margin: 14px 2px 0; color: #b7c5ca; font-size: 13px; line-height: 1.6; }
+ 
+-.state-stage { margin: 0 5vw; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 40px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+-.state-path { display: flex; align-items: center; gap: 0; }
+-.state-step { display: flex; align-items: center; gap: 9px; color: #97a1a5; min-width: 130px; position: relative; }
+-.state-step:not(:last-child)::after { content: ""; width: 48px; height: 1px; margin: 0 18px; background: var(--line); }
+-.state-step span { font: 400 9px var(--mono); }.state-step strong { font: 520 12px var(--display); letter-spacing: .05em; }
+-.state-step.is-current { color: var(--cobalt); }.state-step.is-past { color: var(--ink); }
+-.state-message { display: flex; align-items: center; gap: 12px; }
+-.state-message__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cobalt); box-shadow: 0 0 0 7px rgba(38,103,168,.1); }
+-.state-message div { display: grid; gap: 3px; text-align: right; }.state-message strong { font-size: 12px; }.state-message span { color: #7d898e; font-size: 10px; }
++.state-stage { margin: 0 5vw; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 40px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
++.state-path { display: flex; align-items: center; }
++.state-step { display: flex; align-items: center; gap: 10px; color: #56656a; position: relative; }
++.state-step:not(:last-child)::after { content: ""; width: clamp(28px, 3.5vw, 58px); height: 1px; margin: 0 clamp(12px, 2vw, 30px); background: var(--line); }
++.state-step > span { font: 500 12px var(--mono); }
++.state-step > div { display: grid; line-height: 1.1; }
++.state-step strong { font-size: 14px; font-weight: 760; letter-spacing: 0.035em; }
++.state-step em { margin-top: 5px; font-size: 12px; font-style: normal; }
++.state-step.is-current { color: var(--cobalt); }
++.state-step.is-past { color: var(--carbon); }
++.state-message { display: flex; align-items: center; gap: 13px; }
++.state-message__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--cobalt); box-shadow: 0 0 0 7px rgba(7, 94, 184, 0.1); }
++.state-message div { display: grid; gap: 2px; text-align: right; }
++.state-message strong { font-size: 13px; }
++.state-message div span { color: var(--graphite); font: 500 12px var(--mono); }
+ 
+-.storefront { margin: 48px 2.2vw 0; padding: 44px 2.8vw 54px; border-radius: 34px; background: var(--paper); box-shadow: var(--shadow); position: relative; overflow: hidden; }
+-.demo-stage { margin: 48px 2.2vw 64px; scroll-margin-top: 24px; }
+-.demo-stage__header { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin: 0 2.8vw 14px; }
+-.demo-stage__header .eyebrow { margin-bottom: 5px; }
+-.demo-stage__label { color: #68757a; font-size: 11px; }
++.demo-stage { margin: 48px 2.2vw 68px; scroll-margin-top: 24px; }
++.demo-stage__header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin: 0 2.8vw 16px; }
++.demo-stage__header .eyebrow { margin-bottom: 4px; }
++.demo-stage__label { color: var(--graphite); font-size: 14px; }
++.cart-button { min-height: 44px; border: 0; background: var(--carbon); color: white; padding: 10px 15px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; }
++.cart-button span { display: inline-grid; place-items: center; min-width: 22px; height: 22px; margin-left: 7px; border-radius: 50%; color: var(--carbon); background: var(--alloy); font: 500 12px var(--mono); }
+ .demo-stage__adaptive-surface { display: grid; gap: 14px; }
+-.demo-stage .storefront { margin: 0; }
+-.storefront__heading { display: grid; grid-template-columns: 1fr minmax(280px, 470px); gap: 40px; align-items: end; margin-bottom: 28px; position: relative; z-index: 2; }
+-.storefront__heading h2 { margin: 0; font: 540 clamp(30px, 3vw, 48px)/1.06 var(--display); letter-spacing: -.045em; }
+-.storefront__heading > p { margin: 0; color: #657278; line-height: 1.7; font-size: 14px; }
+-.signal-ribbon { position: absolute; z-index: 0; inset: 85px 0 auto; height: 180px; opacity: .72; pointer-events: none; }
+-.signal-ribbon svg { width: 100%; height: 100%; overflow: visible; }
+-.signal-line { fill: none; stroke: var(--cobalt); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: 0; transition: opacity 300ms ease; }
+-.signal-line--compare { stroke-dasharray: 6 9; }.signal-line--focus { stroke-width: 2.5; }
+-.signal-ribbon--explore .signal-line--explore,.signal-ribbon--compare .signal-line--compare,.signal-ribbon--focus .signal-line--focus { opacity: .58; }
+-.product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; position: relative; z-index: 1; }
+-.product-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--soft-line); border-radius: 24px; overflow: hidden; background: rgba(251,252,251,.88); transition: opacity 280ms ease, transform 280ms ease, grid-column 280ms ease; }
+-.product-card__visual { min-height: 300px; display: grid; place-items: center; position: relative; background: linear-gradient(155deg, rgba(220,233,242,.72), rgba(242,244,243,.45) 55%, rgba(199,170,122,.12)); overflow: hidden; }
+-.product-card__edition { position: absolute; z-index: 2; top: 18px; left: 20px; color: #6e7b80; font: 400 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+-.product-art { width: min(94%, 330px); filter: drop-shadow(0 28px 22px rgba(20,31,36,.12)); transition: transform 280ms ease; }
+-.product-card:hover .product-art { transform: translateY(-4px) scale(1.015); }
+-.product-card__body { display: flex; flex-direction: column; flex: 1; padding: 24px 22px 22px; }
+-.product-card__heading { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+-.product-card h2 { margin: 0; font: 560 28px/1 var(--display); letter-spacing: -.04em; }
+-.product-card__heading p { margin: 8px 0 0; color: #6c787d; font-size: 12px; }
++.storefront { padding: 45px 2.8vw 52px; border: 1px solid rgba(20, 33, 38, 0.05); border-radius: 32px; background: var(--paper); box-shadow: var(--shadow); position: relative; overflow: hidden; }
++.storefront__heading { display: grid; grid-template-columns: 1fr minmax(300px, 470px); gap: 40px; align-items: end; margin-bottom: 30px; }
++.storefront__heading h2 { margin: 0; font: 700 clamp(36px, 3vw, 48px)/1.12 var(--sans); letter-spacing: -0.025em; }
++.storefront__heading > p { margin: 0; color: var(--graphite); line-height: 1.65; font-size: 16px; }
++.product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
++.product-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--soft-line); border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 10px 28px rgba(20, 33, 38, 0.045); transition: opacity 220ms ease, transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
++.product-card:hover { transform: translateY(-4px); box-shadow: 0 18px 42px rgba(20, 33, 38, 0.1); }
++.product-card:focus-within { border-color: rgba(7, 94, 184, 0.45); }
++.product-card__visual { min-height: 280px; display: grid; place-items: center; position: relative; background: linear-gradient(155deg, rgba(220, 236, 249, 0.78), rgba(241, 244, 243, 0.5) 56%, rgba(210, 185, 140, 0.13)); overflow: hidden; }
++.product-card__edition { position: absolute; z-index: 2; top: 18px; left: 20px; color: var(--graphite); font: 500 12px var(--mono); letter-spacing: 0.055em; text-transform: uppercase; }
++.product-art { width: min(90%, 315px); filter: drop-shadow(0 26px 20px rgba(20, 31, 36, 0.13)); transition: transform 220ms ease; }
++.product-card:hover .product-art { transform: translateY(-4px) scale(1.012); }
++.product-card__body { display: flex; flex-direction: column; flex: 1; padding: 25px 22px 22px; }
++.product-card__heading { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: start; }
++.product-card h2 { margin: 0; font: 720 clamp(26px, 2vw, 30px)/1.08 var(--sans); letter-spacing: -0.025em; }
++.product-card__heading p { margin: 9px 0 0; color: var(--graphite); font-size: 15px; line-height: 1.55; }
+ .product-card__price { white-space: nowrap; }
+ .text-action { padding: 0; border: 0; background: none; cursor: pointer; text-align: left; color: inherit; }
+-.product-card__price .text-action { font: 550 16px var(--display); }
++.product-card__price .text-action { color: var(--carbon); font: 680 clamp(20px, 1.5vw, 22px) var(--sans); }
+ .product-card__specs { display: grid; grid-template-columns: repeat(3, 1fr); margin: 22px 0 18px; padding: 17px 0; border-top: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); }
+-.product-card__specs div + div { border-left: 1px solid var(--soft-line); padding-left: 12px; }
+-.product-card__specs dt { color: #7b878c; font-size: 9px; margin-bottom: 5px; }.product-card__specs dd { margin: 0; font-size: 11px; font-weight: 700; }
+-.product-card__proof { display: flex; justify-content: space-between; gap: 12px; color: #536168; font-size: 10px; }
+-.product-card__detail { color: #66747a; font-size: 11px; line-height: 1.55; min-height: 34px; }
+-.color-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 5px 0 20px; }
+-.color-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--soft-line); border-radius: 999px; background: transparent; font-size: 8px; cursor: pointer; }
+-.swatch { width: 8px; height: 8px; border-radius: 50%; background: #30383b; box-shadow: inset 0 0 0 1px rgba(0,0,0,.14); }
+-.swatch--sand,.swatch--ivory { background: #ddd1bd; }.swatch--cobalt { background: #2667a8; }.swatch--silver { background: #b8c3c8; }.swatch--coral { background: #d9826a; }
++.product-card__specs div + div { border-left: 1px solid var(--soft-line); padding-left: 11px; }
++.product-card__specs dt { color: #68767b; font-size: 12px; margin-bottom: 5px; }
++.product-card__specs dd { margin: 0; font-size: 13px; font-weight: 720; }
++.product-card__proof { display: flex; justify-content: space-between; gap: 10px; color: var(--graphite); font-size: 12px; line-height: 1.5; }
++.product-card__detail { min-height: 48px; color: var(--graphite); font-size: 15px; line-height: 1.6; }
++.color-row { display: flex; gap: 7px; flex-wrap: wrap; margin: 5px 0 21px; }
++.color-chip { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--soft-line); border-radius: 999px; background: transparent; font-size: 13px; cursor: pointer; }
++.swatch { width: 9px; height: 9px; border-radius: 50%; background: #30383b; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14); }
++.swatch--sand, .swatch--ivory { background: #ddd1bd; }
++.swatch--cobalt { background: var(--cobalt); }
++.swatch--silver { background: #b8c3c8; }
++.swatch--coral { background: #d9826a; }
+ .product-card__actions { display: flex; gap: 7px; margin-top: auto; flex-wrap: wrap; }
+-.product-card__actions .button { padding: 9px 12px; font-size: 9px; }
+-.button--quiet { background: transparent; }.button--quiet.is-active { border-color: var(--cobalt); color: var(--cobalt); background: var(--ice); }
+-.button--primary { margin-left: auto; border-color: var(--ink); background: var(--ink); color: white; }
+-.product-grid[data-state="FOCUS"] { grid-template-columns: 1.5fr .75fr .75fr; }
+-.product-card--focused { border-color: rgba(38,103,168,.35); box-shadow: 0 20px 50px rgba(38,103,168,.12); }
+-.product-card--focused .product-card__visual { min-height: 330px; }.product-card--focused .product-art { transform: scale(1.08); }
+-.product-card--muted { opacity: .68; transform: scale(.985); }
++.product-card__actions .button { min-height: 40px; padding: 9px 12px; font-size: 13px; }
++.button--quiet { background: transparent; }
++.button--quiet.is-active { border-color: var(--cobalt); color: var(--cobalt); background: var(--cobalt-soft); }
++.button--primary { margin-left: auto; border-color: var(--carbon); background: var(--carbon); color: white; }
++.product-grid[data-state="FOCUS"] { grid-template-columns: 1.4fr 0.8fr 0.8fr; }
++.product-card--focused { border-color: rgba(7, 94, 184, 0.55); box-shadow: 0 0 0 4px rgba(7, 94, 184, 0.08), 0 24px 60px rgba(7, 94, 184, 0.14); }
++.product-card--focused .product-card__visual { min-height: 320px; }
++.product-card--focused .product-art { transform: scale(1.06); }
++.product-card--muted { transform: scale(0.985); box-shadow: none; }
++.product-card--muted .product-card__visual { opacity: 0.62; filter: saturate(0.45); }
+ 
+-.comparison-panel { display: none; margin: 20px 5vw 0; padding: 34px; background: var(--ink); color: white; border-radius: 26px; grid-template-columns: minmax(240px,.65fr) 1.35fr; gap: 48px; }
++.comparison-panel { display: none; margin: 20px 5vw 0; padding: 34px; background: var(--carbon); color: white; border-radius: 26px; grid-template-columns: minmax(250px, 0.65fr) 1.35fr; gap: 48px; }
+ .comparison-panel.is-visible { display: grid; }
+-.comparison-panel__intro h2 { margin: 0 0 14px; font: 520 29px var(--display); }.comparison-panel__intro p:last-child { margin: 0; color: #aeb9be; font-size: 12px; line-height: 1.7; }
++.comparison-panel__intro h2, .decision-support__intro h2 { margin: 0 0 14px; font: 700 clamp(26px, 2.3vw, 34px)/1.18 var(--sans); letter-spacing: -0.02em; }
++.comparison-panel__intro p:last-child { margin: 0; color: #b7c4c9; font-size: 15px; line-height: 1.65; }
+ .comparison-table { display: grid; }
+-.comparison-row { display: grid; grid-template-columns: .65fr 1fr 1fr; align-items: center; gap: 14px; min-height: 42px; border-top: 1px solid rgba(255,255,255,.11); font-size: 11px; }
+-.comparison-row > span:first-child { color: #8f9ba0; }.comparison-row--head { border: 0; color: var(--alloy); }
+-.decision-support { display: grid; grid-template-columns: minmax(240px, .8fr) 1.2fr; gap: 34px; padding: 30px 34px; border: 1px solid rgba(38,103,168,.26); border-radius: 26px; background: linear-gradient(120deg, var(--ice), var(--paper)); }
+-.decision-support__intro h2 { margin: 0 0 12px; font: 520 29px var(--display); letter-spacing: -.04em; }
+-.decision-support__intro p:last-child { margin: 0; color: #5f6e74; font-size: 12px; line-height: 1.7; }
++.comparison-row { display: grid; grid-template-columns: 0.65fr 1fr 1fr; align-items: center; gap: 14px; min-height: 46px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 13px; }
++.comparison-row > span:first-child { color: #a8b5ba; }
++.comparison-row--head { border: 0; color: var(--alloy); }
++.decision-support { display: grid; grid-template-columns: minmax(260px, 0.8fr) 1.2fr; gap: 34px; padding: 32px 34px; border: 1px solid rgba(7, 94, 184, 0.28); border-radius: 26px; background: linear-gradient(120deg, var(--cobalt-soft), var(--paper)); }
++.decision-support__intro p:last-child { margin: 0; color: var(--graphite); font-size: 15px; line-height: 1.65; }
+ .decision-support__proof { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: center; }
+-.decision-support__proof div { display: grid; gap: 6px; padding: 13px; border-radius: 13px; background: rgba(255,255,255,.7); }
+-.decision-support__proof span { color: #718087; font: 400 8px var(--mono); text-transform: uppercase; }
+-.decision-support__proof strong { font: 560 14px var(--display); }
++.decision-support__proof div { display: grid; gap: 6px; padding: 13px; border-radius: 13px; background: rgba(255, 255, 255, 0.78); }
++.decision-support__proof span { color: #64747a; font: 500 12px var(--mono); text-transform: uppercase; }
++.decision-support__proof strong { font-size: 15px; font-weight: 720; }
+ .decision-support__proof .button { grid-column: span 2; justify-self: start; }
+ 
+-.explainers { display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px; margin: 20px 5vw 64px; }
+-.explainers details { border: 1px solid var(--line); border-radius: 20px; background: rgba(251,252,251,.72); overflow: hidden; }
+-.explainers summary { min-height: 76px; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 16px 20px; cursor: pointer; list-style: none; }
++.explainers { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; margin: 20px 5vw 64px; }
++.explainers details { border: 1px solid var(--line); border-radius: 20px; background: rgba(252, 253, 252, 0.78); overflow: hidden; }
++.explainers summary { min-height: 82px; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 18px 21px; cursor: pointer; list-style: none; }
+ .explainers summary::-webkit-details-marker { display: none; }
+-.why-panel summary > span:first-child { display: grid; gap: 4px; }.why-panel summary small { color: var(--cobalt); font: 400 9px var(--mono); }.why-panel summary strong { font: 530 16px var(--display); }
+-.summary-action { color: #68757a; font-size: 10px; }
+-.why-grid,.developer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 20px 20px; }
+-.why-grid div,.developer-grid div { display: grid; gap: 7px; padding: 13px; background: var(--canvas); border-radius: 12px; }.why-grid span,.developer-grid span { color: #7d898e; font: 400 8px var(--mono); text-transform: uppercase; }.why-grid strong,.developer-grid strong { font: 530 12px var(--display); }
+-.suppressed-note { margin: 0 20px 20px; color: var(--cobalt); font-size: 11px; }
+-.developer-view summary span { font: 520 13px var(--display); }.developer-view summary small { color: #8b969a; font: 400 8px var(--mono); }
++.why-panel summary > span:first-child { display: grid; gap: 4px; }
++.why-panel summary small { color: var(--cobalt); font: 500 12px var(--mono); }
++.why-panel summary strong { font-size: 17px; font-weight: 700; }
++.summary-action { flex-shrink: 0; color: var(--graphite); font-size: 13px; white-space: nowrap; }
++.why-grid, .developer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 20px 20px; }
++.why-grid div, .developer-grid div { display: grid; gap: 7px; padding: 13px; background: var(--mineral); border-radius: 12px; }
++.why-grid span, .developer-grid span { color: #6b797e; font: 500 12px var(--mono); text-transform: uppercase; }
++.why-grid strong, .developer-grid strong { font-size: 14px; font-weight: 700; }
++.suppressed-note { margin: 0 20px 20px; color: var(--cobalt); font-size: 13px; }
++.developer-view summary span { font-size: 15px; font-weight: 700; }
++.developer-view summary small { color: #6f7d82; font: 500 12px var(--mono); }
+ .event-ledger { margin: 0 20px 20px; padding: 0; list-style: none; border-top: 1px solid var(--soft-line); }
+-.event-ledger li { display: grid; grid-template-columns: 48px 1fr 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--soft-line); font: 400 8px var(--mono); }.event-ledger li span { color: var(--cobalt); }.event-ledger li em { color: #7e898d; font-style: normal; }.event-ledger__empty { color: #8b969a; display: block !important; }
++.event-ledger li { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--soft-line); font: 500 12px var(--mono); }
++.event-ledger li span { color: var(--cobalt); }
++.event-ledger li em { color: var(--graphite); font-style: normal; }
++.event-ledger__empty { color: #748187; display: block !important; }
+ 
+-footer { min-height: 100px; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px 5vw; border-top: 1px solid var(--line); color: #778388; font: 400 9px var(--mono); }
++footer { min-height: 104px; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px 5vw; border-top: 1px solid var(--line); color: var(--graphite); font: 500 12px var(--mono); }
+ footer p { margin: 0; }
+-.transition-toast { position: fixed; z-index: 50; left: 50%; bottom: 30px; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 999px; background: var(--ink); color: white; box-shadow: 0 18px 50px rgba(0,0,0,.22); opacity: 0; transform: translate(-50%, 18px); pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; }
+-.transition-toast.is-visible { animation: toast-cycle 2.4s ease forwards; }.transition-toast span { color: var(--alloy); font: 500 9px var(--mono); }.transition-toast strong { font-size: 11px; white-space: nowrap; }
++.transition-toast { position: fixed; z-index: 50; left: 50%; bottom: 30px; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 999px; background: var(--carbon); color: white; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22); opacity: 0; transform: translate(-50%, 18px); pointer-events: none; transition: opacity 220ms ease, transform 220ms ease; }
++.transition-toast.is-visible { animation: toast-cycle 2.4s ease forwards; }
++.transition-toast span { color: var(--alloy); font: 500 12px var(--mono); }
++.transition-toast strong { font-size: 13px; white-space: nowrap; }
+ @keyframes toast-cycle { 0% { opacity: 0; transform: translate(-50%, 18px); } 12%, 82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -6px); } }
+ 
+-@media (max-width: 1050px) {
+-  .site-header { grid-template-columns: auto auto 1fr; }.header-story { display: none; }.header-tools { justify-self: end; }
+-  .hero { grid-template-columns: 1fr; gap: 46px; padding-top: 62px; }.hero__console { border-left: 0; border-top: 1px solid var(--line); padding: 28px 0 0; display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }.demo-thesis { margin: 0; }
+-  .state-stage { grid-template-columns: 1fr; }.state-message { justify-self: start; }.state-message div { text-align: left; }
+-  .storefront__heading { grid-template-columns: 1fr; }.product-grid,.product-grid[data-state="FOCUS"] { grid-template-columns: repeat(2, minmax(0,1fr)); }.product-card--focused { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; }.product-card--focused .product-card__visual { min-height: 100%; }
+-  .comparison-panel { grid-template-columns: 1fr; }.explainers { grid-template-columns: 1fr; }
++@media (max-width: 1120px) {
++  .hero { grid-template-columns: 1fr; gap: 42px; padding-top: 56px; }
++  .hero__copy { max-width: 850px; }
++  .hero__console { width: 100%; }
++  .state-stage { grid-template-columns: 1fr; gap: 18px; }
++  .state-message { justify-self: start; }
++  .state-message div { text-align: left; }
++  .storefront__heading { grid-template-columns: 1fr; }
++  .product-grid, .product-grid[data-state="FOCUS"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  .product-grid:not([data-state="FOCUS"]) > .product-card:last-child:nth-child(odd) { grid-column: 1 / -1; width: calc((100% - 18px) / 2); justify-self: center; }
++  .product-card--focused { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; }
++  .product-card--focused .product-card__visual { min-height: 100%; }
++  .comparison-panel { grid-template-columns: 1fr; gap: 26px; }
++  .explainers { grid-template-columns: 1fr; }
+ }
+ 
+ @media (max-width: 680px) {
+-  .site-header { min-height: 64px; padding: 0 18px; gap: 10px; }.brand { font-size: 14px; }.powered-by { display: none; }.header-tools { gap: 8px; }.adaptive-toggle > span:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; }.cart-button { font-size: 10px; padding: 8px 10px; }
+-  .hero { padding: 48px 20px 38px; }.hero h1 { font-size: clamp(50px, 16vw, 72px); }.hero__lead { margin-top: 24px; font-size: 15px; }.hero__console { grid-template-columns: 1fr; }.replay-controls { align-items: stretch; }.button--watch { width: 100%; }
+-  .state-stage { margin: 0 20px; gap: 16px; }.state-path { justify-content: space-between; }.state-step { min-width: auto; gap: 5px; }.state-step:not(:last-child)::after { width: 22px; margin: 0 8px; }.state-step span { display: none; }.state-step strong { font-size: 10px; }
+-  .demo-stage { margin: 30px 10px 46px; }.demo-stage__header { align-items: start; margin: 0 10px 12px; }.demo-stage__header .powered-by { display: inline; font-size: 8px; }.demo-stage .storefront { margin: 0; padding: 32px 10px 24px; border-radius: 25px; }.storefront__heading { padding: 0 10px; gap: 18px; }.storefront__heading h2 { font-size: 34px; }.storefront__heading > p { font-size: 12px; }.signal-ribbon { top: 110px; }
+-  .product-grid,.product-grid[data-state="FOCUS"] { grid-template-columns: 1fr; }.product-card--focused { grid-column: auto; display: flex; }.product-card__visual,.product-card--focused .product-card__visual { min-height: 275px; }.product-card__body { padding: 22px 18px 19px; }.product-card__heading { grid-template-columns: 1fr; }.product-card__price { margin-top: 2px !important; }.product-card__specs { gap: 6px; }.product-card__proof { flex-direction: column; }.product-card__actions .button { flex: 1 1 auto; }.button--primary { margin-left: 0; flex-basis: 100% !important; }.product-card--muted { opacity: .78; transform: none; }
+-  .comparison-panel { margin: 0; padding: 26px 18px; border-radius: 22px; }.comparison-row { grid-template-columns: .7fr 1fr 1fr; gap: 8px; font-size: 9px; }.decision-support { grid-template-columns: 1fr; gap: 20px; padding: 24px 18px; border-radius: 22px; }.decision-support__proof .button { grid-column: span 2; }
+-  .explainers { margin: 14px 10px 46px; }.why-grid,.developer-grid { grid-template-columns: repeat(2,1fr); }
+-  footer { align-items: flex-start; flex-direction: column; padding: 24px 20px; line-height: 1.5; }
++  .site-header { min-height: 72px; grid-template-columns: 1fr auto; padding: 0 18px; gap: 10px; }
++  .header-story { display: none; }
++  .brand { gap: 9px; }
++  .brand__mark { width: 28px; height: 28px; }
++  .brand__lockup strong { font-size: 18px; }
++  .brand__lockup small { font-size: 12px; }
++  .adaptive-toggle > span:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; }
++  .hero { min-height: 0; padding: 46px 20px 36px; }
++  .hero h1 { font-size: 52px; letter-spacing: -0.025em; }
++  .hero__lead { margin-top: 22px; font-size: 17px; }
++  .product-invariants { align-items: flex-start; gap: 7px 9px; margin-top: 24px; }
++  .product-invariants i { width: 10px; }
++  .hero__console { padding: 14px; border-radius: 22px; }
++  .causal-system { min-height: 255px; }
++  .causal-trace { grid-template-columns: repeat(2, 1fr); gap: 9px; }
++  .causal-trace b { display: none; }
++  .causal-trace > div { padding: 14px 8px; }
++  .replay-controls { align-items: stretch; }
++  .button--watch { width: 100%; }
++  .state-stage { margin: 0 20px; }
++  .state-path { justify-content: space-between; }
++  .state-step { gap: 5px; }
++  .state-step:not(:last-child)::after { width: 12px; margin: 0 7px; }
++  .state-step > span { display: none; }
++  .state-step strong, .state-step em { font-size: 12px; }
++  .demo-stage { margin: 32px 10px 48px; }
++  .demo-stage__header { align-items: center; margin: 0 10px 13px; }
++  .demo-stage__header .eyebrow { font-size: 13px; }
++  .demo-stage__label { font-size: 12px; }
++  .cart-button { flex: 0 0 auto; }
++  .storefront { padding: 34px 10px 25px; border-radius: 25px; }
++  .storefront__heading { padding: 0 10px; gap: 17px; }
++  .storefront__heading h2 { font-size: 36px; }
++  .storefront__heading > p { font-size: 15px; }
++  .product-grid, .product-grid[data-state="FOCUS"] { grid-template-columns: 1fr; }
++  .product-grid:not([data-state="FOCUS"]) > .product-card:last-child:nth-child(odd) { grid-column: auto; width: 100%; }
++  .product-card--focused { grid-column: auto; display: flex; }
++  .product-card__visual, .product-card--focused .product-card__visual { min-height: 270px; }
++  .product-card__body { padding: 23px 18px 20px; }
++  .product-card__heading { grid-template-columns: 1fr; }
++  .product-card__price { margin-top: 2px !important; }
++  .product-card__proof { flex-direction: column; }
++  .product-card__actions .button { flex: 1 1 auto; }
++  .button--primary { margin-left: 0; flex-basis: 100% !important; }
++  .product-card--muted { transform: none; }
++  .comparison-panel { margin: 0; padding: 27px 18px; border-radius: 22px; }
++  .comparison-row { grid-template-columns: 0.7fr 1fr 1fr; gap: 7px; font-size: 13px; }
++  .decision-support { grid-template-columns: 1fr; gap: 20px; padding: 25px 18px; border-radius: 22px; }
++  .decision-support__proof .button { grid-column: span 2; }
++  .explainers { margin: 14px 10px 48px; }
++  .why-grid, .developer-grid { grid-template-columns: repeat(2, 1fr); }
++  footer { align-items: flex-start; flex-direction: column; padding: 24px 20px; line-height: 1.55; }
+   .transition-toast { bottom: 16px; max-width: calc(100vw - 24px); border-radius: 18px; }
+ }
+ 

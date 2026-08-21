@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "receipt_id": "pre-court-final-review-r2-20260821T023620Z",
+  "created_at_utc": "2026-08-21T02:36:20.1839445Z",
+  "authority_mode": "read_only",
+  "reviewer_relationship": {
+    "reviewer": "/root/investor_stage_quality_review",
+    "role": "fresh append-only independent pre-Court reviewer",
+    "implementation_author": "different agent",
+    "deployment_operator": "different root agent",
+    "r2_spec_author": "different root agent",
+    "evidence_sealer": "different root agent",
+    "mutation_authority": "No evidence-directory, product, Git, deployment, or R2 spec mutation. Only this external final-review receipt was authorized."
+  },
+  "review_scope": {
+    "spec_path": "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md",
+    "spec_sha256": "5225e9e7bb57c6ec4d21ee6bf7de2672512c1089f3b3ae31b6b49f5f1988bfa8",
+    "sealed_evidence_directory": "review/evidence/run_20260821_020352_uiadapt_investor_stage",
+    "review_target": "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "comparison_base": "91d73b45adeb97b86be97dba69f638ab910a06e9",
+    "prior_findings_retested": ["PC-M1", "PC-M2", "PC-M3"],
+    "checks": [
+      "self-excluding SHA256SUMS verification and membership",
+      "R2 evidence-quote lint and exact capture-stream equality",
+      "mandatory companion invocation/output/RC/UTC/artifact receipts",
+      "18-image visual receipt binding to inventory and actual PNG bytes",
+      "target/base/tree/diff/remote branch provenance",
+      "secret-pattern scan",
+      "risk, exclusion, status, and append-only revision consistency"
+    ]
+  },
+  "package_completeness": {
+    "status": "PARTIAL",
+    "evidence_file_count_including_manifest": 41,
+    "sealed_non_manifest_file_count": 40,
+    "evidence_total_bytes": 6929995,
+    "manifest_path": "review/evidence/run_20260821_020352_uiadapt_investor_stage/SHA256SUMS",
+    "manifest_sha256": "6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33",
+    "manifest_bytes": 4002,
+    "manifest_verify_exit_code": 0,
+    "manifest_verify_result": "GREEN",
+    "manifest_missing_count": 0,
+    "manifest_extra_count": 0,
+    "manifest_duplicate_count": 0,
+    "manifest_self_included": false,
+    "r2_spec_present": true,
+    "r2_spec_self_identity_consistent": false,
+    "reason": "The evidence bytes are correctly sealed, but the R2 spec's evidence_package.spec_file_path still identifies the superseded R1 spec and does not record the verified manifest digest."
+  },
+  "prior_finding_resolution": [
+    {
+      "finding": "PC-M1",
+      "status": "PARTIALLY_RESOLVED",
+      "resolved": [
+        "SHA256SUMS now exists.",
+        "All 40 non-manifest files are covered exactly once.",
+        "finalize_evidence.py verify returned RC 0 and EVIDENCE_VERIFY_RESULT=GREEN.",
+        "The manifest includes both companion receipts, the visual receipt, the first pre-Court REMAND receipt, R2 linter receipt, source diff, runtime evidence, and all 18 PNGs."
+      ],
+      "unresolved": [
+        "R2 meta.evidence_package.spec_file_path still points to review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md rather than the R2 spec.",
+        "R2 does not record the verified SHA256SUMS digest 6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33, despite the prior correction contract requiring the new spec revision to name it."
+      ]
+    },
+    {
+      "finding": "PC-M2",
+      "status": "RESOLVED_WITH_NONBLOCKING_SERIALIZATION_NOTE",
+      "resolved": [
+        "verification-before-completion-receipt.json records two invocations with command, cwd, bounded stdout, bounded stderr, RC 0, UTC completion, and raw artifact path.",
+        "independent-review-receipt.json records public smoke and provenance invocations with bounded streams, RC 0, UTC completion, reviewer relationship, and raw artifact path.",
+        "Spec companion records now include applicability, status, invocation, bounded output, UTC completion, and artifacts."
+      ],
+      "note": "The public-smoke receipt omits shell quotes that appear in the raw command string. Because the referenced path contains no spaces, both strings produce the same argv; this is not a material invocation mismatch."
+    },
+    {
+      "finding": "PC-M3",
+      "status": "RESOLVED",
+      "resolved": [
+        "visual-review-final.json identifies a different-session reviewer, review time, scope, method, findings, verdict, and limitations.",
+        "All 18 inspected_artifacts are unique and bind to every screenshot-inventory row.",
+        "All 18 hashes match the current sealed PNG bytes.",
+        "Critical, Important, and Minor arrays are empty and verdict is PASS."
+      ]
+    }
+  ],
+  "claim_to_evidence_matrix": [
+    {
+      "claim": "The evidence directory is completely and self-excludingly sealed.",
+      "evidence": "SHA256SUMS plus fresh finalize_evidence.py verify",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "R2 evidence quotes match their raw captures.",
+      "evidence": "R2 lint RC 0 and independent nine-item field comparison",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "Mandatory verification and independent-review receipts are complete.",
+      "evidence": "verification-before-completion-receipt.json, independent-review-receipt.json, raw referenced artifacts",
+      "result": "SUPPORTED_WITH_NONBLOCKING_ARGV_EQUIVALENCE_NOTE"
+    },
+    {
+      "claim": "The visual PASS is bound to all 18 exact screenshots.",
+      "evidence": "visual-review-final.json, screenshot-inventory.json, actual PNG hashes",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "The R2 spec identifies itself and its sealed package correctly.",
+      "evidence": "R2 meta.spec_revision, meta.supersedes, meta.evidence_package.spec_file_path, absence of manifest digest metadata",
+      "result": "CONTRADICTED"
+    },
+    {
+      "claim": "Target, base, tree, diff, and GitHub branch remain exact.",
+      "evidence": "fresh sanitized replacement-disabled Git verification",
+      "result": "SUPPORTED"
+    },
+    {
+      "claim": "No secret content is exposed by R2 or the sealed evidence package.",
+      "evidence": "redacted pattern scans",
+      "result": "SUPPORTED; one deliberate incorrect-password test literal only"
+    },
+    {
+      "claim": "Human product clarity and full-host reboot are proven.",
+      "evidence": "R2 known_missing_items and risks",
+      "result": "NOT_CLAIMED; both remain explicitly unavailable/excluded"
+    }
+  ],
+  "findings": {
+    "Critical": [],
+    "High": [],
+    "Medium": [
+      {
+        "id": "R2-M1",
+        "title": "R2 identifies the superseded R1 spec as the package specification and omits the sealed manifest digest",
+        "evidence": "R2 meta.spec_revision=2 and meta.supersedes identify this as the append-only replacement, but line 51 sets meta.evidence_package.spec_file_path to review/spec_20260821_021401_uiadapt_investor_stage_nwg_release.md. No evidence_manifest_sha256 or equivalent field records the freshly verified SHA256SUMS digest 6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33.",
+        "violated_requirement": "A Court package must identify the exact submitted spec revision and the exact sealed evidence identity. The prior PC-M1 correction explicitly required a new append-only spec to name the manifest digest.",
+        "impact": "A package consumer following the self-declared spec_file_path opens the superseded R1 document—the version that the first independent review remanded. The sealed evidence bytes are valid, but R2 does not bind its own package identity correctly, so status=success is not yet self-consistent.",
+        "exact_locations": [
+          "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md:51",
+          "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md meta.spec_revision",
+          "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md meta.supersedes",
+          "review/spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md meta.evidence_package"
+        ],
+        "required_correction": "Do not rewrite R2. Create append-only R3 with a fresh revision timestamp, set evidence_package.spec_file_path to the R3 path, record evidence_manifest_path, evidence_manifest_sha256=6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33, sealed_non_manifest_file_count=40, and supersedes=R2. Preserve R1, R2, and both pre-Court receipts.",
+        "verification_required": "Lint R3, recompute R3 spec hash, run manifest verify RC 0, confirm the R3 package pointer and manifest digest are exact, then perform a new different-session read-only pre-Court review."
+      }
+    ],
+    "Low": []
+  },
+  "secret_scan": {
+    "sealed_evidence_private_key_hits": 0,
+    "sealed_evidence_authorization_header_hits": 0,
+    "sealed_evidence_credential_uri_hits": 0,
+    "sealed_evidence_token_assignment_hits": 0,
+    "sealed_evidence_basic_literal_hits": 0,
+    "sealed_evidence_password_literal_hits": 1,
+    "password_literal_classification": "independent-public-smoke.mjs line 51 is the explicit deliberately-incorrect-credential negative-control literal; it is not the approved credential",
+    "r2_spec_secret_pattern_hits": 0,
+    "result": "PASS_NO_SECRET_CONTENT_FOUND"
+  },
+  "risks_and_status_consistency": {
+    "product_clarity": "NOT_VERIFIED and not promoted",
+    "full_host_reboot": "NOT_EXECUTED and not promoted",
+    "short_shared_basic_auth": "disclosed medium risk with rotation plan",
+    "tailscale_dependency": "disclosed low accepted risk",
+    "missing_historical_raw_attempts": "disclosed low accepted risk",
+    "status_success_consistent": false,
+    "reason": "Product and sealed evidence claims are supported, but the R2 package self-identity contradiction is an unresolved material verification defect."
+  },
+  "commands": [
+    {
+      "id": "manifest-verify",
+      "command": "python E:\\03_AllWork\\grafana\\.agents\\skills\\evidence-quote-linter\\scripts\\finalize_evidence.py verify E:\\03_AllWork\\uiadapt-investor-stage\\review\\evidence\\run_20260821_020352_uiadapt_investor_stage",
+      "utc_start": "2026-08-21T02:32:58.2836145Z",
+      "utc_end": "2026-08-21T02:32:58.3763989Z",
+      "stdout": "All 40 named non-manifest artifacts reported OK; EVIDENCE_FILE_COUNT=40; EVIDENCE_VERIFY_RESULT=GREEN.",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "r2-evidence-lint",
+      "command": "python E:\\03_AllWork\\grafana\\.agents\\skills\\evidence-quote-linter\\scripts\\lint_evidence.py E:\\03_AllWork\\uiadapt-investor-stage\\review\\spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md",
+      "utc_start": "2026-08-21T02:33:05.9109854Z",
+      "utc_end": "2026-08-21T02:33:06.0488125Z",
+      "stdout": "Evidence lint passed: E:\\03_AllWork\\uiadapt-investor-stage\\review\\spec_20260821_113136_uiadapt_investor_stage_nwg_release_r2.md",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "manifest-membership-audit",
+      "command": "Audit SHA256SUMS self-exclusion, syntax, uniqueness, exact current non-manifest membership, and digest",
+      "utc_start": "2026-08-21T02:35:27.7566943Z",
+      "utc_end": "2026-08-21T02:35:27.8543385Z",
+      "stdout": "MANIFEST_SHA256=6d428f6edad6df85dde9c7da50d9f4768ebc931d8c702da1003dd5a2078fbe33\nLINE_COUNT=40\nPARSE_ISSUE_COUNT=0\nDUPLICATE_COUNT=0\nACTUAL_NON_MANIFEST_COUNT=40\nMISSING_COUNT=0\nEXTRA_COUNT=0\nSELF_INCLUDED=False\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "companion-receipt-audit",
+      "command": "Inspect verification-before-completion-receipt.json and independent-review-receipt.json invocations; cross-check bounded streams, RC, UTC, reviewer relationship, artifact, and raw-capture binding",
+      "utc_start": "2026-08-21T02:33:48.7053145Z",
+      "utc_end": "2026-08-21T02:34:09.4192780Z",
+      "stdout": "Verification receipt invocation count=2, both RC 0 with command/bounded streams/UTC/artifact and raw binding. Independent receipt invocation count=2, both RC 0 with command/bounded streams/UTC/artifact. Public-smoke command differs textually only by optional shell quotes around a path without spaces; argv is equivalent. Provenance correction is explicitly retained.",
+      "stderr": "",
+      "exit_code": 0,
+      "review_conclusion": "PC-M2_RESOLVED"
+    },
+    {
+      "id": "visual-receipt-binding",
+      "command": "Bind visual-review-final inspected_artifacts to screenshot-inventory rows and actual PNG bytes",
+      "utc_start": "2026-08-21T02:34:26.9315374Z",
+      "utc_end": "2026-08-21T02:34:27.0004394Z",
+      "stdout": "VISUAL_ARTIFACT_COUNT=18\nINVENTORY_COUNT=18\nUNIQUE_VISUAL_COUNT=18\nISSUE_COUNT=0\nVERDICT=PASS\nCritical=0 Important=0 Minor=0\n",
+      "stderr": "",
+      "exit_code": 0,
+      "review_conclusion": "PC-M3_RESOLVED"
+    },
+    {
+      "id": "r2-evidence-quote-exact-comparison",
+      "command": "Compare all nine R2 evidence quote command/stdout/stderr/exit_code/timestamp fields to referenced captures",
+      "utc_start": "2026-08-21T02:35:07.4588486Z",
+      "utc_end": "2026-08-21T02:35:07.5103118Z",
+      "stdout": "QUOTE_COUNT=9\nMATCH_COUNT=9\nMISMATCH_COUNT=0\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "secret-scan",
+      "command": "Redacted secret-pattern scans over the R2 spec and every sealed text artifact",
+      "utc_start": "2026-08-21T02:35:18.6058457Z",
+      "utc_end": "2026-08-21T02:36:04.7864320Z",
+      "stdout": "private-key=0 authorization-header=0 credential-uri=0 token-assignment=0 basic-literal=0; one deliberately-incorrect password literal used as a negative control; R2 spec pattern hits=0",
+      "stderr": "",
+      "exit_code": 0
+    },
+    {
+      "id": "fresh-git-target",
+      "command": "Fresh sanitized replacement-disabled local Git target/base/tree/diff and explicit GitHub branch verification",
+      "utc_start": "2026-08-21T02:36:17.4943812Z",
+      "utc_end": "2026-08-21T02:36:20.1839445Z",
+      "stdout": "ROOT=E:/03_AllWork/uiadapt-investor-stage\nHEAD=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nBASE=91d73b45adeb97b86be97dba69f638ab910a06e9\nTARGET=fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91\nTREE=8738e6e8cf3d4aa6e205b18a51a17b591a0ab218\nSHALLOW=false\nSOURCE_DIFF_BLOB=89075eb97e54ed41ae0e4bcc800008b0c42991a5\nREGENERATED_DIFF_BLOB=89075eb97e54ed41ae0e4bcc800008b0c42991a5\nDIFF_MATCH=True\nREMOTE_MATCH=True\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  ],
+  "reviewer_execution_anomalies": [
+    {
+      "description": "An initial attempt to separate stdout/stderr through temporary files was rejected by command policy before process creation.",
+      "state_change": "none",
+      "resolution": "Ran finalize_evidence.py verify directly with combined display; RC 0 and full bounded output were captured."
+    },
+    {
+      "description": "The first companion-validation PowerShell expression had a parser error because a variable preceding a colon was not delimited.",
+      "state_change": "none",
+      "resolution": "Reran with ${name}/${i} delimiting and then manually inspected the one textual quote difference."
+    }
+  ],
+  "verdict": "NOT_READY_FOR_COURT",
+  "verdict_basis": "PC-M2 and PC-M3 are resolved and the sealed evidence bytes are valid. R2-M1 remains a material package-identity contradiction: the current append-only revision identifies the superseded R1 spec as its package spec and fails to name the verified manifest digest required by the prior remediation contract. Verdict precedence therefore forbids READY_FOR_COURT.",
+  "next_actions": [
+    "Preserve R1, R2, the sealed evidence directory, the first pre-Court receipt, and this R2 final-review receipt unchanged.",
+    "Create append-only R3 correcting only package self-identity and manifest metadata; do not regenerate product/runtime evidence.",
+    "Lint R3 and perform one fresh independent read-only re-review binding R3 SHA-256 to the unchanged manifest SHA-256."
+  ]
+}

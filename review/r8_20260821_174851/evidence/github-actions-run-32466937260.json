@@ -1,0 +1,73 @@
+{
+  "schema_version": "uiadapt.r8.github-actions.v1",
+  "captured_at_utc": "2026-08-21T09:18:18.1496174Z",
+  "repository": "KaronLabs/UiAdapt-demo-scv",
+  "workflow": "UIAdapt v4.1 verification",
+  "workflow_path": ".github/workflows/verify.yml",
+  "run_id": 32466937260,
+  "run_number": 1,
+  "event": "push",
+  "head_branch": "codex/uiadapt-investor-r8-remediation",
+  "head_sha": "00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at_utc": "2026-08-21T09:14:32Z",
+  "updated_at_utc": "2026-08-21T09:17:15Z",
+  "html_url": "https://github.com/KaronLabs/UiAdapt-demo-scv/actions/runs/32466937260",
+  "jobs": [
+    {
+      "id": 96725414363,
+      "name": "verify",
+      "status": "completed",
+      "conclusion": "success",
+      "observed_duration": "2m 39s",
+      "steps": {
+        "checkout": "success",
+        "setup_node_22": "success",
+        "install_locked_dependencies": "success",
+        "lint": "success",
+        "unit_and_component_tests": "success",
+        "password_gateway_tests": "success",
+        "deployment_contract_tests": "success",
+        "install_chromium_and_system_dependencies": "success",
+        "nested_path_browser_tests": "success",
+        "production_dependency_audit": "success",
+        "upload_verification_artifacts": "success"
+      },
+      "vitest_summary": "2 test files passed; 19 tests passed"
+    },
+    {
+      "id": 96725414653,
+      "name": "runtime-contract",
+      "status": "completed",
+      "conclusion": "success",
+      "observed_duration": "36s",
+      "steps": {
+        "checkout": "success",
+        "setup_node_24": "success",
+        "install_locked_dependencies": "success",
+        "password_gateway_tests": "success",
+        "deployment_contract_tests": "success"
+      }
+    }
+  ],
+  "artifact": {
+    "id": 9441095944,
+    "name": "uiadapt-v4.1-verification-00c4c47a63f859d33b4264f6e6ddb3c5ef71913b",
+    "size_in_bytes": 8472139,
+    "digest": "sha256:885a333e71ce2546e0d720f026b50f5f0eb48ffdcb8f18ad8b3662d142a2fbda",
+    "expired": false,
+    "created_at_utc": "2026-08-21T09:17:10Z",
+    "expires_at_utc": "2026-11-19T09:14:32Z"
+  },
+  "warnings": [
+    "GitHub reported that actions/checkout@v4, actions/setup-node@v4, and actions/upload-artifact@v4 target Node.js 20 internally and were forced to run on Node.js 24. Both jobs still concluded success."
+  ],
+  "collection": {
+    "run": "GitHub connector fetch of https://github.com/KaronLabs/UiAdapt-demo-scv/actions/runs/32466937260 plus authenticated Chrome DOM observation",
+    "jobs": "GitHub connector fetch_workflow_run_jobs(run_id=32466937260)",
+    "artifact": "GitHub connector fetch_workflow_run_artifacts(run_id=32466937260)",
+    "local_gh_failure": "The local gh CLI account returned HTTP 404 for this private repository; that failed access path was not treated as CI evidence."
+  },
+  "result": "REMOTE_CI_PASS"
+}
