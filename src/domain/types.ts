@@ -3,6 +3,25 @@ export type AdaptiveState = "EXPLORE" | "COMPARE" | "FOCUS";
 export type EventSource = "USER" | "REPLAY";
 export type BehaviorDimension = "BROWSE" | "DETAIL" | "COMPARE" | "DECISION" | "CART_INTENT";
 
+export interface Distribution {
+  BROWSE: number;
+  DETAIL: number;
+  COMPARE: number;
+  DECISION: number;
+  CART_INTENT: number;
+}
+
+export type DistributionCounts = Record<BehaviorDimension, number>;
+
+export interface DistributionEvaluation {
+  eventCount: number;
+  windowSize: number;
+  counts: DistributionCounts;
+  current: Distribution;
+  reference: Distribution;
+  changeScore: number;
+}
+
 export type BehaviorEventType =
   | "VIEW_PRODUCT"
   | "OPEN_DETAILS"
