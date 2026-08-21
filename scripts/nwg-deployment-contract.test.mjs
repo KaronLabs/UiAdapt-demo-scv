@@ -643,16 +643,23 @@ test("documented automatic switch preserves the original failure after recovery"
   const newSha = "a".repeat(40);
   const scenario = `
 set -Eeuo pipefail
-TEST_ROOT="$(mktemp -d)"
 OLD_SHA="${oldSha}"
 NEW_SHA="${newSha}"
-mkdir -p "$TEST_ROOT/releases/$OLD_SHA" "$TEST_ROOT/releases/$NEW_SHA"
-ln -s "releases/$NEW_SHA" "$TEST_ROOT/current"
-trap 'printf "FINAL_TARGET=%s\\n" "$(readlink -f "$TEST_ROOT/current")"; rm -rf "$TEST_ROOT"' EXIT
-
-DEPLOY_ROOT="$TEST_ROOT"
-PREVIOUS_TARGET="$TEST_ROOT/releases/$OLD_SHA"
+DEPLOY_ROOT="/test-deploy-root"
+PREVIOUS_TARGET="$DEPLOY_ROOT/releases/$OLD_SHA"
+CURRENT_TARGET="$DEPLOY_ROOT/releases/$NEW_SHA"
+STAGED_TARGET=""
 RESTART_CALLS=0
+ln() { STAGED_TARGET="$2"; return 0; }
+readlink() {
+  local path="\${!#}"
+  if test "$path" = "$DEPLOY_ROOT/current.rollback.new"; then
+    printf '%s\\n' "$STAGED_TARGET"
+  else
+    printf '%s\\n' "$CURRENT_TARGET"
+  fi
+}
+mv() { CURRENT_TARGET="$STAGED_TARGET"; return 0; }
 systemctl() {
   if test "\${1:-}" = "restart"; then
     RESTART_CALLS=$((RESTART_CALLS + 1))
@@ -661,13 +668,14 @@ systemctl() {
   return 0
 }
 curl() { return 0; }
+trap 'printf "FINAL_TARGET=%s\\n" "$CURRENT_TARGET"' EXIT
 ${rollbackMatch[0]}
 systemctl restart uiadapt-static.service uiadapt-gateway.service
 printf 'SWITCH_STATUS=PASS\\n'
 `;
 
-  const command = process.platform === "win32" ? "wsl.exe" : "bash";
-  const args = process.platform === "win32" ? ["-d", "Ubuntu", "--", "bash", "-s"] : ["-s"];
+  const command = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
+  const args = ["-s"];
   const child = spawn(command, args, {
     cwd: projectRoot,
     stdio: ["pipe", "pipe", "pipe"],
