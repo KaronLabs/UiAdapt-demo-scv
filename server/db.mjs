@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import mysql from "mysql2/promise";
-import { assertTrajectoryConsistency, canonicalizeTrajectory } from "./validation.mjs";
+import {
+  assertTrajectoryConsistency,
+  assertTrajectoryContinuity,
+  canonicalizeTrajectory,
+} from "./validation.mjs";
 
 const SESSION_COLUMNS = "session_id, started_at_ms, event_source, adaptive_enabled";
 
@@ -219,6 +223,21 @@ export function createDbAdapter(pool) {
           [normalized.sessionId],
         );
         const previous = previousRows[0];
+        let previousSnapshot = null;
+        if (normalized.transition && previous) {
+          const [snapshotRows] = await connection.execute(
+            `SELECT sequence_no, detected_state, candidate_state, candidate_persistence
+             FROM uiadapt_distribution_snapshots
+             WHERE session_id = ? AND sequence_no = ?
+             FOR UPDATE`,
+            [normalized.sessionId, previous.sequence_no],
+          );
+          previousSnapshot = snapshotRows[0] ?? null;
+        }
+        assertTrajectoryContinuity(
+          normalized,
+          previous ? { ...previous, ...(previousSnapshot ?? {}) } : null,
+        );
         if (
           (!previous && normalized.sequenceNo !== 1)
           || (previous && (

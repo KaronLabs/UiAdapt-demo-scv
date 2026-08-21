@@ -124,6 +124,27 @@ describe("deterministic evidence and state policy", () => {
     expect(state.lastRejectedReason).toBe("STALE_SESSION_EPOCH");
   });
 
+  it("rejects an unknown product and a non-monotonic event clock", () => {
+    const first = REPLAY_EVENTS[0];
+    let state = runtimeReducer(createInitialRuntime(), { type: "RECORD_EVENT", event: first, epoch: 0 });
+
+    state = runtimeReducer(state, {
+      type: "RECORD_EVENT",
+      event: { ...REPLAY_EVENTS[1], id: "unknown-product", productId: "unknown" } as unknown as BehaviorEvent,
+      epoch: 0,
+    });
+    expect(state.events).toHaveLength(1);
+    expect(state.lastRejectedReason).toBe("UNKNOWN_PRODUCT_ID");
+
+    state = runtimeReducer(state, {
+      type: "RECORD_EVENT",
+      event: { ...REPLAY_EVENTS[1], id: "old-clock", atMs: first.atMs - 1 },
+      epoch: 0,
+    });
+    expect(state.events).toHaveLength(1);
+    expect(state.lastRejectedReason).toBe("NON_MONOTONIC_EVENT_CLOCK");
+  });
+
   it("rejects an unknown event type before distribution evaluation", () => {
     const state = createInitialRuntime();
     const invalidEvent = {

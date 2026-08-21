@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDbAdapter, createMysqlPool } from "./db.mjs";
+import { assertTrajectoryContinuity } from "./validation.mjs";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -191,4 +192,76 @@ test("treats a retry as duplicate after MySQL DECIMAL storage rounds telemetry f
     }),
     (error) => error.code === "TRAJECTORY_INCONSISTENT",
   );
+});
+
+test("rejects a forged transition before minimum evidence and before writing", async () => {
+  const payload = {
+    ...frame(),
+    snapshot: {
+      ...frame().snapshot,
+      candidateState: "PURCHASE_INTENT",
+      candidatePersistence: 3,
+      detectedState: "PURCHASE_INTENT",
+      appliedState: "PURCHASE_INTENT",
+    },
+    transition: {
+      sequenceNo: 1,
+      fromState: "EXPLORE",
+      toState: "PURCHASE_INTENT",
+      changeScore: 0.5,
+      persistenceCount: 3,
+    },
+  };
+  const queries = [];
+  const connection = {
+    async beginTransaction() {},
+    async commit() {},
+    async rollback() {},
+    release() {},
+    async execute(query) {
+      queries.push(query);
+      if (query.includes("FROM uiadapt_sessions WHERE session_id = ? FOR UPDATE")) {
+        return [[{ session_id: SESSION_ID, event_source: "REPLAY" }], []];
+      }
+      if (query.includes("FROM uiadapt_events")) return [[], []];
+      if (query.includes("INSERT INTO")) return [{ affectedRows: 1 }, []];
+      throw new Error(`UNEXPECTED_QUERY:${query}`);
+    },
+  };
+  const db = createDbAdapter({ async getConnection() { return connection; } });
+
+  await assert.rejects(
+    () => db.appendTrajectory(payload),
+    (error) => error.code === "TRAJECTORY_INCONSISTENT",
+  );
+  assert.equal(queries.some((query) => query.includes("INSERT INTO")), false);
+});
+
+test("accepts a transition with the required preceding persistence frame", () => {
+  const payload = {
+    ...frame(),
+    sequenceNo: 15,
+    snapshot: {
+      ...frame().snapshot,
+      eventCount: 15,
+      candidateState: "COMPARE",
+      candidatePersistence: 3,
+      detectedState: "COMPARE",
+      appliedState: "COMPARE",
+    },
+    transition: {
+      sequenceNo: 15,
+      fromState: "EXPLORE",
+      toState: "COMPARE",
+      changeScore: 0.5,
+      persistenceCount: 3,
+    },
+  };
+
+  assert.doesNotThrow(() => assertTrajectoryContinuity(payload, {
+    sequence_no: 14,
+    detected_state: "EXPLORE",
+    candidate_state: "COMPARE",
+    candidate_persistence: 2,
+  }));
 });

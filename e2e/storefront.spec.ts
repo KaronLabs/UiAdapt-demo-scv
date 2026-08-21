@@ -322,9 +322,16 @@ test("the canonical replay changes presentation without changing product data", 
   }
   await page.screenshot({ path: `test-results/${testInfo.project.name}-compare.png`, fullPage: true, animations: "disabled" });
   await page.screenshot({ path: `test-results/${testInfo.project.name}-compare-viewport.png`, animations: "disabled" });
+  await page.locator(".why-panel summary").click();
+  await expect(page.locator(".why-grid").getByText("Evidence", { exact: true }).locator("..")).toHaveText(/\d+ \/ 15/);
+  await expect(page.locator(".why-grid").getByText("Candidate", { exact: true }).locator("..")).toContainText("COMPARE");
+  await expect(page.locator(".why-grid").getByText("Persistence", { exact: true }).locator("..")).toContainText("0 / 3");
+  await expect(page.locator(".why-grid").getByText("Last transition", { exact: true }).locator("..")).toContainText("EXPLORE → COMPARE");
   await page.clock.fastForward(8_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("PURCHASE_INTENT");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT");
+  await expect(page.locator(".why-grid").getByText("Evidence", { exact: true }).locator("..")).toHaveText(/\d+ \/ 15/);
+  await expect(page.locator(".why-grid").getByText("Last transition", { exact: true }).locator("..")).toContainText("COMPARE → PURCHASE_INTENT");
   expect((await page.locator(".product-card__price").allTextContents()).map((value) => value.trim())).toEqual(expectedPrices);
   expect(await productContracts(page)).toEqual(expectedProducts);
   await page.screenshot({ path: `test-results/${testInfo.project.name}-purchase-intent.png`, fullPage: true, animations: "disabled" });

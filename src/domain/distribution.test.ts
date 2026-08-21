@@ -15,12 +15,16 @@ function event(sequenceNo: number, type: BehaviorEventType): BehaviorEvent {
 
 describe("behavior distribution", () => {
   it("keeps only the last twenty events", () => {
-    const events = Array.from({ length: 21 }, (_, index) => event(index + 1, "VIEW_PRODUCT"));
+    const events = [
+      event(1, "CHECK_REVIEWS"),
+      ...Array.from({ length: 20 }, (_, index) => event(index + 2, "VIEW_PRODUCT")),
+    ];
     const result = evaluateDistribution(events);
 
     expect(result.windowSize).toBe(20);
     expect(result.eventCount).toBe(21);
     expect(result.counts.BROWSE).toBe(20);
+    expect(result.counts.DECISION).toBe(0);
   });
 
   it("normalizes non-empty counts to one and keeps values in range", () => {

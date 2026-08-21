@@ -87,6 +87,15 @@ describe("distribution transition engine", () => {
     expect(third.detectedState).toBe("COMPARE");
   });
 
+  it("does not transition on one eligible spike", () => {
+    const result = evaluateTransition(context(), compareDistribution, 15);
+
+    expect(result.candidateState).toBe("COMPARE");
+    expect(result.candidatePersistence).toBe(1);
+    expect(result.transition).toBeNull();
+    expect(result.detectedState).toBe("EXPLORE");
+  });
+
   it("resets persistence when the candidate flips", () => {
     const compare = evaluateTransition(context(), compareDistribution, 15);
     const purchase = advance(compare, purchaseDistribution, 16);
@@ -95,6 +104,29 @@ describe("distribution transition engine", () => {
     expect(purchase.candidateState).toBe("PURCHASE_INTENT");
     expect(purchase.candidatePersistence).toBe(1);
     expect(purchase.detectedState).toBe("EXPLORE");
+  });
+
+  it("does not accumulate persistence across hysteresis oscillation", () => {
+    let result = evaluateTransition(context(), compareDistribution, 15);
+    result = advance(result, releaseBoundaryDistribution, 16);
+    result = advance(result, compareDistribution, 17);
+    result = advance(result, releaseBoundaryDistribution, 18);
+    result = advance(result, compareDistribution, 19);
+
+    expect(result.transition).toBeNull();
+    expect(result.pendingCandidate).toBe("COMPARE");
+    expect(result.candidatePersistence).toBe(1);
+  });
+
+  it("resets a two-window candidate when a different candidate appears", () => {
+    let result = evaluateTransition(context(), compareDistribution, 15);
+    result = advance(result, compareDistribution, 16);
+    result = advance(result, purchaseDistribution, 17);
+
+    expect(result.candidateState).toBe("PURCHASE_INTENT");
+    expect(result.candidatePersistence).toBe(1);
+    expect(result.transition).toBeNull();
+    expect(result.detectedState).toBe("EXPLORE");
   });
 
   it("does not release at the exact 0.20 boundary", () => {

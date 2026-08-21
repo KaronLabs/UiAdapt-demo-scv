@@ -39,6 +39,8 @@ const REFERENCE_DISTRIBUTION = Object.freeze({
 });
 const DECIMAL_SCALE = 10;
 const DECIMAL_EPSILON = 1e-9;
+const MINIMUM_EVIDENCE = 15;
+const REQUIRED_PERSISTENCE = 3;
 
 export class ApiError extends Error {
   constructor(status, code) {
@@ -246,6 +248,25 @@ export function assertTrajectoryConsistency(payload) {
       semantic("TRAJECTORY_INCONSISTENT");
     }
   }
+  return payload;
+}
+
+export function assertTrajectoryContinuity(payload, previous) {
+  if (payload.transition === null) return payload;
+
+  if (
+    payload.snapshot.eventCount < MINIMUM_EVIDENCE
+    || previous === null
+    || Number(previous.sequence_no) !== payload.sequenceNo - 1
+    || previous.detected_state !== payload.transition.fromState
+    || previous.candidate_state !== payload.transition.toState
+    || Number(previous.candidate_persistence) !== REQUIRED_PERSISTENCE - 1
+    || payload.snapshot.candidateState !== payload.transition.toState
+    || payload.snapshot.candidatePersistence !== REQUIRED_PERSISTENCE
+  ) {
+    semantic("TRAJECTORY_INCONSISTENT");
+  }
+
   return payload;
 }
 

@@ -96,4 +96,26 @@ describe("bounded telemetry client", () => {
     expect(client.getStatus()).toBe("DEGRADED");
     client.dispose();
   });
+
+  it("recovers to HEALTHY after a later frame is delivered", async () => {
+    vi.useFakeTimers();
+    let callCount = 0;
+    const fetchImpl = vi.fn(async () => {
+      callCount += 1;
+      return callCount <= 3 ? { ok: false, status: 503 } : okResponse();
+    });
+    const client = createTelemetryClient(fetchImpl);
+
+    expect(client.enqueueTrajectory(frame(1))).toBe(true);
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(250);
+    await client.whenIdle();
+    expect(client.getStatus()).toBe("DEGRADED");
+
+    expect(client.enqueueTrajectory(frame(2))).toBe(true);
+    await client.whenIdle();
+    expect(client.getStatus()).toBe("HEALTHY");
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    client.dispose();
+  });
 });
