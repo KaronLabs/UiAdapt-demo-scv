@@ -628,6 +628,106 @@ test("release runbook records version-addressed deployment, readiness, rollback,
   }
 });
 
+test("documented switch and rollback poll bounded readiness after every restart", { timeout: 10_000 }, async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const automaticSection = runbook.slice(
+    runbook.indexOf("### Automated fail-closed switch"),
+    runbook.indexOf("### Manual rollback"),
+  );
+  const manualSection = runbook.slice(
+    runbook.indexOf("### Manual rollback"),
+    runbook.indexOf("## 4. Credential"),
+  );
+  const automaticScript = automaticSection.match(/```bash\r?\n([\s\S]*?)```/)?.[1] ?? "";
+  const manualScript = manualSection.match(/```bash\r?\n([\s\S]*?)```/)?.[1] ?? "";
+  const readinessMatch = automaticScript.match(/wait_for_readiness\(\) \{[\s\S]*?\r?\n\}/);
+
+  assert.ok(readinessMatch, "automatic switch must define a readiness helper");
+  assert.match(readinessMatch[0], /for \(\(attempt=1; attempt<=max_attempts; attempt\+\+\)\)/);
+  assert.doesNotMatch(readinessMatch[0], /while\s+(?:true|:)/);
+  assert.match(readinessMatch[0], /--connect-timeout\s+\d+/);
+  assert.match(readinessMatch[0], /--max-time\s+\d+/);
+  assert.match(readinessMatch[0], /127\.0\.0\.1:5173\/uiadapt_demo/);
+  assert.match(readinessMatch[0], /127\.0\.0\.1:4180\/uiadapt_demo/);
+
+  for (const [name, script] of [
+    ["automatic switch", automaticScript],
+    ["manual rollback", manualScript],
+  ]) {
+    assert.equal(
+      (script.match(/systemctl restart uiadapt-static\.service uiadapt-gateway\.service/g) ?? []).length,
+      2,
+      `${name} must retain exactly two restart paths`,
+    );
+    assert.equal(
+      (script.match(/^\s*wait_for_readiness(?:\s|$)/gm) ?? []).length,
+      2,
+      `${name} must wait after its primary and recovery restarts`,
+    );
+    assert.match(
+      script,
+      /systemctl restart uiadapt-static\.service uiadapt-gateway\.service[^\n]*\r?\n\s*wait_for_readiness/,
+      `${name} must wait immediately after restart`,
+    );
+  }
+  assert.match(
+    automaticScript,
+    /systemctl restart uiadapt-static\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
+  );
+  assert.match(
+    manualScript,
+    /systemctl restart uiadapt-static\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
+  );
+
+  const command = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
+  async function runReadinessScenario(staticReadyAfter, gatewayReadyAfter, maxAttempts) {
+    const scenario = `
+set -Eeuo pipefail
+STATIC_PROBES=0
+SLEEP_CALLS=0
+STATIC_READY_AFTER="${staticReadyAfter}"
+GATEWAY_READY_AFTER="${gatewayReadyAfter}"
+systemctl() { return 0; }
+curl() {
+  if printf '%s\\n' "$*" | grep -q '127.0.0.1:5173'; then
+    STATIC_PROBES=$((STATIC_PROBES + 1))
+    test "$STATIC_PROBES" -ge "$STATIC_READY_AFTER"
+    return
+  fi
+  test "$STATIC_PROBES" -ge "$GATEWAY_READY_AFTER" || return
+  printf '401'
+}
+sleep() { SLEEP_CALLS=$((SLEEP_CALLS + 1)); }
+${readinessMatch[0]}
+set +e
+wait_for_readiness "${maxAttempts}" 0
+STATUS=$?
+set -e
+printf 'STATUS=%s\\nSTATIC_PROBES=%s\\nSLEEP_CALLS=%s\\n' \
+  "$STATUS" "$STATIC_PROBES" "$SLEEP_CALLS"
+`;
+    const result = spawnSync(command, ["-s"], {
+      cwd: projectRoot,
+      input: scenario,
+      encoding: "utf8",
+      timeout: 2_000,
+    });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    return `${result.stdout}${result.stderr}`;
+  }
+
+  const delayedSuccess = await runReadinessScenario(2, 3, 5);
+  assert.match(delayedSuccess, /^STATUS=0$/m);
+  assert.match(delayedSuccess, /^STATIC_PROBES=3$/m);
+  assert.match(delayedSuccess, /^SLEEP_CALLS=2$/m);
+
+  const boundedFailure = await runReadinessScenario(99, 99, 4);
+  assert.match(boundedFailure, /^STATUS=1$/m);
+  assert.match(boundedFailure, /^STATIC_PROBES=4$/m);
+  assert.match(boundedFailure, /^SLEEP_CALLS=3$/m);
+});
+
 test("documented automatic switch preserves the original failure after recovery", { timeout: 10_000 }, async () => {
   const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
   const automaticSection = runbook.slice(
@@ -636,6 +736,8 @@ test("documented automatic switch preserves the original failure after recovery"
   );
   const scriptMatch = automaticSection.match(/```bash\r?\n([\s\S]*?)```/);
   assert.ok(scriptMatch, "automatic switch recipe must be executable");
+  const readinessMatch = scriptMatch[1].match(/wait_for_readiness\(\) \{[\s\S]*?\r?\n\}/);
+  assert.ok(readinessMatch, "automatic switch recipe must contain its readiness helper");
   const rollbackMatch = scriptMatch[1].match(/rollback\(\) \{[\s\S]*?\r?\n\}\r?\n\r?\ntrap 'rollback' ERR/);
   assert.ok(rollbackMatch, "automatic switch recipe must contain its rollback trap");
 
@@ -667,8 +769,12 @@ systemctl() {
   fi
   return 0
 }
-curl() { return 0; }
+curl() {
+  if printf '%s\\n' "$*" | grep -q '127.0.0.1:4180'; then printf '401'; fi
+  return 0
+}
 trap 'printf "FINAL_TARGET=%s\\n" "$CURRENT_TARGET"' EXIT
+${readinessMatch[0]}
 ${rollbackMatch[0]}
 systemctl restart uiadapt-static.service uiadapt-gateway.service
 printf 'SWITCH_STATUS=PASS\\n'

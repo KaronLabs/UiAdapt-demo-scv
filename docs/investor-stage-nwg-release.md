@@ -138,6 +138,34 @@ request.end();
 NODE
 }
 
+wait_for_readiness() {
+  local max_attempts="${1:-20}"
+  local poll_seconds="${2:-0.5}"
+  local attempt
+  case "$max_attempts" in
+    ''|*[!0-9]*) printf 'invalid readiness attempt bound\n' >&2; return 2 ;;
+  esac
+  test "$max_attempts" -gt 0 || { printf 'invalid readiness attempt bound\n' >&2; return 2; }
+  for ((attempt=1; attempt<=max_attempts; attempt++)); do
+    if systemctl is-active --quiet uiadapt-static.service &&
+      systemctl is-active --quiet uiadapt-gateway.service &&
+      curl --connect-timeout 1 --max-time 2 \
+        --fail --silent \
+        http://127.0.0.1:5173/uiadapt_demo/ \
+        --output /dev/null &&
+      test "$(curl --connect-timeout 1 --max-time 2 \
+        --silent --output /dev/null --write-out '%{http_code}' \
+        http://127.0.0.1:4180/uiadapt_demo/)" = "401"; then
+      return 0
+    fi
+    if test "$attempt" -lt "$max_attempts"; then
+      sleep "$poll_seconds"
+    fi
+  done
+  printf 'services did not become ready after %s attempts\n' "$max_attempts" >&2
+  return 1
+}
+
 smoke() {
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$NEW_RELEASE"
   systemctl is-active --quiet uiadapt-static.service
@@ -167,6 +195,7 @@ rollback() {
   mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
   systemctl daemon-reload || exit "$failure_status"
   systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  wait_for_readiness || exit "$failure_status"
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET" || exit "$failure_status"
   systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
   systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
@@ -183,6 +212,7 @@ test "$(readlink -f "$DEPLOY_ROOT/current.new")" = "$NEW_RELEASE"
 mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"
 systemctl daemon-reload
 systemctl restart uiadapt-static.service uiadapt-gateway.service
+wait_for_readiness
 smoke
 trap - ERR
 printf 'SWITCH_STATUS=PASS\n'
@@ -257,6 +287,34 @@ request.end();
 NODE
 }
 
+wait_for_readiness() {
+  local max_attempts="${1:-20}"
+  local poll_seconds="${2:-0.5}"
+  local attempt
+  case "$max_attempts" in
+    ''|*[!0-9]*) printf 'invalid readiness attempt bound\n' >&2; return 2 ;;
+  esac
+  test "$max_attempts" -gt 0 || { printf 'invalid readiness attempt bound\n' >&2; return 2; }
+  for ((attempt=1; attempt<=max_attempts; attempt++)); do
+    if systemctl is-active --quiet uiadapt-static.service &&
+      systemctl is-active --quiet uiadapt-gateway.service &&
+      curl --connect-timeout 1 --max-time 2 \
+        --fail --silent \
+        http://127.0.0.1:5173/uiadapt_demo/ \
+        --output /dev/null &&
+      test "$(curl --connect-timeout 1 --max-time 2 \
+        --silent --output /dev/null --write-out '%{http_code}' \
+        http://127.0.0.1:4180/uiadapt_demo/)" = "401"; then
+      return 0
+    fi
+    if test "$attempt" -lt "$max_attempts"; then
+      sleep "$poll_seconds"
+    fi
+  done
+  printf 'services did not become ready after %s attempts\n' "$max_attempts" >&2
+  return 1
+}
+
 test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$CURRENT_TARGET")"
 test ! -e "$DEPLOY_ROOT/current.rollback.new"
 test ! -L "$DEPLOY_ROOT/current.rollback.new"
@@ -277,6 +335,7 @@ manual_recover() {
   mv -T "$DEPLOY_ROOT/current.manual-recover.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
   systemctl daemon-reload || exit "$failure_status"
   systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  wait_for_readiness || exit "$failure_status"
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$CURRENT_TARGET" || exit "$failure_status"
   systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
   systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
@@ -298,6 +357,7 @@ test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$ROLLBACK_TARGET"
 mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
 systemctl daemon-reload
 systemctl restart uiadapt-static.service uiadapt-gateway.service
+wait_for_readiness
 test "$(readlink -f "$DEPLOY_ROOT/current")" = "$ROLLBACK_TARGET"
 systemctl is-active --quiet uiadapt-static.service
 systemctl is-active --quiet uiadapt-gateway.service
