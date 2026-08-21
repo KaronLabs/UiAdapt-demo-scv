@@ -135,7 +135,7 @@ test("pins a non-SPA static server to the production loopback endpoint", async (
   assert.equal(packageJson.scripts["build:nwg"], "npm run build && npm run stage:nwg");
   assert.equal(
     packageJson.scripts["test:deployment"],
-    "npm run build && node --test scripts/nwg-deployment-contract.test.mjs",
+    "node --test scripts/nwg-deployment-contract.test.mjs",
   );
   assert.doesNotMatch(packageJson.scripts["serve:static"], /(?:^|\s)(?:-s|--single)(?:\s|$)/);
 
@@ -177,28 +177,64 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   const workflow = await readProjectFile(".github/workflows/verify.yml");
   const [verifyJob, runtimeContractJob] = workflow.split(/^ {2}runtime-contract:\s*$/m);
 
-  assert.match(verifyJob, /node-version: 22[\s\S]*?npm run build[\s\S]*?npm run test:deployment/);
+  assert.match(verifyJob, /node-version: 22[\s\S]*?npm run test:deployment/);
   assert.ok(runtimeContractJob, "runtime-contract job must exist");
   assert.match(runtimeContractJob, /uses: actions\/checkout@v4/);
   assert.match(runtimeContractJob, /node-version: 24/);
   assert.match(runtimeContractJob, /cache: npm/);
   for (const command of [
     "npm ci",
-    "npm run build",
     "npm run test:gateway",
     "npm run test:deployment",
   ]) {
     assert.match(runtimeContractJob, new RegExp(`run: ${command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
   }
-  assert.match(runtimeContractJob, /npm ci[\s\S]*?npm run build[\s\S]*?npm run test:gateway[\s\S]*?npm run test:deployment/);
+  assert.match(runtimeContractJob, /npm ci[\s\S]*?npm run test:gateway[\s\S]*?npm run test:deployment/);
+  assert.doesNotMatch(workflow, /^\s*run: npm run build$/m);
   assert.match(workflow, /^permissions:\s*\r?\n {2}contents: read$/m);
   assert.doesNotMatch(workflow, /^\s*environment:/m);
   assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);
 });
 
-test("stages and serves the built nested application through the real gateway", { timeout: 20_000 }, async () => {
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-nwg-contract-"));
+test("preserves the existing target when source validation or copying fails", async () => {
+  const { stageNwg } = await import("./stage-nwg.mjs");
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-nwg-stage-failure-"));
+  const sourceRoot = join(temporaryRoot, "dist");
   const wwwRoot = join(temporaryRoot, "www");
+  const targetFile = join(wwwRoot, "uiadapt_demo", "existing.bin");
+  const existingBytes = Buffer.from([0, 255, 17, 42, 128]);
+
+  try {
+    await mkdir(sourceRoot, { recursive: true });
+    await mkdir(join(wwwRoot, "uiadapt_demo"), { recursive: true });
+    await writeFile(join(sourceRoot, "index.html"), "new release", "utf8");
+    await writeFile(targetFile, existingBytes);
+
+    await assert.rejects(
+      stageNwg({ sourceRoot: join(temporaryRoot, "missing-dist"), wwwRoot }),
+    );
+    assert.deepEqual(await readFile(targetFile), existingBytes);
+
+    await assert.rejects(
+      stageNwg({
+        sourceRoot,
+        wwwRoot,
+        copy: async () => {
+          throw new Error("injected copy failure");
+        },
+      }),
+      /injected copy failure/,
+    );
+    assert.deepEqual(await readFile(targetFile), existingBytes);
+  } finally {
+    await rm(temporaryRoot, { force: true, recursive: true });
+  }
+});
+
+test("canonical build:nwg release is served through the static and gateway contracts", { timeout: 20_000 }, async () => {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-nwg-contract-"));
+  const wwwRoot = join(projectRoot, "www");
+  const releaseRoot = join(wwwRoot, "uiadapt_demo");
   const passwordFile = join(temporaryRoot, "password");
   const password = "deployment-contract-password";
   let staticProcess;
@@ -206,22 +242,16 @@ test("stages and serves the built nested application through the real gateway", 
 
   try {
     await writeFile(passwordFile, `${password}\n`, "utf8");
-    await mkdir(join(wwwRoot, "uiadapt_demo"), { recursive: true });
-    await writeFile(join(wwwRoot, "sibling.txt"), "preserve sibling", "utf8");
-    await writeFile(join(wwwRoot, "uiadapt_demo", "stale.txt"), "remove stale target", "utf8");
-    const stageResult = spawnSync(
+    await rm(releaseRoot, { force: true, recursive: true });
+    const releaseResult = spawnSync(
       process.execPath,
-      [join(projectRoot, "scripts", "stage-nwg.mjs"), wwwRoot],
+      [process.env.npm_execpath, "run", "build:nwg"],
       { cwd: projectRoot, encoding: "utf8" },
     );
-    assert.equal(stageResult.status, 0, `${stageResult.stdout}${stageResult.stderr}`);
-    assert.equal(await readFile(join(wwwRoot, "sibling.txt"), "utf8"), "preserve sibling");
-    await assert.rejects(
-      readFile(join(wwwRoot, "uiadapt_demo", "stale.txt"), "utf8"),
-      { code: "ENOENT" },
-    );
+    assert.equal(releaseResult.status, 0, `${releaseResult.stdout}${releaseResult.stderr}`);
+    assert.match(await readFile(join(releaseRoot, "index.html"), "utf8"), /<div id="root"><\/div>/);
 
-    const staticPort = await reserveLoopbackPort();
+    const staticPort = 5173;
     const gatewayPort = await reserveLoopbackPort();
     staticProcess = launchNode(
       join(projectRoot, "node_modules", "serve", "build", "main.js"),
@@ -306,6 +336,7 @@ test("stages and serves the built nested application through the real gateway", 
   } finally {
     await stopChild(gatewayProcess);
     await stopChild(staticProcess);
+    await rm(releaseRoot, { force: true, recursive: true });
     await rm(temporaryRoot, { force: true, recursive: true });
   }
 });
