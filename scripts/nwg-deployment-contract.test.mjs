@@ -405,6 +405,94 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);
 });
 
+test("README records the investor-stage contract and the complete safe verification order", async () => {
+  const readme = await readProjectFile("README.md");
+  const commands = [
+    "npm ci",
+    "npm run lint",
+    "npm test",
+    "npm run test:gateway",
+    "npm run test:deployment",
+    "npm run verify:build-bases",
+    "npm run build",
+    "npm run build:nwg",
+    "npm run test:e2e",
+    "npm audit --omit=dev --audit-level=high",
+  ];
+
+  let previousIndex = -1;
+  for (const command of commands) {
+    const commandIndex = readme.indexOf(command);
+    assert.ok(commandIndex > previousIndex, `${command} must appear once in the documented order`);
+    previousIndex = commandIndex;
+  }
+
+  assert.match(readme, /Wanted Sans/);
+  assert.match(readme, /Same catalog · Same behavior · Different presentation/);
+  assert.match(readme, /Behavior → State → Policy → Interface/);
+  assert.match(readme, /docs\/investor-stage-nwg-release\.md/);
+  assert.match(readme, /docs\/security\/investor-preview-threat-model\.md/);
+});
+
+test("release runbook records immutable deployment, readiness, rollback, and measured live status", async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+
+  for (const contract of [
+    "releases/<SHA>",
+    "current",
+    "uiadapt-static.service",
+    "uiadapt-gateway.service",
+    "127.0.0.1:5173",
+    "127.0.0.1:4180",
+    "/etc/uiadapt-demo/password",
+    "root:root",
+    "0600",
+    "LoadCredential",
+    "fba3d9d390c50cf4cdcfd9c51fd3aa616eeb2a91",
+    "R8_NOT_DEPLOYED",
+  ]) {
+    assert.ok(runbook.includes(contract), `runbook must record ${contract}`);
+  }
+
+  assert.match(runbook, /test:deployment[\s\S]*temporary root/i);
+  assert.match(runbook, /projectRoot\/www[\s\S]*(?:must not|금지)/i);
+  assert.match(runbook, /5173[\s\S]*dynamic port/i);
+  assert.match(runbook, /Tailscale Funnel[\s\S]*TLS/i);
+  assert.match(runbook, /readiness[\s\S]*authentication[\s\S]*public smoke/i);
+  assert.match(runbook, /rollback/i);
+  assert.match(runbook, /rotate|rotation/i);
+  assert.match(runbook, /secret[\s\S]*(?:must not|금지)[\s\S]*log/i);
+  assert.match(runbook, /https:\/\/tailscale\.com\/docs\/reference\/tailscale-cli\/funnel/);
+  assert.match(runbook, /https:\/\/www\.freedesktop\.org\/software\/systemd\/man\/latest\/systemd\.exec\.html/);
+});
+
+test("tracked threat model states the enforced controls and accepted operational gaps", async () => {
+  const threatModel = await readProjectFile("docs/security/investor-preview-threat-model.md");
+
+  for (const contract of [
+    "preview content",
+    "release integrity",
+    "Internet → Tailscale daemon TLS → loopback gateway → static service",
+    "Authorization",
+    "WebSocket",
+    "ubuntu",
+    "NoNewPrivileges",
+    "ProtectSystem=strict",
+    "ProtectHome=true",
+  ]) {
+    assert.ok(threatModel.includes(contract), `threat model must record ${contract}`);
+  }
+
+  assert.match(threatModel, /no application-layer rate limiter/i);
+  assert.match(threatModel, /no explicit hop-by-hop header filtering/i);
+  assert.match(threatModel, /no explicitly pinned upstream idle timeout/i);
+  assert.match(threatModel, /no explicitly pinned WebSocket idle timeout/i);
+  assert.match(threatModel, /credential[\s\S]*rotation/i);
+  assert.match(threatModel, /fail-closed/i);
+  assert.match(threatModel, /https:\/\/tailscale\.com\/docs\/features\/tailscale-funnel/);
+  assert.match(threatModel, /https:\/\/nodejs\.org\/api\/http\.html/);
+});
+
 test("preserves the existing target when source validation or copying fails", async () => {
   const { stageNwg } = await import("./stage-nwg.mjs");
   const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-nwg-stage-failure-"));
