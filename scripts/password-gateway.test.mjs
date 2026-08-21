@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 
 async function loadGateway() {
   try {
@@ -188,6 +189,68 @@ test("keeps the direct environment password compatible when no file is configure
   const { resolveGatewayPassword } = await loadGateway();
 
   assert.equal(resolveGatewayPassword({ password: "direct-environment-password" }), "direct-environment-password");
+});
+
+test("starts and authenticates when executed through a symlinked current release", async (t) => {
+  const directory = await temporaryDirectory(t);
+  const currentPath = join(directory, "current");
+  await symlink(join(import.meta.dirname, ".."), currentPath, process.platform === "win32" ? "junction" : "dir");
+
+  const reservation = net.createServer();
+  const port = await listen(reservation);
+  await close(reservation);
+
+  const child = spawn(
+    process.execPath,
+    [join(currentPath, "scripts", "password-gateway.mjs")],
+    {
+      cwd: currentPath,
+      env: {
+        ...process.env,
+        UIADAPT_GATEWAY_PASSWORD: "symlink-release-password",
+        UIADAPT_GATEWAY_PORT: String(port),
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  const output = [];
+  child.stdout.on("data", (chunk) => output.push(chunk));
+  child.stderr.on("data", (chunk) => output.push(chunk));
+
+  try {
+    let unauthorizedResponse;
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      if (child.exitCode !== null) {
+        assert.fail(`gateway exited before listening:\n${Buffer.concat(output).toString("utf8")}`);
+      }
+      try {
+        unauthorizedResponse = await globalThis.fetch(`http://127.0.0.1:${port}/uiadapt_demo/`);
+        if (unauthorizedResponse.status === 401) break;
+      } catch {
+        // Listener startup is asynchronous.
+      }
+      await delay(100);
+    }
+
+    assert.equal(unauthorizedResponse?.status, 401);
+    assert.equal(child.exitCode, null, Buffer.concat(output).toString("utf8"));
+
+    const authenticatedResponse = await globalThis.fetch(`http://127.0.0.1:${port}/`, {
+      headers: {
+        authorization: basicAuth("reviewer", "symlink-release-password"),
+      },
+      redirect: "manual",
+    });
+    assert.equal(authenticatedResponse.status, 302);
+    assert.equal(authenticatedResponse.headers.get("location"), "/uiadapt_demo/");
+  } finally {
+    if (child.exitCode === null) {
+      child.kill();
+      await once(child, "exit");
+    }
+  }
+
+  assert.ok(child.exitCode !== null || child.signalCode !== null);
 });
 
 test("rejects missing and incorrect credentials without contacting upstream", async (t) => {

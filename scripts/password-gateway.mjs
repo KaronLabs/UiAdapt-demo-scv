@@ -1,11 +1,11 @@
 import { Buffer } from "node:buffer";
 import console from "node:console";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import http from "node:http";
 import { resolve } from "node:path";
 import process from "node:process";
-import { pathToFileURL, URL } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 4180;
@@ -252,9 +252,10 @@ function readPort(value) {
   return port;
 }
 
-const entryPath = process.argv[1] ? resolve(process.argv[1]) : "";
+const entryPath = process.argv[1] ? realpathSync(resolve(process.argv[1])) : "";
+const modulePath = realpathSync(fileURLToPath(import.meta.url));
 const isDirectExecution = entryPath
-  && pathToFileURL(entryPath).href === import.meta.url;
+  && entryPath === modulePath;
 
 if (isDirectExecution) {
   const port = readPort(process.env.UIADAPT_GATEWAY_PORT);
