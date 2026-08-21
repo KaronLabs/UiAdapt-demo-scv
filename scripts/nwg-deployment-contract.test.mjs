@@ -423,10 +423,9 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.match(apiIntegrationJob, /UIADAPT_INTEGRATION: "1"/);
   assert.match(apiIntegrationJob, /--health-cmd="mysqladmin ping -h 127\.0\.0\.1 -uroot --silent"/);
   assert.match(apiIntegrationJob, /CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'%'/);
-  assert.match(apiIntegrationJob, /GRANT SELECT, INSERT ON uiadapt_demo\.\* TO 'uiadapt_demo_app'@'%'/);
+  assert.match(apiIntegrationJob, /GRANT SELECT, INSERT, LOCK TABLES ON uiadapt_demo\.\* TO 'uiadapt_demo_app'@'%'/);
   assert.doesNotMatch(apiIntegrationJob, /uiadapt_demo_app'@'127\.0\.0\.1'/);
-  assert.match(apiIntegrationJob, /GRANT SELECT, INSERT ON uiadapt_demo\.\* TO/);
-  assert.doesNotMatch(apiIntegrationJob, /GRANT [^\n]*\bUPDATE\b/);
+  assert.doesNotMatch(apiIntegrationJob, /GRANT [^\n]*\b(?:UPDATE|DELETE)\b/);
   assert.match(apiIntegrationJob, /npm run test:api-integration/);
   assert.doesNotMatch(workflow, /^\s*run: npm run build$/m);
   assert.match(workflow, /^permissions:\s*\r?\n {2}contents: read$/m);

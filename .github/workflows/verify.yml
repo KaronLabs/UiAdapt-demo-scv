@@ -123,7 +123,7 @@ jobs:
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo <<SQL
           CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'%' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
           ALTER USER 'uiadapt_demo_app'@'%' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
-          GRANT SELECT, INSERT ON uiadapt_demo.* TO 'uiadapt_demo_app'@'%';
+          GRANT SELECT, INSERT, LOCK TABLES ON uiadapt_demo.* TO 'uiadapt_demo_app'@'%';
           FLUSH PRIVILEGES;
           SQL
           echo "UIADAPT_MYSQL_PASSWORD=$UIADAPT_MYSQL_PASSWORD" >> "$GITHUB_ENV"
