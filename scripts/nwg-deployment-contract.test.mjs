@@ -480,14 +480,16 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     'PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"',
     'ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"',
     'mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"',
+    "systemctl daemon-reload",
     "systemctl restart uiadapt-static.service uiadapt-gateway.service",
-    'ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new"',
-    'mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"',
-    'AUTH_CONFIG="$(mktemp /run/uiadapt-curl.XXXXXX)"',
-    'chmod 0600 "$AUTH_CONFIG"',
-    "read -r -s -p 'Password: ' REVIEW_PASSWORD",
-    'unset REVIEW_PASSWORD',
-    'curl --config "$AUTH_CONFIG"',
+    "rollback() {",
+    "trap 'rollback' ERR",
+    "trap - ERR",
+    "node <<'NODE'",
+    'readFileSync(process.env.UIADAPT_SMOKE_PASSWORD_FILE, "utf8")',
+    'raw.endsWith("\\r\\n") ? raw.slice(0, -2)',
+    'raw.endsWith("\\n") ? raw.slice(0, -1)',
+    'Buffer.from(`reviewer:${password}`).toString("base64")',
   ]) {
     assert.ok(runbook.includes(command), `runbook must provide fail-closed command: ${command}`);
   }
@@ -496,6 +498,44 @@ test("release runbook records version-addressed deployment, readiness, rollback,
   assert.match(runbook, /8443[\s\S]*(?:must not|금지)[\s\S]*8787/i);
   assert.match(runbook, /never stages, cleans, or writes projectRoot\/www/i);
   assert.doesNotMatch(runbook, /curl\s+(?:[^\n]*\s)?(?:--user|-u)(?:\s|=)/);
+  assert.doesNotMatch(runbook, /AUTH_CONFIG|REVIEW_PASSWORD|curl --config/);
+  assert.match(runbook, /console\.log\(`AUTH_STATUS=\$\{status\}`\)/);
+  assert.doesNotMatch(runbook, /AUTH_ERROR|console\.error/);
+
+  const automaticSection = runbook.slice(
+    runbook.indexOf("### Automated fail-closed switch"),
+    runbook.indexOf("### Manual rollback"),
+  );
+  const automaticScripts = [...automaticSection.matchAll(/```bash\r?\n([\s\S]*?)```/g)];
+  assert.equal(automaticScripts.length, 1, "switch, rollback trap, and smoke must share one Bash process");
+  const automaticScript = automaticScripts[0][1];
+  for (const [earlier, later] of [
+    ['PREVIOUS_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"', "rollback() {"],
+    ["rollback() {", "trap 'rollback' ERR"],
+    ["trap 'rollback' ERR", 'ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"'],
+    ['mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"', "systemctl daemon-reload"],
+    ["systemctl restart uiadapt-static.service uiadapt-gateway.service", "smoke"],
+    ["smoke", "trap - ERR"],
+  ]) {
+    assert.ok(
+      automaticScript.indexOf(earlier) < automaticScript.lastIndexOf(later),
+      `${earlier} must precede ${later}`,
+    );
+  }
+
+  const manualSection = runbook.slice(
+    runbook.indexOf("### Manual rollback"),
+    runbook.indexOf("## 4. Credential"),
+  );
+  assert.doesNotMatch(manualSection, /PREVIOUS_TARGET/);
+  for (const command of [
+    'ROLLBACK_SHA="${ROLLBACK_SHA:?set the exact prior 40-character lowercase Git SHA}"',
+    'ROLLBACK_TARGET="$DEPLOY_ROOT/releases/$ROLLBACK_SHA"',
+    'ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"',
+    'mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"',
+  ]) {
+    assert.ok(manualSection.includes(command), `manual rollback must recompute target: ${command}`);
+  }
 });
 
 test("tracked threat model states the enforced controls and accepted operational gaps", async () => {

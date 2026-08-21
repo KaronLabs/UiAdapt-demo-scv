@@ -65,16 +65,22 @@ npm audit --omit=dev --audit-level=high
 
 SHA 기반 directory 이름은 내용 변경을 기술적으로 차단하지 않습니다. `no filesystem immutable bit` 및 `no root-owned read-only enforcement`가 현재 증명된 상태입니다. release tree와 service는 `ubuntu`가 소유·실행할 수 있으므로 `ubuntu ownership is a residual risk`입니다.
 
-### Fail-closed same-filesystem switch와 rollback
+### Automated fail-closed switch
 
-다음 Bash 명령은 새 release가 이미 전송·검증된 뒤 root 운영자가 실행하는 pointer 교체 절차입니다. `NEW_SHA`에는 exact 40자리 lowercase Git SHA만 넣습니다. 이 블록은 비밀번호를 명령행이나 로그에 출력하지 않으며 Funnel 8443·8787 설정을 변경하지 않습니다.
+다음 Bash 전체를 **한 shell process에서** 실행합니다. 새 release는 이미 전송·hash 검증된 상태여야 합니다. `ERR` trap은 pointer 교체 전에 설치되며 switch, restart, readiness 또는 인증 smoke 중 하나라도 실패하면 같은 shell이 캡처한 `PREVIOUS_TARGET`으로 복구합니다. 비밀번호 값은 argv·stdout·shell trace에 나타나지 않습니다.
 
 ```bash
-set -euo pipefail
+set -Eeuo pipefail
 set +x
 
 DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"
+CREDENTIAL_FILE="/etc/uiadapt-demo/password"
+PUBLIC_URL="https://00-new-world-gpu.tail645adc.ts.net/uiadapt_demo/"
 NEW_SHA="${NEW_SHA:?set the exact 40-character lowercase Git SHA}"
+
+test "$(id -u)" -eq 0
+test -d "$DEPLOY_ROOT/releases"
+test -L "$DEPLOY_ROOT/current"
 printf '%s\n' "$NEW_SHA" | grep -Eq '^[0-9a-f]{40}$'
 
 NEW_RELEASE="$DEPLOY_ROOT/releases/$NEW_SHA"
@@ -86,15 +92,127 @@ case "$PREVIOUS_TARGET" in
   "$DEPLOY_ROOT"/releases/*) ;;
   *) printf 'refusing unexpected current target\n' >&2; exit 1 ;;
 esac
-
+test -d "$PREVIOUS_TARGET"
+test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$PREVIOUS_TARGET")"
 test ! -e "$DEPLOY_ROOT/current.new"
 test ! -L "$DEPLOY_ROOT/current.new"
+test ! -e "$DEPLOY_ROOT/current.rollback.new"
+test ! -L "$DEPLOY_ROOT/current.rollback.new"
+test -r "$CREDENTIAL_FILE"
+
+auth_smoke() {
+  UIADAPT_SMOKE_PASSWORD_FILE="$CREDENTIAL_FILE" \
+  UIADAPT_SMOKE_URL="$1" \
+  node <<'NODE'
+const { readFileSync } = require("node:fs");
+const http = require("node:http");
+const https = require("node:https");
+
+const raw = readFileSync(process.env.UIADAPT_SMOKE_PASSWORD_FILE, "utf8");
+const password = raw.endsWith("\r\n") ? raw.slice(0, -2)
+  : raw.endsWith("\n") ? raw.slice(0, -1)
+    : raw;
+if (password.length === 0) process.exit(2);
+
+const target = new URL(process.env.UIADAPT_SMOKE_URL);
+const transport = target.protocol === "https:" ? https : http;
+const authorization = `Basic ${Buffer.from(`reviewer:${password}`).toString("base64")}`;
+const request = transport.request(target, { headers: { authorization } }, (response) => {
+  response.resume();
+  response.on("end", () => {
+    const status = response.statusCode ?? 0;
+    console.log(`AUTH_STATUS=${status}`);
+    if (status !== 200) process.exitCode = 1;
+  });
+});
+request.on("error", () => {
+  console.log("AUTH_STATUS=0");
+  process.exitCode = 1;
+});
+request.end();
+NODE
+}
+
+smoke() {
+  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$NEW_RELEASE"
+  systemctl is-active --quiet uiadapt-static.service
+  systemctl is-active --quiet uiadapt-gateway.service
+  curl --fail --silent --show-error \
+    http://127.0.0.1:5173/uiadapt_demo/ \
+    --output /dev/null
+  test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+    http://127.0.0.1:4180/uiadapt_demo/)" = "401"
+  auth_smoke "http://127.0.0.1:4180/uiadapt_demo/"
+  auth_smoke "$PUBLIC_URL"
+}
+
+rollback() {
+  trap - ERR
+  set +e
+  printf 'switch failed; restoring previous release\n' >&2
+  if test -e "$DEPLOY_ROOT/current.rollback.new" || test -L "$DEPLOY_ROOT/current.rollback.new"; then
+    printf 'rollback staging path unexpectedly exists\n' >&2
+    return 1
+  fi
+  ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new" || return 1
+  test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET" || return 1
+  mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current" || return 1
+  systemctl daemon-reload
+  systemctl restart uiadapt-static.service uiadapt-gateway.service
+  test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET"
+  systemctl is-active --quiet uiadapt-static.service
+  systemctl is-active --quiet uiadapt-gateway.service
+  curl --fail --silent --show-error \
+    http://127.0.0.1:5173/uiadapt_demo/ \
+    --output /dev/null
+}
+
+trap 'rollback' ERR
 ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"
 test "$(readlink -f "$DEPLOY_ROOT/current.new")" = "$NEW_RELEASE"
 mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"
-
+systemctl daemon-reload
 systemctl restart uiadapt-static.service uiadapt-gateway.service
-test "$(readlink -f "$DEPLOY_ROOT/current")" = "$NEW_RELEASE"
+smoke
+trap - ERR
+printf 'SWITCH_STATUS=PASS\n'
+```
+
+Node helper는 gateway와 동일하게 terminal CRLF 한 번 또는 LF 한 번만 제거하고 나머지 문자를 보존합니다. credential file을 직접 읽어 메모리에서 Basic header를 만들며 출력은 `AUTH_STATUS=<code>`뿐입니다.
+
+### Manual rollback
+
+자동 trap 이후 운영자가 다른 이전 release로 되돌려야 할 때는 새 shell에서 아래 recipe를 사용합니다. prior shell 변수에 의존하지 않고 `ROLLBACK_SHA`에서 target을 다시 계산·검증합니다.
+
+```bash
+set -Eeuo pipefail
+set +x
+
+DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"
+ROLLBACK_SHA="${ROLLBACK_SHA:?set the exact prior 40-character lowercase Git SHA}"
+
+test "$(id -u)" -eq 0
+test -d "$DEPLOY_ROOT/releases"
+test -L "$DEPLOY_ROOT/current"
+printf '%s\n' "$ROLLBACK_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+CURRENT_TARGET="$(readlink -f "$DEPLOY_ROOT/current")"
+case "$CURRENT_TARGET" in
+  "$DEPLOY_ROOT"/releases/*) ;;
+  *) printf 'refusing unexpected current target\n' >&2; exit 1 ;;
+esac
+
+ROLLBACK_TARGET="$DEPLOY_ROOT/releases/$ROLLBACK_SHA"
+test -d "$ROLLBACK_TARGET"
+test "$(stat -c %d "$DEPLOY_ROOT")" = "$(stat -c %d "$ROLLBACK_TARGET")"
+test ! -e "$DEPLOY_ROOT/current.rollback.new"
+test ! -L "$DEPLOY_ROOT/current.rollback.new"
+ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"
+test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$ROLLBACK_TARGET"
+mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
+systemctl daemon-reload
+systemctl restart uiadapt-static.service uiadapt-gateway.service
+test "$(readlink -f "$DEPLOY_ROOT/current")" = "$ROLLBACK_TARGET"
 systemctl is-active --quiet uiadapt-static.service
 systemctl is-active --quiet uiadapt-gateway.service
 curl --fail --silent --show-error \
@@ -102,64 +220,10 @@ curl --fail --silent --show-error \
   --output /dev/null
 test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
   http://127.0.0.1:4180/uiadapt_demo/)" = "401"
+printf 'MANUAL_ROLLBACK_STATUS=PASS\n'
 ```
 
-정적 readiness 또는 gateway 401 검사가 실패하면 아래 rollback을 즉시 실행합니다. `PREVIOUS_TARGET`은 switch 전 위 경계 검사로 `releases/` 아래임이 확인된 값이어야 합니다.
-
-```bash
-set -euo pipefail
-set +x
-
-DEPLOY_ROOT="/mnt/nvme-hot/ne/karon_api_lab/07_UiAdapt-demo"
-test -n "${PREVIOUS_TARGET:-}"
-case "$PREVIOUS_TARGET" in
-  "$DEPLOY_ROOT"/releases/*) ;;
-  *) printf 'refusing unexpected rollback target\n' >&2; exit 1 ;;
-esac
-test -d "$PREVIOUS_TARGET"
-
-test ! -e "$DEPLOY_ROOT/current.rollback.new"
-test ! -L "$DEPLOY_ROOT/current.rollback.new"
-ln -s "$PREVIOUS_TARGET" "$DEPLOY_ROOT/current.rollback.new"
-test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET"
-mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
-systemctl restart uiadapt-static.service uiadapt-gateway.service
-test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET"
-systemctl is-active --quiet uiadapt-static.service
-systemctl is-active --quiet uiadapt-gateway.service
-curl --fail --silent --show-error \
-  http://127.0.0.1:5173/uiadapt_demo/ \
-  --output /dev/null
-```
-
-인증 및 public smoke는 비표시 입력으로 만든 root-only curl config를 사용합니다. 아래 명령은 secret을 child process argument에 넣지 않으며 실제 secret 또는 config 내용을 stdout, shell trace, evidence log에 기록하지 않습니다.
-
-```bash
-set -euo pipefail
-set +x
-
-AUTH_CONFIG="$(mktemp /run/uiadapt-curl.XXXXXX)"
-trap 'rm -f "$AUTH_CONFIG"' EXIT
-chmod 0600 "$AUTH_CONFIG"
-read -r -s -p 'Password: ' REVIEW_PASSWORD
-printf '\n'
-printf 'user = "reviewer:%s"\n' "$REVIEW_PASSWORD" > "$AUTH_CONFIG"
-unset REVIEW_PASSWORD
-
-curl --config "$AUTH_CONFIG" \
-  --fail --silent --show-error \
-  http://127.0.0.1:4180/uiadapt_demo/ \
-  --output /dev/null
-curl --config "$AUTH_CONFIG" \
-  --fail --silent --show-error \
-  https://00-new-world-gpu.tail645adc.ts.net/uiadapt_demo/ \
-  --output /dev/null
-
-rm -f "$AUTH_CONFIG"
-trap - EXIT
-```
-
-`tailscale funnel` 재설정 명령은 이 절차에 포함하지 않으며 기존 8443 설정은 변경 금지, 기존 8787 설정도 변경 금지입니다.
+수동 rollback 후에는 위와 동일한 secret-safe Node helper로 local/public authenticated smoke를 다시 실행합니다. `tailscale funnel` 재설정 명령은 두 recipe에 포함하지 않으며 기존 8443 설정은 변경 금지, 기존 8787 설정도 변경 금지입니다.
 
 ## 4. Credential 계약과 rotation
 
