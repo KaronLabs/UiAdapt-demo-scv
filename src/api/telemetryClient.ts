@@ -2,7 +2,8 @@ import type { TelemetryFrame, TelemetrySession, TelemetryStatus } from "../domai
 
 export const TELEMETRY_QUEUE_LIMIT = 128;
 export const TELEMETRY_MAX_ATTEMPTS = 3;
-export const TELEMETRY_BACKOFF_MS = [100, 250, 500] as const;
+export const TELEMETRY_ATTEMPT_TIMEOUT_MS = 1_000;
+export const TELEMETRY_BACKOFF_MS = [100, 250] as const;
 
 export interface TelemetryResponse {
   ok: boolean;
@@ -11,7 +12,7 @@ export interface TelemetryResponse {
 
 export type TelemetryFetch = (
   input: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
+  init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal },
 ) => Promise<TelemetryResponse>;
 
 type Request = { path: string; body: TelemetrySession | TelemetryFrame };
@@ -34,16 +35,25 @@ export class TelemetryClient {
   private disposed = false;
   private status: TelemetryStatus = "HEALTHY";
   private idleResolvers: Array<() => void> = [];
+  private pendingSession: Request | null = null;
 
   public constructor(fetchImpl: TelemetryFetch = defaultFetch) {
     this.fetchImpl = fetchImpl;
   }
 
   public startSession(session: TelemetrySession): boolean {
-    return this.enqueue({ path: "/api/uiadapt/sessions", body: session });
+    if (this.disposed) return false;
+    const request = { path: "/api/uiadapt/sessions", body: session };
+    if (this.queue.length >= TELEMETRY_QUEUE_LIMIT) {
+      this.pendingSession = request;
+      this.setStatus("OVERFLOW");
+      return true;
+    }
+    return this.enqueue(request);
   }
 
   public enqueueTrajectory(frame: TelemetryFrame): boolean {
+    if (this.pendingSession?.body.sessionId === frame.sessionId) return false;
     return this.enqueue({ path: "/api/uiadapt/trajectory", body: frame });
   }
 
@@ -86,21 +96,38 @@ export class TelemetryClient {
       let delivered = false;
       for (let attempt = 0; attempt < TELEMETRY_MAX_ATTEMPTS; attempt += 1) {
         if (attempt > 0) await wait(TELEMETRY_BACKOFF_MS[attempt - 1]);
+        const controller = new AbortController();
+        let timeout: ReturnType<typeof setTimeout> | undefined;
         try {
-          const response = await this.fetchImpl(request.path, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(request.body),
-          });
+          const response = await Promise.race([
+            this.fetchImpl(request.path, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(request.body),
+              signal: controller.signal,
+            }),
+            new Promise<never>((_, reject) => {
+              timeout = setTimeout(() => {
+                controller.abort();
+                reject(new Error("TELEMETRY_TIMEOUT"));
+              }, TELEMETRY_ATTEMPT_TIMEOUT_MS);
+            }),
+          ]);
           if (response.ok) {
             delivered = true;
             break;
           }
         } catch {
           // Telemetry is observational; retry exhaustion is surfaced below.
+        } finally {
+          if (timeout !== undefined) clearTimeout(timeout);
         }
       }
       this.queue.shift();
+      if (this.pendingSession) {
+        this.queue.unshift(this.pendingSession);
+        this.pendingSession = null;
+      }
       if (!delivered) this.setStatus("DEGRADED");
       else if (this.status !== "OVERFLOW") this.setStatus("HEALTHY");
     }

@@ -6,6 +6,9 @@ import type { BehaviorEvent, RuntimeSnapshot } from "./types";
 
 function play(events: readonly BehaviorEvent[], adaptiveEnabled = true): RuntimeSnapshot {
   let state = createInitialRuntime(adaptiveEnabled);
+  if (events.some((event) => event.source === "REPLAY")) {
+    state = runtimeReducer(state, { type: "RESET_FOR_REPLAY" });
+  }
   for (const event of events) {
     state = runtimeReducer(state, { type: "RECORD_EVENT", event, epoch: state.sessionEpoch });
   }
@@ -33,7 +36,7 @@ describe("deterministic evidence and state policy", () => {
   });
 
   it("reaches COMPARE and then PURCHASE_INTENT on the canonical replay", () => {
-    let state = createInitialRuntime();
+    let state = runtimeReducer(createInitialRuntime(), { type: "RESET_FOR_REPLAY" });
     const transitions: string[] = [];
     for (const event of REPLAY_EVENTS) {
       const previous = state.detectedState;
@@ -69,8 +72,8 @@ describe("deterministic evidence and state policy", () => {
   });
 
   it("keeps ON and OFF evidence sequences identical at every Replay step", () => {
-    let on = createInitialRuntime(true);
-    let off = createInitialRuntime(false);
+    let on = runtimeReducer(createInitialRuntime(true), { type: "RESET_FOR_REPLAY" });
+    let off = runtimeReducer(createInitialRuntime(false), { type: "RESET_FOR_REPLAY" });
     for (const event of REPLAY_EVENTS) {
       on = runtimeReducer(on, { type: "RECORD_EVENT", event, epoch: on.sessionEpoch });
       off = runtimeReducer(off, { type: "RECORD_EVENT", event, epoch: off.sessionEpoch });
@@ -84,7 +87,7 @@ describe("deterministic evidence and state policy", () => {
 
   it("produces the same complete evidence and policy sequence over ten runs", () => {
     const signatures = Array.from({ length: 10 }, () => {
-      let state = createInitialRuntime();
+      let state = runtimeReducer(createInitialRuntime(), { type: "RESET_FOR_REPLAY" });
       return REPLAY_EVENTS.map((event) => {
         state = runtimeReducer(state, { type: "RECORD_EVENT", event, epoch: state.sessionEpoch });
         return {
@@ -103,35 +106,37 @@ describe("deterministic evidence and state policy", () => {
 
   it("rejects duplicate, invalid-clock, and stale-epoch events", () => {
     const first = REPLAY_EVENTS[0];
-    let state = createInitialRuntime();
-    state = runtimeReducer(state, { type: "RECORD_EVENT", event: first, epoch: 0 });
+    let state = runtimeReducer(createInitialRuntime(), { type: "RESET_FOR_REPLAY" });
+    const activeEpoch = state.sessionEpoch;
+    state = runtimeReducer(state, { type: "RECORD_EVENT", event: first, epoch: activeEpoch });
     const acceptedCount = state.events.length;
-    state = runtimeReducer(state, { type: "RECORD_EVENT", event: first, epoch: 0 });
+    state = runtimeReducer(state, { type: "RECORD_EVENT", event: first, epoch: activeEpoch });
     expect(state.events).toHaveLength(acceptedCount);
     expect(state.lastRejectedReason).toBe("DUPLICATE_EVENT_ID");
 
     state = runtimeReducer(state, {
       type: "RECORD_EVENT",
       event: { ...REPLAY_EVENTS[1], id: "nan-clock", atMs: Number.NaN },
-      epoch: 0,
+      epoch: activeEpoch,
     });
     expect(state.events).toHaveLength(acceptedCount);
     expect(state.lastRejectedReason).toBe("INVALID_EVENT_CLOCK");
 
     state = runtimeReducer(state, { type: "RESET" });
-    state = runtimeReducer(state, { type: "RECORD_EVENT", event: REPLAY_EVENTS[2], epoch: 0 });
+    state = runtimeReducer(state, { type: "RECORD_EVENT", event: REPLAY_EVENTS[2], epoch: activeEpoch });
     expect(state.events).toHaveLength(0);
     expect(state.lastRejectedReason).toBe("STALE_SESSION_EPOCH");
   });
 
   it("rejects an unknown product and a non-monotonic event clock", () => {
     const first = REPLAY_EVENTS[0];
-    let state = runtimeReducer(createInitialRuntime(), { type: "RECORD_EVENT", event: first, epoch: 0 });
+    let state = runtimeReducer(createInitialRuntime(), { type: "RESET_FOR_REPLAY" });
+    state = runtimeReducer(state, { type: "RECORD_EVENT", event: first, epoch: state.sessionEpoch });
 
     state = runtimeReducer(state, {
       type: "RECORD_EVENT",
       event: { ...REPLAY_EVENTS[1], id: "unknown-product", productId: "unknown" } as unknown as BehaviorEvent,
-      epoch: 0,
+      epoch: state.sessionEpoch,
     });
     expect(state.events).toHaveLength(1);
     expect(state.lastRejectedReason).toBe("UNKNOWN_PRODUCT_ID");
@@ -139,14 +144,14 @@ describe("deterministic evidence and state policy", () => {
     state = runtimeReducer(state, {
       type: "RECORD_EVENT",
       event: { ...REPLAY_EVENTS[1], id: "old-clock", atMs: first.atMs - 1 },
-      epoch: 0,
+      epoch: state.sessionEpoch,
     });
     expect(state.events).toHaveLength(1);
     expect(state.lastRejectedReason).toBe("NON_MONOTONIC_EVENT_CLOCK");
   });
 
   it("rejects an unknown event type before distribution evaluation", () => {
-    const state = createInitialRuntime();
+    const state = runtimeReducer(createInitialRuntime(), { type: "RESET_FOR_REPLAY" });
     const invalidEvent = {
       ...REPLAY_EVENTS[0],
       id: "unknown-type",
@@ -202,4 +207,31 @@ describe("deterministic evidence and state policy", () => {
     expect(state.replayStatus).toBe("STOPPED_MANUAL_TAKEOVER");
     expect(state.events).toHaveLength(1);
   });
+
+  it.each(["IDLE", "PAUSED", "STOPPED", "COMPLETED", "STOPPED_MANUAL_TAKEOVER"] as const)(
+    "rejects same-epoch REPLAY events while replay is non-running: %s",
+    (status) => {
+      let state = createInitialRuntime();
+      if (status !== "IDLE") {
+        state = runtimeReducer(state, { type: "RESET_FOR_REPLAY" });
+        state = runtimeReducer(state, {
+          type: "SET_REPLAY_STATUS",
+          status,
+          epoch: state.sessionEpoch,
+        });
+      }
+      const before = state;
+
+      const rejected = runtimeReducer(state, {
+        type: "RECORD_EVENT",
+        event: REPLAY_EVENTS[0],
+        epoch: state.sessionEpoch,
+      });
+
+      expect(rejected.events).toBe(before.events);
+      expect(rejected.sequenceNo).toBe(before.sequenceNo);
+      expect(rejected.distribution).toBe(before.distribution);
+      expect(rejected.lastRejectedReason).toBe("INACTIVE_REPLAY_STATUS");
+    },
+  );
 });

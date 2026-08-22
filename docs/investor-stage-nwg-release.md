@@ -80,7 +80,7 @@ authenticated gateway 127.0.0.1:4180
 1. 검증한 exact Git SHA를 `releases/<SHA>.staging`에 전송하고 deployment-time archive/manifest hash verification을 수행합니다.
 2. production dependency 설치와 unit 검증이 끝나면 staging을 `releases/<SHA>`로 rename합니다.
 3. `current.new` symlink를 새 release로 만들고 `current`로 원자 교체합니다.
-4. `systemctl daemon-reload` 후 static, gateway 순서로 재시작합니다.
+4. `systemctl daemon-reload` 후 static, API, gateway를 재시작합니다.
 5. 기존 release는 rollback이 끝날 때까지 삭제하지 않습니다.
 
 SHA 기반 directory 이름은 내용 변경을 기술적으로 차단하지 않습니다. `no filesystem immutable bit` 및 `no root-owned read-only enforcement`가 현재 증명된 상태입니다. release tree와 service는 `ubuntu`가 소유·실행할 수 있으므로 `ubuntu ownership is a residual risk`입니다.
@@ -177,6 +177,7 @@ max_attempts="$1"
 poll_seconds="$2"
   for ((attempt=1; attempt<=max_attempts; attempt++)); do
     if systemctl is-active --quiet uiadapt-static.service &&
+      systemctl is-active --quiet uiadapt-api.service &&
       systemctl is-active --quiet uiadapt-gateway.service &&
       curl --connect-timeout 1 --max-time 2 \
         --fail --silent \
@@ -224,8 +225,9 @@ rollback() {
   test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET" || exit "$failure_status"
   mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
   systemctl daemon-reload || exit "$failure_status"
-  systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service || exit "$failure_status"
   wait_for_readiness || exit "$failure_status"
+  auth_smoke "http://127.0.0.1:4180/api/uiadapt/health" || exit "$failure_status"
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET" || exit "$failure_status"
   systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
   systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
@@ -246,8 +248,9 @@ ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"
 test "$(readlink -f "$DEPLOY_ROOT/current.new")" = "$NEW_RELEASE"
 mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"
 systemctl daemon-reload
-systemctl restart uiadapt-static.service uiadapt-gateway.service
+systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service
 wait_for_readiness
+auth_smoke "http://127.0.0.1:4180/api/uiadapt/health"
 smoke
 trap - ERR
 printf 'SWITCH_STATUS=PASS\n'
@@ -341,6 +344,7 @@ max_attempts="$1"
 poll_seconds="$2"
   for ((attempt=1; attempt<=max_attempts; attempt++)); do
     if systemctl is-active --quiet uiadapt-static.service &&
+      systemctl is-active --quiet uiadapt-api.service &&
       systemctl is-active --quiet uiadapt-gateway.service &&
       curl --connect-timeout 1 --max-time 2 \
         --fail --silent \
@@ -379,8 +383,9 @@ manual_recover() {
   test "$(readlink -f "$DEPLOY_ROOT/current.manual-recover.new")" = "$CURRENT_TARGET" || exit "$failure_status"
   mv -T "$DEPLOY_ROOT/current.manual-recover.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
   systemctl daemon-reload || exit "$failure_status"
-  systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service || exit "$failure_status"
   wait_for_readiness || exit "$failure_status"
+  manual_auth_smoke "http://127.0.0.1:4180/api/uiadapt/health" || exit "$failure_status"
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$CURRENT_TARGET" || exit "$failure_status"
   systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
   systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
@@ -401,8 +406,9 @@ ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"
 test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$ROLLBACK_TARGET"
 mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
 systemctl daemon-reload
-systemctl restart uiadapt-static.service uiadapt-gateway.service
+systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service
 wait_for_readiness
+manual_auth_smoke "http://127.0.0.1:4180/api/uiadapt/health"
 test "$(readlink -f "$DEPLOY_ROOT/current")" = "$ROLLBACK_TARGET"
 systemctl is-active --quiet uiadapt-static.service
 systemctl is-active --quiet uiadapt-gateway.service

@@ -57,16 +57,20 @@ export function createMysqlPool(env = process.env) {
 
 async function withTransaction(pool, callback) {
   const connection = await pool.getConnection();
-  await connection.beginTransaction();
+  let transactionStarted = false;
   try {
+    await connection.beginTransaction();
+    transactionStarted = true;
     const result = await callback(connection);
     await connection.commit();
     return result;
   } catch (error) {
-    try {
-      await connection.rollback();
-    } catch {
-      // Preserve the original transaction failure.
+    if (transactionStarted) {
+      try {
+        await connection.rollback();
+      } catch {
+        // Preserve the original transaction failure.
+      }
     }
     throw error;
   } finally {

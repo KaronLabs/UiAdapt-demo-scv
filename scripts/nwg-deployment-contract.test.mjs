@@ -403,7 +403,7 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.match(verifyJob, /npm run test:api/);
   assert.match(
     verifyJob,
-    /npm run verify:build-bases[\s\S]*?run: npm run build\r?\n[\s\S]*?npm run build:nwg[\s\S]*?npm run test:e2e[\s\S]*?npm audit[\s\S]*?run: git diff --check/,
+    /npm run verify:build-bases[\s\S]*?run: npm run build\r?\n[\s\S]*?npm run build:nwg[\s\S]*?npm run test:e2e[\s\S]*?npm audit[\s\S]*?git diff --check/,
   );
   assert.match(verifyJob, /BASE_SHA:/);
   assert.match(verifyJob, /HEAD_SHA:/);
@@ -438,6 +438,16 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.match(workflow, /^permissions:\s*\r?\n {2}contents: read$/m);
   assert.doesNotMatch(workflow, /^\s*environment:/m);
   assert.doesNotMatch(workflow, /\b(?:wrangler|rsync|scp|ssh|deploy-pages)\b/i);
+});
+
+test("uses an empty-tree diff only for an all-zero first-push base", async () => {
+  const workflow = await readProjectFile(".github/workflows/verify.yml");
+  const verifyJob = workflow.split(/^ {2}runtime-contract:\s*$/m)[0];
+
+  assert.match(verifyJob, /if \[ "\$BASE_SHA" = "0{40}" \]; then/);
+  assert.match(verifyJob, /EMPTY_TREE="\$\(git hash-object -t tree \/dev\/null\)"/);
+  assert.match(verifyJob, /git diff --check "\$EMPTY_TREE" "\$HEAD_SHA" -- \. ':\(exclude\)evidence\/\*\*'/);
+  assert.match(verifyJob, /else\s+git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA" -- \. ':\(exclude\)evidence\/\*\*'/);
 });
 
 test("runs verification pushes for main, R8 remediation, and the distribution candidate", async () => {
@@ -545,7 +555,7 @@ test("release runbook records version-addressed deployment, readiness, rollback,
     'ln -s "releases/$NEW_SHA" "$DEPLOY_ROOT/current.new"',
     'mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"',
     "systemctl daemon-reload",
-    "systemctl restart uiadapt-static.service uiadapt-gateway.service",
+    "systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service",
     "rollback() {",
     "trap 'rollback' ERR",
     "trap - ERR",
@@ -691,7 +701,7 @@ test("documented switch and rollback poll bounded readiness after every restart"
     ["manual rollback", manualScript],
   ]) {
     assert.equal(
-      (script.match(/systemctl restart uiadapt-static\.service uiadapt-gateway\.service/g) ?? []).length,
+      (script.match(/systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service/g) ?? []).length,
       2,
       `${name} must retain exactly two restart paths`,
     );
@@ -702,17 +712,17 @@ test("documented switch and rollback poll bounded readiness after every restart"
     );
     assert.match(
       script,
-      /systemctl restart uiadapt-static\.service uiadapt-gateway\.service[^\n]*\r?\n\s*wait_for_readiness/,
+      /systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service[^\n]*\r?\n\s*wait_for_readiness/,
       `${name} must wait immediately after restart`,
     );
   }
   assert.match(
     automaticScript,
-    /systemctl restart uiadapt-static\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
+    /systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
   );
   assert.match(
     manualScript,
-    /systemctl restart uiadapt-static\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
+    /systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
   );
 
   const command = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
@@ -810,6 +820,43 @@ printf 'HANG_STATUS=%s\\n' "$STATUS"
   }
 });
 
+test("documented switch and rollback require API and database health after every restart", async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const automaticSection = runbook.slice(
+    runbook.indexOf("### Automated fail-closed switch"),
+    runbook.indexOf("### Manual rollback"),
+  );
+  const manualSection = runbook.slice(
+    runbook.indexOf("### Manual rollback"),
+    runbook.indexOf("## 4. Credential"),
+  );
+  const automaticScript = automaticSection.match(/```bash\r?\n([\s\S]*?)```/)?.[1] ?? "";
+  const manualScript = manualSection.match(/```bash\r?\n([\s\S]*?)```/)?.[1] ?? "";
+
+  for (const [name, script, authHelper] of [
+    ["automatic switch", automaticScript, "auth_smoke"],
+    ["manual rollback", manualScript, "manual_auth_smoke"],
+  ]) {
+    const readiness = script.match(/wait_for_readiness\(\) \{[\s\S]*?\r?\n\}/)?.[0] ?? "";
+    assert.match(readiness, /systemctl is-active --quiet uiadapt-api\.service/);
+    assert.equal(
+      (script.match(/systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service/g) ?? []).length,
+      2,
+      `${name} must restart the API on its primary and recovery paths`,
+    );
+    assert.equal(
+      (script.match(new RegExp(`${authHelper} "http://127\\.0\\.0\\.1:4180/api/uiadapt/health"`, "g")) ?? []).length,
+      2,
+      `${name} must require authenticated API and database health on its primary and recovery paths`,
+    );
+    assert.match(
+      script,
+      new RegExp(`wait_for_readiness[^\\n]*\\r?\\n\\s*${authHelper} "http://127\\.0\\.0\\.1:4180/api/uiadapt/health"`),
+      `${name} must check API and database health immediately after bounded readiness`,
+    );
+  }
+});
+
 test("documented automatic switch preserves the original failure after recovery", { timeout: 10_000 }, async () => {
   const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
   const automaticSection = runbook.slice(
@@ -861,7 +908,7 @@ export -f systemctl curl
 trap 'printf "FINAL_TARGET=%s\\n" "$CURRENT_TARGET"' EXIT
 ${readinessMatch[0]}
 ${rollbackMatch[0]}
-systemctl restart uiadapt-static.service uiadapt-gateway.service
+systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service
 printf 'SWITCH_STATUS=PASS\\n'
 `;
 

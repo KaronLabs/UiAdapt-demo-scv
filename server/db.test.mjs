@@ -62,6 +62,18 @@ test("rolls back a correlated trajectory when snapshot insertion fails", async (
   assert.equal(sqlCalls.every(({ query }) => !query.includes("'event-1'") && query.includes("?")), true);
 });
 
+test("releases the connection when beginning a transaction fails", async () => {
+  let releaseCount = 0;
+  const connection = {
+    async beginTransaction() { throw new Error("BEGIN_FAILED"); },
+    release() { releaseCount += 1; },
+  };
+  const db = createDbAdapter({ async getConnection() { return connection; } });
+
+  await assert.rejects(() => db.appendTrajectory(frame()), { message: "BEGIN_FAILED" });
+  assert.equal(releaseCount, 1);
+});
+
 test("rejects a forged non-transition detected-state change", async () => {
   const payload = {
     ...frame(),

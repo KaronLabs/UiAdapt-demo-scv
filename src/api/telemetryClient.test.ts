@@ -3,19 +3,20 @@ import { createTelemetryClient } from "./telemetryClient";
 import type { TelemetryFrame, TelemetrySession } from "../domain/types";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
+const RESET_SESSION_ID = "22222222-2222-4222-8222-222222222222";
 
-function session(): TelemetrySession {
+function session(sessionId = SESSION_ID): TelemetrySession {
   return {
-    sessionId: SESSION_ID,
+    sessionId,
     startedAtMs: 1_000,
     source: "REPLAY",
     adaptiveEnabled: true,
   };
 }
 
-function frame(sequenceNo: number): TelemetryFrame {
+function frame(sequenceNo: number, sessionId = SESSION_ID): TelemetryFrame {
   return {
-    sessionId: SESSION_ID,
+    sessionId,
     sequenceNo,
     event: {
       id: `event-${sequenceNo}`,
@@ -116,6 +117,51 @@ describe("bounded telemetry client", () => {
     await client.whenIdle();
     expect(client.getStatus()).toBe("HEALTHY");
     expect(fetchImpl).toHaveBeenCalledTimes(4);
+    client.dispose();
+  });
+
+  it("bounds a permanently pending fetch and degrades after three timed-out attempts", async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn(() => new Promise<never>(() => undefined));
+    const client = createTelemetryClient(fetchImpl);
+
+    expect(client.enqueueTrajectory(frame(1))).toBe(true);
+    await vi.runAllTimersAsync();
+    await client.whenIdle();
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(client.getStatus()).toBe("DEGRADED");
+    client.dispose();
+  });
+
+  it("admits a reset session ahead of its trajectory when the queue is full", async () => {
+    let releaseFirstFetch!: () => void;
+    const firstFetch = new Promise<{ ok: true; status: 200 }>((resolve) => {
+      releaseFirstFetch = () => resolve({ ok: true, status: 200 });
+    });
+    const bodies: Array<TelemetrySession | TelemetryFrame> = [];
+    const fetchImpl = vi.fn(async (_input: string, init?: { body?: string }) => {
+      bodies.push(JSON.parse(init?.body ?? "{}") as TelemetrySession | TelemetryFrame);
+      if (bodies.length === 1) return firstFetch;
+      return okResponse();
+    });
+    const client = createTelemetryClient(fetchImpl);
+
+    for (let sequenceNo = 1; sequenceNo <= 128; sequenceNo += 1) {
+      expect(client.enqueueTrajectory(frame(sequenceNo))).toBe(true);
+    }
+    expect(client.startSession(session(RESET_SESSION_ID))).toBe(true);
+    expect(client.enqueueTrajectory(frame(1, RESET_SESSION_ID))).toBe(false);
+
+    releaseFirstFetch();
+    await client.whenIdle();
+    expect(client.enqueueTrajectory(frame(2, RESET_SESSION_ID))).toBe(true);
+    await client.whenIdle();
+
+    const resetSessionIndex = bodies.findIndex((body) => body.sessionId === RESET_SESSION_ID && !("sequenceNo" in body));
+    const resetTrajectoryIndex = bodies.findIndex((body) => body.sessionId === RESET_SESSION_ID && "sequenceNo" in body);
+    expect(resetSessionIndex).toBeGreaterThanOrEqual(0);
+    expect(resetTrajectoryIndex === -1 || resetSessionIndex < resetTrajectoryIndex).toBe(true);
     client.dispose();
   });
 });

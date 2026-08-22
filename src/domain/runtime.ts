@@ -106,7 +106,7 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
       ...state,
       adaptiveEnabled: action.enabled,
       appliedState: policy.appliedState,
-      focusedProductId: policy.focusedProductId,
+      focusedProductId: state.focusedProductId,
       lastRejectedReason: null,
     };
   }
@@ -123,6 +123,9 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
 
   const { event, epoch } = action;
   if (epoch !== state.sessionEpoch) return reject(state, "STALE_SESSION_EPOCH");
+  if (event.source === "REPLAY" && state.replayStatus !== "RUNNING") {
+    return reject(state, "INACTIVE_REPLAY_STATUS");
+  }
   if (!isBehaviorEventType(event.type)) return reject(state, "UNKNOWN_EVENT_TYPE");
   if (!Number.isFinite(event.atMs) || event.atMs < 0) return reject(state, "INVALID_EVENT_CLOCK");
   if (!PRODUCT_IDS.includes(event.productId)) return reject(state, "UNKNOWN_PRODUCT_ID");
@@ -170,7 +173,7 @@ export function runtimeReducer(state: RuntimeSnapshot, action: RuntimeAction): R
     candidateState: transition.candidateState,
     detectedState,
     appliedState: policy.appliedState,
-    focusedProductId: policy.focusedProductId,
+    focusedProductId,
     pendingCandidate: transition.pendingCandidate,
     candidatePersistence,
     lastTransition: stateTransition ?? state.lastTransition,

@@ -5,6 +5,7 @@ import type { RuntimeSnapshot } from "./types";
 
 function play(events = REPLAY_EVENTS, adaptiveEnabled = true, sessionId = "session-test"): RuntimeSnapshot {
   let state = createInitialRuntime(adaptiveEnabled, sessionId);
+  state = runtimeReducer(state, { type: "RESET_FOR_REPLAY", sessionId });
   for (const event of events) {
     state = runtimeReducer(state, { type: "RECORD_EVENT", event, epoch: state.sessionEpoch });
   }
@@ -35,6 +36,15 @@ describe("distribution replay integration", () => {
     expect(off.detectedState).toBe("PURCHASE_INTENT");
     expect(off.appliedState).toBe("EXPLORE");
     expect(on.appliedState).toBe("PURCHASE_INTENT");
+  });
+
+  it("restores the detected product focus when Adaptive UI is re-enabled", () => {
+    const detectedWhileOff = play(REPLAY_EVENTS, false, "session-off-on");
+    const reEnabled = runtimeReducer(detectedWhileOff, { type: "SET_ADAPTIVE", enabled: true });
+
+    expect(detectedWhileOff.detectedState).toBe("PURCHASE_INTENT");
+    expect(reEnabled.appliedState).toBe("PURCHASE_INTENT");
+    expect(reEnabled.focusedProductId).toBe("aurora-one");
   });
 
   it("creates a new session on reset and rejects the old epoch", () => {

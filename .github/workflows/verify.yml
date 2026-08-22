@@ -67,7 +67,13 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.sha }}
-        run: git diff --check "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)evidence/**'
+        run: |
+          if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            EMPTY_TREE="$(git hash-object -t tree /dev/null)"
+            git diff --check "$EMPTY_TREE" "$HEAD_SHA" -- . ':(exclude)evidence/**'
+          else
+            git diff --check "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)evidence/**'
+          fi
 
       - name: Upload verification artifacts
         if: always()
