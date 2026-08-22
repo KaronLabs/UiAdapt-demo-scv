@@ -193,6 +193,9 @@ function validateSnapshot(snapshot) {
     candidatePersistence: requireInteger(body.candidatePersistence, "INVALID_CANDIDATE_PERSISTENCE", { max: 3 }),
     detectedState: requireEnum(body.detectedState, STATES, "INVALID_DETECTED_STATE"),
     appliedState: requireEnum(body.appliedState, STATES, "INVALID_APPLIED_STATE"),
+    adaptiveEnabled: typeof body.adaptiveEnabled === "boolean"
+      ? body.adaptiveEnabled
+      : invalid("INVALID_ADAPTIVE_ENABLED"),
   };
 }
 
@@ -263,18 +266,44 @@ export function assertTrajectoryConsistency(payload) {
   return payload;
 }
 
-export function assertTrajectoryPolicy(payload, adaptiveEnabled) {
-  const expectedAppliedState = adaptiveEnabled ? payload.snapshot.detectedState : "EXPLORE";
+export function assertTrajectoryPolicy(payload) {
+  const expectedAppliedState = payload.snapshot.adaptiveEnabled ? payload.snapshot.detectedState : "EXPLORE";
   if (payload.snapshot.appliedState !== expectedAppliedState) semantic("TRAJECTORY_INCONSISTENT");
   return payload;
 }
 
-export function assertTrajectoryContinuity(payload, previous) {
+function isEligibleCandidate(snapshot, detectedState) {
+  const scoreEligible = snapshot.candidateState === "EXPLORE"
+    ? snapshot.changeScore < 0.2
+    : snapshot.changeScore >= 0.3;
+  return snapshot.eventCount >= MINIMUM_EVIDENCE
+    && snapshot.candidateState !== detectedState
+    && scoreEligible;
+}
+
+export function assertTrajectoryContinuity(payload, previous, sessionSource) {
+  if (
+    (sessionSource === "USER" && payload.event.source !== "USER")
+    || (previous?.event_source === "USER" && payload.event.source !== "USER")
+  ) {
+    semantic("TRAJECTORY_INCONSISTENT");
+  }
+
   if (payload.transition === null) {
+    const { snapshot } = payload;
+    const eligible = isEligibleCandidate(snapshot, snapshot.detectedState);
+    const expectedPersistence = !eligible
+      ? 0
+      : previous?.candidate_state === snapshot.candidateState
+        && Number(previous.candidate_persistence) > 0
+        ? Number(previous.candidate_persistence) + 1
+        : 1;
     if (
       (previous === null && payload.sequenceNo !== 1)
       || (previous !== null && Number(previous.sequence_no) !== payload.sequenceNo - 1)
       || payload.snapshot.detectedState !== (previous === null ? "EXPLORE" : previous.detected_state)
+      || snapshot.candidatePersistence !== expectedPersistence
+      || expectedPersistence >= REQUIRED_PERSISTENCE
     ) {
       semantic("TRAJECTORY_INCONSISTENT");
     }
@@ -282,7 +311,7 @@ export function assertTrajectoryContinuity(payload, previous) {
   }
 
   if (
-    payload.snapshot.eventCount < MINIMUM_EVIDENCE
+    !isEligibleCandidate(payload.snapshot, payload.transition.fromState)
     || previous === null
     || Number(previous.sequence_no) !== payload.sequenceNo - 1
     || previous.detected_state !== payload.transition.fromState

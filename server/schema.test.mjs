@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { URL } from "node:url";
 
@@ -21,4 +21,18 @@ test("defines exactly four InnoDB utf8mb4 telemetry tables without server-side d
   assert.match(schema, /UNIQUE KEY uq_uiadapt_event_identity/);
   assert.match(schema, /FOREIGN KEY \(session_id, trigger_sequence_no\)/);
   assert.doesNotMatch(schema, /ip_address|user_agent|email|password/i);
+});
+
+test("upgrades existing snapshots through nullable add, session backfill, then NOT NULL", () => {
+  const migrationUrl = new URL("../db/002-uiadapt-snapshot-adaptive.sql", import.meta.url);
+  assert.equal(existsSync(migrationUrl), true, "numbered snapshot Adaptive migration must exist");
+  const migration = readFileSync(migrationUrl, "utf8");
+  assert.match(migration, /UPDATE uiadapt_distribution_snapshots[\s\S]*JOIN uiadapt_sessions[\s\S]*session_id[\s\S]*SET[\s\S]*adaptive_enabled\s*=\s*[^;]*adaptive_enabled/i);
+  const add = migration.indexOf("ADD COLUMN adaptive_enabled BOOLEAN NULL");
+  const backfill = migration.indexOf("UPDATE uiadapt_distribution_snapshots");
+  const enforce = migration.indexOf("MODIFY COLUMN adaptive_enabled BOOLEAN NOT NULL");
+
+  assert.ok(add >= 0, "migration must add a nullable column");
+  assert.ok(add < backfill, "session metadata backfill must follow the nullable add");
+  assert.ok(backfill < enforce, "NOT NULL enforcement must follow the backfill");
 });

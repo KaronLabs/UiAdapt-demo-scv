@@ -39,6 +39,7 @@ function frame(overrides = {}) {
       candidatePersistence: 0,
       detectedState: "EXPLORE",
       appliedState: "EXPLORE",
+      adaptiveEnabled: true,
     },
     transition: null,
     ...overrides,

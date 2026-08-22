@@ -85,6 +85,18 @@ authenticated gateway 127.0.0.1:4180
 
 SHA 기반 directory 이름은 내용 변경을 기술적으로 차단하지 않습니다. `no filesystem immutable bit` 및 `no root-owned read-only enforcement`가 현재 증명된 상태입니다. release tree와 service는 `ubuntu`가 소유·실행할 수 있으므로 `ubuntu ownership is a residual risk`입니다.
 
+### API-capable R9 telemetry migration
+
+API-capable R9 switch 전에 root DB 계정으로 번호 migration을 순서대로 단 한 번 적용합니다. 새 DB는 `001` 다음 `002`를 적용하고, 기존 R9 DB는 이미 적용된 번호를 다시 실행하지 않고 미적용 `002`만 실행합니다. `002`는 snapshot 컬럼을 nullable로 추가하고 session 초기 metadata를 backfill한 뒤 `NOT NULL`로 강화하므로 중간 실패 시 switch를 진행하지 않습니다.
+
+```bash
+# Fresh database only:
+mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/001-uiadapt-demo.sql
+
+# Fresh and existing databases where migration 002 is not yet recorded as applied:
+mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/002-uiadapt-snapshot-adaptive.sql
+```
+
 ### Automated fail-closed switch
 
 다음 Bash 전체를 **한 shell process에서** 실행합니다. 새 release는 이미 전송·hash 검증된 상태여야 합니다. `ERR` trap은 pointer 교체 전에 설치되며 switch, restart, readiness 또는 인증 smoke 중 하나라도 실패하면 같은 shell이 캡처한 `PREVIOUS_TARGET`으로 복구합니다. 비밀번호 값은 argv·stdout·shell trace에 나타나지 않습니다.
@@ -159,9 +171,10 @@ NODE
 }
 
 wait_for_readiness() {
-  local max_attempts="${1:-20}"
-  local poll_seconds="${2:-0.5}"
-  local deadline_seconds="${3:-30}"
+  local target="${1:?target path required}"
+  local max_attempts="${2:-20}"
+  local poll_seconds="${3:-0.5}"
+  local deadline_seconds="${4:-30}"
   case "$max_attempts" in
     ''|*[!0-9]*) printf 'invalid readiness attempt bound\n' >&2; return 2 ;;
   esac
@@ -171,14 +184,15 @@ wait_for_readiness() {
   esac
   test "$deadline_seconds" -gt 0 || { printf 'invalid readiness deadline\n' >&2; return 2; }
   timeout --signal=TERM --kill-after=1s "${deadline_seconds}s" \
-    bash -s -- "$max_attempts" "$poll_seconds" <<'READINESS'
+    bash -s -- "$target" "$max_attempts" "$poll_seconds" <<'READINESS'
 set -Eeuo pipefail
-max_attempts="$1"
-poll_seconds="$2"
+target="$1"
+max_attempts="$2"
+poll_seconds="$3"
   for ((attempt=1; attempt<=max_attempts; attempt++)); do
     if systemctl is-active --quiet uiadapt-static.service &&
-      systemctl is-active --quiet uiadapt-api.service &&
       systemctl is-active --quiet uiadapt-gateway.service &&
+      { test ! -f "$target/server/uiadapt-api.mjs" || systemctl is-active --quiet uiadapt-api.service; } &&
       curl --connect-timeout 1 --max-time 2 \
         --fail --silent \
         http://127.0.0.1:5173/uiadapt_demo/ \
@@ -225,9 +239,16 @@ rollback() {
   test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$PREVIOUS_TARGET" || exit "$failure_status"
   mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
   systemctl daemon-reload || exit "$failure_status"
-  systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service || exit "$failure_status"
-  wait_for_readiness || exit "$failure_status"
-  auth_smoke "http://127.0.0.1:4180/api/uiadapt/health" || exit "$failure_status"
+  if test -f "$PREVIOUS_TARGET/server/uiadapt-api.mjs"; then
+    systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service || exit "$failure_status"
+  else
+    systemctl stop uiadapt-api.service || exit "$failure_status"
+    systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  fi
+  wait_for_readiness "$PREVIOUS_TARGET" || exit "$failure_status"
+  if test -f "$PREVIOUS_TARGET/server/uiadapt-api.mjs"; then
+    auth_smoke "http://127.0.0.1:4180/api/uiadapt/health" || exit "$failure_status"
+  fi
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$PREVIOUS_TARGET" || exit "$failure_status"
   systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
   systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
@@ -249,7 +270,7 @@ test "$(readlink -f "$DEPLOY_ROOT/current.new")" = "$NEW_RELEASE"
 mv -T "$DEPLOY_ROOT/current.new" "$DEPLOY_ROOT/current"
 systemctl daemon-reload
 systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service
-wait_for_readiness
+wait_for_readiness "$NEW_RELEASE"
 auth_smoke "http://127.0.0.1:4180/api/uiadapt/health"
 smoke
 trap - ERR
@@ -326,9 +347,10 @@ NODE
 }
 
 wait_for_readiness() {
-  local max_attempts="${1:-20}"
-  local poll_seconds="${2:-0.5}"
-  local deadline_seconds="${3:-30}"
+  local target="${1:?target path required}"
+  local max_attempts="${2:-20}"
+  local poll_seconds="${3:-0.5}"
+  local deadline_seconds="${4:-30}"
   case "$max_attempts" in
     ''|*[!0-9]*) printf 'invalid readiness attempt bound\n' >&2; return 2 ;;
   esac
@@ -338,14 +360,15 @@ wait_for_readiness() {
   esac
   test "$deadline_seconds" -gt 0 || { printf 'invalid readiness deadline\n' >&2; return 2; }
   timeout --signal=TERM --kill-after=1s "${deadline_seconds}s" \
-    bash -s -- "$max_attempts" "$poll_seconds" <<'READINESS'
+    bash -s -- "$target" "$max_attempts" "$poll_seconds" <<'READINESS'
 set -Eeuo pipefail
-max_attempts="$1"
-poll_seconds="$2"
+target="$1"
+max_attempts="$2"
+poll_seconds="$3"
   for ((attempt=1; attempt<=max_attempts; attempt++)); do
     if systemctl is-active --quiet uiadapt-static.service &&
-      systemctl is-active --quiet uiadapt-api.service &&
       systemctl is-active --quiet uiadapt-gateway.service &&
+      { test ! -f "$target/server/uiadapt-api.mjs" || systemctl is-active --quiet uiadapt-api.service; } &&
       curl --connect-timeout 1 --max-time 2 \
         --fail --silent \
         http://127.0.0.1:5173/uiadapt_demo/ \
@@ -383,9 +406,16 @@ manual_recover() {
   test "$(readlink -f "$DEPLOY_ROOT/current.manual-recover.new")" = "$CURRENT_TARGET" || exit "$failure_status"
   mv -T "$DEPLOY_ROOT/current.manual-recover.new" "$DEPLOY_ROOT/current" || exit "$failure_status"
   systemctl daemon-reload || exit "$failure_status"
-  systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service || exit "$failure_status"
-  wait_for_readiness || exit "$failure_status"
-  manual_auth_smoke "http://127.0.0.1:4180/api/uiadapt/health" || exit "$failure_status"
+  if test -f "$CURRENT_TARGET/server/uiadapt-api.mjs"; then
+    systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service || exit "$failure_status"
+  else
+    systemctl stop uiadapt-api.service || exit "$failure_status"
+    systemctl restart uiadapt-static.service uiadapt-gateway.service || exit "$failure_status"
+  fi
+  wait_for_readiness "$CURRENT_TARGET" || exit "$failure_status"
+  if test -f "$CURRENT_TARGET/server/uiadapt-api.mjs"; then
+    manual_auth_smoke "http://127.0.0.1:4180/api/uiadapt/health" || exit "$failure_status"
+  fi
   test "$(readlink -f "$DEPLOY_ROOT/current")" = "$CURRENT_TARGET" || exit "$failure_status"
   systemctl is-active --quiet uiadapt-static.service || exit "$failure_status"
   systemctl is-active --quiet uiadapt-gateway.service || exit "$failure_status"
@@ -406,9 +436,16 @@ ln -s "releases/$ROLLBACK_SHA" "$DEPLOY_ROOT/current.rollback.new"
 test "$(readlink -f "$DEPLOY_ROOT/current.rollback.new")" = "$ROLLBACK_TARGET"
 mv -T "$DEPLOY_ROOT/current.rollback.new" "$DEPLOY_ROOT/current"
 systemctl daemon-reload
-systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service
-wait_for_readiness
-manual_auth_smoke "http://127.0.0.1:4180/api/uiadapt/health"
+if test -f "$ROLLBACK_TARGET/server/uiadapt-api.mjs"; then
+  systemctl restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service
+else
+  systemctl stop uiadapt-api.service
+  systemctl restart uiadapt-static.service uiadapt-gateway.service
+fi
+wait_for_readiness "$ROLLBACK_TARGET"
+if test -f "$ROLLBACK_TARGET/server/uiadapt-api.mjs"; then
+  manual_auth_smoke "http://127.0.0.1:4180/api/uiadapt/health"
+fi
 test "$(readlink -f "$DEPLOY_ROOT/current")" = "$ROLLBACK_TARGET"
 systemctl is-active --quiet uiadapt-static.service
 systemctl is-active --quiet uiadapt-gateway.service
@@ -448,7 +485,7 @@ systemd의 `active`만으로 readiness를 선언하지 않습니다.
 
 ## 6. Rollback
 
-readiness, authentication 또는 public smoke가 하나라도 실패하면 `success`를 선언하지 않습니다. 위 fail-closed 명령으로 `current`를 캡처한 `PREVIOUS_TARGET`으로 되돌리고 static과 gateway를 재시작한 뒤 동일 검증을 반복합니다. 최초 배포라 이전 release가 없으면 새 unit과 Funnel :443만 중지하며, 실패 release와 로그는 감사 증거로 보존합니다.
+readiness, authentication 또는 public smoke가 하나라도 실패하면 `success`를 선언하지 않습니다. 위 fail-closed 명령으로 `current`를 캡처한 `PREVIOUS_TARGET`으로 되돌립니다. 대상에 `server/uiadapt-api.mjs`가 있으면 static, API, gateway와 API/DB health를 모두 검증하고, legacy 대상이면 잔존 API를 명시적으로 중지한 뒤 static과 gateway 및 인증된 local/public smoke를 검증합니다. 최초 배포라 이전 release가 없으면 새 unit과 Funnel :443만 중지하며, 실패 release와 로그는 감사 증거로 보존합니다.
 
 ## 7. 측정된 상태와 현재 작업 경계
 

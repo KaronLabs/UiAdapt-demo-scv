@@ -44,6 +44,7 @@ function buildTelemetryFrame(
       candidatePersistence: state.candidatePersistence,
       detectedState: state.detectedState,
       appliedState: state.appliedState,
+      adaptiveEnabled: state.adaptiveEnabled,
     },
     transition,
   };

@@ -428,6 +428,8 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.match(apiIntegrationJob, /GITHUB_ENV/);
   assert.doesNotMatch(apiIntegrationJob, /UIADAPT_CI_MYSQL_(?:ROOT|APP)_PASSWORD/);
   assert.match(apiIntegrationJob, /db\/001-uiadapt-demo\.sql/);
+  assert.match(apiIntegrationJob, /db\/002-uiadapt-snapshot-adaptive\.sql/);
+  assert.ok(apiIntegrationJob.indexOf("db/001-uiadapt-demo.sql") < apiIntegrationJob.indexOf("db/002-uiadapt-snapshot-adaptive.sql"));
   assert.match(apiIntegrationJob, /UIADAPT_INTEGRATION: "1"/);
   assert.match(apiIntegrationJob, /--health-cmd="mysqladmin ping -h 127\.0\.0\.1 -uroot --silent"/);
   assert.match(apiIntegrationJob, /CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'%'/);
@@ -696,9 +698,9 @@ test("documented switch and rollback poll bounded readiness after every restart"
   assert.match(readinessMatch[0], /127\.0\.0\.1:5173\/uiadapt_demo/);
   assert.match(readinessMatch[0], /127\.0\.0\.1:4180\/uiadapt_demo/);
 
-  for (const [name, script] of [
-    ["automatic switch", automaticScript],
-    ["manual rollback", manualScript],
+  for (const [name, script, recoveryTarget] of [
+    ["automatic switch", automaticScript, "PREVIOUS_TARGET"],
+    ["manual rollback", manualScript, "CURRENT_TARGET"],
   ]) {
     assert.equal(
       (script.match(/systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service/g) ?? []).length,
@@ -710,19 +712,15 @@ test("documented switch and rollback poll bounded readiness after every restart"
       2,
       `${name} must wait after its primary and recovery restarts`,
     );
-    assert.match(
-      script,
-      /systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service[^\n]*\r?\n\s*wait_for_readiness/,
-      `${name} must wait immediately after restart`,
-    );
+    assert.match(script, new RegExp(`fi\\r?\\n\\s*wait_for_readiness "\\$${recoveryTarget}"`), `${name} must wait after capability-aware recovery restart`);
   }
   assert.match(
     automaticScript,
-    /systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
+    /fi\r?\n\s*wait_for_readiness "\$PREVIOUS_TARGET" \|\| exit "\$failure_status"/,
   );
   assert.match(
     manualScript,
-    /systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service \|\| exit "\$failure_status"\r?\n\s*wait_for_readiness \|\| exit "\$failure_status"/,
+    /fi\r?\n\s*wait_for_readiness "\$CURRENT_TARGET" \|\| exit "\$failure_status"/,
   );
 
   const command = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
@@ -756,7 +754,7 @@ export PROBE_FILE SLEEP_FILE STATIC_READY_AFTER GATEWAY_READY_AFTER
 export -f systemctl curl sleep
 ${readinessMatch[0]}
 set +e
-wait_for_readiness "${maxAttempts}" 0
+wait_for_readiness "/api-absent-r8" "${maxAttempts}" 0
 STATUS=$?
 set -e
 printf 'STATUS=%s\\nSTATIC_PROBES=%s\\nSLEEP_CALLS=%s\\n' \
@@ -791,7 +789,7 @@ curl() { return 0; }
 export -f systemctl curl
 ${readinessMatch[0]}
 set +e
-wait_for_readiness 1 0.5 1
+wait_for_readiness "/api-absent-r8" 1 0.5 1
 STATUS=$?
 set -e
 printf 'HANG_STATUS=%s\\n' "$STATUS"
@@ -820,7 +818,7 @@ printf 'HANG_STATUS=%s\\n' "$STATUS"
   }
 });
 
-test("documented switch and rollback require API and database health after every restart", async () => {
+test("API-capable switch and rollback retain strict API and database health", async () => {
   const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
   const automaticSection = runbook.slice(
     runbook.indexOf("### Automated fail-closed switch"),
@@ -838,7 +836,7 @@ test("documented switch and rollback require API and database health after every
     ["manual rollback", manualScript, "manual_auth_smoke"],
   ]) {
     const readiness = script.match(/wait_for_readiness\(\) \{[\s\S]*?\r?\n\}/)?.[0] ?? "";
-    assert.match(readiness, /systemctl is-active --quiet uiadapt-api\.service/);
+    assert.match(readiness, /test ! -f "\$target\/server\/uiadapt-api\.mjs" \|\| systemctl is-active --quiet uiadapt-api\.service/);
     assert.equal(
       (script.match(/systemctl restart uiadapt-static\.service uiadapt-api\.service uiadapt-gateway\.service/g) ?? []).length,
       2,
@@ -849,15 +847,11 @@ test("documented switch and rollback require API and database health after every
       2,
       `${name} must require authenticated API and database health on its primary and recovery paths`,
     );
-    assert.match(
-      script,
-      new RegExp(`wait_for_readiness[^\\n]*\\r?\\n\\s*${authHelper} "http://127\\.0\\.0\\.1:4180/api/uiadapt/health"`),
-      `${name} must check API and database health immediately after bounded readiness`,
-    );
+    assert.match(script, new RegExp(`if test -f "\\$[^\"]+/server/uiadapt-api\\.mjs"; then\\r?\\n\\s*${authHelper} "http://127\\.0\\.0\\.1:4180/api/uiadapt/health"`), `${name} must gate API health on target capability`);
   }
 });
 
-test("documented automatic switch preserves the original failure after recovery", { timeout: 10_000 }, async () => {
+test("documented automatic switch preserves failure while recovering an API-absent R8 target", { timeout: 10_000 }, async () => {
   const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
   const automaticSection = runbook.slice(
     runbook.indexOf("### Automated fail-closed switch"),
@@ -893,6 +887,7 @@ readlink() {
 }
 mv() { CURRENT_TARGET="$STAGED_TARGET"; return 0; }
 systemctl() {
+  printf 'SYSTEMCTL=%s\n' "$*"
   if test "\${1:-}" = "restart"; then
     RESTART_CALLS=$((RESTART_CALLS + 1))
     if test "$RESTART_CALLS" -eq 1; then return 42; fi
@@ -929,8 +924,125 @@ printf 'SWITCH_STATUS=PASS\\n'
   assert.equal(code, 42, `injected restart failure must survive recovery exactly:\n${combinedOutput}`);
   assert.doesNotMatch(combinedOutput, /SWITCH_STATUS=PASS/);
   assert.match(combinedOutput, new RegExp(`FINAL_TARGET=.*${oldSha}$`, "m"));
+  assert.match(combinedOutput, /^SYSTEMCTL=stop uiadapt-api\.service$/m);
+  assert.match(combinedOutput, /^SYSTEMCTL=restart uiadapt-static\.service uiadapt-gateway\.service$/m);
+  assert.doesNotMatch(combinedOutput, /^AUTH_RECOVERY=.*\/api\/uiadapt\/health$/m);
   assert.match(combinedOutput, /^AUTH_RECOVERY=http:\/\/127\.0\.0\.1:4180\/uiadapt_demo\/$/m);
   assert.match(combinedOutput, /^AUTH_RECOVERY=https:\/\/00-new-world-gpu\.tail645adc\.ts\.net\/uiadapt_demo\/$/m);
+});
+
+test("automatic rollback, manual rollback, and manual recovery branch on target API capability", async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const automatic = runbook.slice(runbook.indexOf("### Automated fail-closed switch"), runbook.indexOf("### Manual rollback"));
+  const manual = runbook.slice(runbook.indexOf("### Manual rollback"), runbook.indexOf("## 4. Credential"));
+
+  assert.match(automatic, /test -f "\$PREVIOUS_TARGET\/server\/uiadapt-api\.mjs"/);
+  assert.match(manual, /test -f "\$ROLLBACK_TARGET\/server\/uiadapt-api\.mjs"/);
+  assert.match(manual, /test -f "\$CURRENT_TARGET\/server\/uiadapt-api\.mjs"/);
+  assert.equal((runbook.match(/systemctl stop uiadapt-api\.service/g) ?? []).length >= 3, true);
+});
+
+test("runbook applies numbered snapshot migration before the API-capable R9 switch", async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const base = runbook.indexOf("db/001-uiadapt-demo.sql");
+  const migration = runbook.indexOf("db/002-uiadapt-snapshot-adaptive.sql");
+  const switchSection = runbook.indexOf("### Automated fail-closed switch");
+
+  assert.ok(base >= 0 && base < migration && migration < switchSection);
+});
+
+test("manual rollback and recovery execute capability-specific service and health contracts", { timeout: 10_000 }, async () => {
+  const runbook = await readProjectFile("docs/investor-stage-nwg-release.md");
+  const manualSection = runbook.slice(runbook.indexOf("### Manual rollback"), runbook.indexOf("## 4. Credential"));
+  const script = manualSection.match(/```bash\r?\n([\s\S]*?)```/)?.[1] ?? "";
+  const recover = script.match(/manual_recover\(\) \{[\s\S]*?\r?\n\}\r?\n\r?\ntrap 'manual_recover' ERR/)?.[0] ?? "";
+  const main = script.slice(script.indexOf("trap 'manual_recover' ERR"));
+  assert.ok(recover && main, "manual rollback recipe must expose executable recovery and main blocks");
+
+  const command = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
+  for (const currentApiCapable of [false, true]) {
+    for (const rollbackApiCapable of [false, true]) {
+      for (const injectFailure of [false, true]) {
+      const temporaryRoot = await mkdtemp(join(tmpdir(), "uiadapt-manual-rollback-"));
+      try {
+        const deploy = join(temporaryRoot, "deploy").replaceAll("\\", "/");
+        const currentSha = "c".repeat(40);
+        const rollbackSha = "d".repeat(40);
+        const currentTarget = `${deploy}/releases/${currentSha}`;
+        const rollbackTarget = `${deploy}/releases/${rollbackSha}`;
+        await mkdir(join(temporaryRoot, "deploy", "releases", currentSha, "server"), { recursive: true });
+        await mkdir(join(temporaryRoot, "deploy", "releases", rollbackSha, "server"), { recursive: true });
+        if (currentApiCapable) {
+          await writeFile(join(temporaryRoot, "deploy", "releases", currentSha, "server", "uiadapt-api.mjs"), "", "utf8");
+        }
+        if (rollbackApiCapable) {
+          await writeFile(join(temporaryRoot, "deploy", "releases", rollbackSha, "server", "uiadapt-api.mjs"), "", "utf8");
+        }
+        const scenario = `
+set -Eeuo pipefail
+DEPLOY_ROOT="${deploy}"
+ROLLBACK_SHA="${rollbackSha}"
+ROLLBACK_TARGET="${rollbackTarget}"
+CURRENT_TARGET="${currentTarget}"
+PUBLIC_URL="https://public.invalid/uiadapt_demo/"
+CURRENT_POINTER="$CURRENT_TARGET"
+STAGED_TARGET=""
+ln() {
+  if test "$1" = "-s"; then
+    case "$2" in
+      releases/*) STAGED_TARGET="$DEPLOY_ROOT/$2" ;;
+      *) STAGED_TARGET="$2" ;;
+    esac
+  fi
+}
+readlink() {
+  case "\${!#}" in
+    *.new) printf '%s\\n' "$STAGED_TARGET" ;;
+    *) printf '%s\\n' "$CURRENT_POINTER" ;;
+  esac
+}
+mv() { CURRENT_POINTER="$STAGED_TARGET"; }
+FAIL_ON_TARGET="${injectFailure ? "1" : "0"}"
+TARGET_FAILED=0
+systemctl() {
+  printf 'POINTER=%s SYSTEMCTL=%s\\n' "$CURRENT_POINTER" "$*"
+  if test "$FAIL_ON_TARGET" = "1" && test "$TARGET_FAILED" = "0" && test "$(readlink -f "$DEPLOY_ROOT/current")" = "$ROLLBACK_TARGET" && test "\${1:-}" != "daemon-reload"; then
+    TARGET_FAILED=1
+    return 42
+  fi
+}
+wait_for_readiness() { printf 'POINTER=%s READINESS=%s\\n' "$CURRENT_POINTER" "$1"; }
+manual_auth_smoke() { printf 'POINTER=%s AUTH=%s\\n' "$CURRENT_POINTER" "$1"; }
+curl() {
+  if printf '%s\\n' "$*" | grep -q -- '--write-out'; then printf '401'; fi
+}
+export -f systemctl curl
+trap 'printf "FINAL_TARGET=%s\\n" "$CURRENT_POINTER"' EXIT
+${recover}
+${main}
+`;
+        const result = spawnSync(command, ["-s"], { input: scenario, encoding: "utf8", timeout: 3_000 });
+        const output = `${result.stdout}${result.stderr}`;
+        assert.equal(result.error, undefined);
+        assert.equal(result.status, injectFailure ? 42 : 0, output);
+        assert.match(output, new RegExp(`FINAL_TARGET=${injectFailure ? currentTarget : rollbackTarget}$`, "m"));
+        const activeTarget = injectFailure ? currentTarget : rollbackTarget;
+        const activeApiCapable = injectFailure ? currentApiCapable : rollbackApiCapable;
+        if (activeApiCapable) {
+          assert.ok(output.includes(`POINTER=${activeTarget} SYSTEMCTL=restart uiadapt-static.service uiadapt-api.service uiadapt-gateway.service`));
+          assert.ok(output.includes(`POINTER=${activeTarget} AUTH=http://127.0.0.1:4180/api/uiadapt/health`));
+          assert.equal(output.includes(`POINTER=${activeTarget} SYSTEMCTL=stop uiadapt-api.service`), false);
+        } else {
+          assert.ok(output.includes(`POINTER=${activeTarget} SYSTEMCTL=stop uiadapt-api.service`));
+          assert.ok(output.includes(`POINTER=${activeTarget} SYSTEMCTL=restart uiadapt-static.service uiadapt-gateway.service`));
+          assert.equal(output.includes(`POINTER=${activeTarget} AUTH=http://127.0.0.1:4180/api/uiadapt/health`), false);
+        }
+      } finally {
+        await rm(temporaryRoot, { recursive: true, force: true });
+      }
+      }
+    }
+  }
 });
 
 test("documented auth helper enforces a total wall-clock deadline against trickle responses", { timeout: 5_000 }, async () => {

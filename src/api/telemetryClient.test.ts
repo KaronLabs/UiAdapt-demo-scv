@@ -37,6 +37,7 @@ function frame(sequenceNo: number, sessionId = SESSION_ID): TelemetryFrame {
       candidatePersistence: 0,
       detectedState: "EXPLORE",
       appliedState: "EXPLORE",
+      adaptiveEnabled: true,
     },
     transition: null,
   };

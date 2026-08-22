@@ -34,6 +34,7 @@ export interface DistributionSnapshot {
   candidatePersistence: number;
   detectedState: DistributionState;
   appliedState: DistributionState;
+  adaptiveEnabled: boolean;
 }
 
 export interface StateTransition {

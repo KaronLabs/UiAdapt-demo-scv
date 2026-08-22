@@ -26,6 +26,7 @@ function frame(sequenceNo, eventId = `event-${sequenceNo}`, targetSessionId = se
       candidatePersistence: 0,
       detectedState: "EXPLORE",
       appliedState: "EXPLORE",
+      adaptiveEnabled: true,
     },
     transition: null,
   };
@@ -46,11 +47,26 @@ if (enabled) {
   test("persists ordered trajectory and exact duplicate retry without duplicate rows", async () => {
     const first = frame(1);
     const second = frame(2);
+    const third = frame(3);
+    second.snapshot.adaptiveEnabled = false;
     assert.deepEqual(await db.appendTrajectory(first), { duplicate: false });
     assert.deepEqual(await db.appendTrajectory(first), { duplicate: true });
     assert.deepEqual(await db.appendTrajectory(second), { duplicate: false });
+    assert.deepEqual(await db.appendTrajectory(third), { duplicate: false });
     const trajectory = await db.getTrajectory(sessionId);
-    assert.deepEqual(trajectory.map((item) => item.sequenceNo), [1, 2]);
+    assert.deepEqual(trajectory.map((item) => item.sequenceNo), [1, 2, 3]);
+    assert.deepEqual(trajectory.map((item) => item.snapshot.adaptiveEnabled), [true, false, true]);
+  });
+
+  test("fresh schema plus numbered migration exposes a non-null snapshot Adaptive column", async () => {
+    const [columns] = await pool.execute(
+      `SELECT IS_NULLABLE
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = 'uiadapt_demo'
+         AND TABLE_NAME = 'uiadapt_distribution_snapshots'
+         AND COLUMN_NAME = 'adaptive_enabled'`,
+    );
+    assert.deepEqual(columns, [{ IS_NULLABLE: "NO" }]);
   });
 
   test("rejects conflicting duplicate identity", async () => {
@@ -60,18 +76,19 @@ if (enabled) {
     );
   });
 
-  test("rejects a source mismatch and a sequence gap before inserting", async () => {
+  test("accepts REPLAY then USER and rejects source reversion and a sequence gap", async () => {
     const isolatedSessionId = randomUUID();
     await db.createSession({ sessionId: isolatedSessionId, startedAtMs: Date.now(), source: "REPLAY", adaptiveEnabled: true });
 
-    const sourceMismatch = frame(1, "event-source-mismatch", isolatedSessionId);
-    sourceMismatch.event.source = "USER";
+    const replay = frame(1, "event-replay", isolatedSessionId);
+    const user = frame(2, "event-user", isolatedSessionId);
+    user.event.source = "USER";
+    const replayAgain = frame(3, "event-replay-again", isolatedSessionId);
+    assert.deepEqual(await db.appendTrajectory(replay), { duplicate: false });
+    assert.deepEqual(await db.appendTrajectory(user), { duplicate: false });
+    await assert.rejects(() => db.appendTrajectory(replayAgain), (error) => error.code === "TRAJECTORY_INCONSISTENT");
     await assert.rejects(
-      () => db.appendTrajectory(sourceMismatch),
-      (error) => error.code === "TRAJECTORY_INCONSISTENT",
-    );
-    await assert.rejects(
-      () => db.appendTrajectory(frame(2, "event-sequence-gap", isolatedSessionId)),
+      () => db.appendTrajectory(frame(4, "event-sequence-gap", isolatedSessionId)),
       (error) => error.code === "TRAJECTORY_INCONSISTENT",
     );
   });

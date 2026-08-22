@@ -143,6 +143,7 @@ jobs:
           set -eu
           export UIADAPT_MYSQL_PASSWORD="$(openssl rand -hex 32)"
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/001-uiadapt-demo.sql
+          mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/002-uiadapt-snapshot-adaptive.sql
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo <<SQL
           CREATE USER IF NOT EXISTS 'uiadapt_demo_app'@'%' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';
           ALTER USER 'uiadapt_demo_app'@'%' IDENTIFIED BY '$UIADAPT_MYSQL_PASSWORD';

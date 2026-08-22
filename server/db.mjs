@@ -127,6 +127,7 @@ function frameFromRows(event, snapshot, transition) {
       candidatePersistence: Number(snapshot.candidate_persistence),
       detectedState: snapshot.detected_state,
       appliedState: snapshot.applied_state,
+      adaptiveEnabled: Boolean(snapshot.adaptive_enabled),
     },
     transition: transition
       ? {
@@ -155,7 +156,7 @@ async function findExisting(connection, sessionId, sequenceNo, eventId) {
             cart_intent_count, current_browse, current_detail, current_compare, current_decision,
             current_cart_intent, reference_browse, reference_detail, reference_compare,
             reference_decision, reference_cart_intent, change_score, candidate_state,
-            candidate_persistence, detected_state, applied_state
+            candidate_persistence, detected_state, applied_state, adaptive_enabled
      FROM uiadapt_distribution_snapshots
      WHERE session_id = ? AND sequence_no = ?
      FOR UPDATE`,
@@ -210,8 +211,7 @@ export function createDbAdapter(pool) {
           [normalized.sessionId],
         );
         if (sessionRows.length === 0) throw notFound();
-        if (sessionRows[0].event_source !== normalized.event.source) throw inconsistentTrajectory();
-        assertTrajectoryPolicy(normalized, Boolean(sessionRows[0].adaptive_enabled));
+        assertTrajectoryPolicy(normalized);
 
         const existing = await findExisting(connection, normalized.sessionId, normalized.sequenceNo, normalized.event.id);
         if (existing) {
@@ -220,7 +220,7 @@ export function createDbAdapter(pool) {
         }
 
         const [previousRows] = await connection.execute(
-          `SELECT sequence_no, at_ms
+          `SELECT sequence_no, at_ms, event_source
            FROM uiadapt_events
            WHERE session_id = ?
            ORDER BY sequence_no DESC
@@ -243,6 +243,7 @@ export function createDbAdapter(pool) {
         assertTrajectoryContinuity(
           normalized,
           previous ? { ...previous, ...(previousSnapshot ?? {}) } : null,
+          sessionRows[0].event_source,
         );
         if (
           (!previous && normalized.sequenceNo !== 1)
@@ -275,8 +276,8 @@ export function createDbAdapter(pool) {
             decision_count, cart_intent_count, current_browse, current_detail, current_compare,
             current_decision, current_cart_intent, reference_browse, reference_detail, reference_compare,
             reference_decision, reference_cart_intent, change_score, candidate_state,
-            candidate_persistence, detected_state, applied_state)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            candidate_persistence, detected_state, applied_state, adaptive_enabled)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             normalized.sessionId,
             normalized.sequenceNo,
@@ -302,6 +303,7 @@ export function createDbAdapter(pool) {
             normalized.snapshot.candidatePersistence,
             normalized.snapshot.detectedState,
             normalized.snapshot.appliedState,
+            normalized.snapshot.adaptiveEnabled,
           ],
         );
         if (normalized.transition) {
@@ -333,7 +335,7 @@ export function createDbAdapter(pool) {
                 s.current_cart_intent, s.reference_browse, s.reference_detail,
                 s.reference_compare, s.reference_decision, s.reference_cart_intent,
                 s.change_score, s.candidate_state, s.candidate_persistence,
-                s.detected_state, s.applied_state,
+                s.detected_state, s.applied_state, s.adaptive_enabled,
                 t.trigger_sequence_no, t.from_state, t.to_state,
                 t.change_score AS transition_change_score, t.persistence_count
          FROM uiadapt_events e
