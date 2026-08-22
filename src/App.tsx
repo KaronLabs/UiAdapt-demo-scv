@@ -30,6 +30,8 @@ const stateMission: Record<AdaptiveState, string> = {
   COMPARE: "비교",
   PURCHASE_INTENT: "결정지원",
 };
+const release = import.meta.env.VITE_UIADAPT_RELEASE?.trim();
+const buildId = import.meta.env.VITE_UIADAPT_BUILD_ID;
 
 function App() {
   const {
@@ -88,7 +90,13 @@ function App() {
       <header className="site-header">
         <a className="brand" href="#main-content" aria-label="UIAdapt 홈">
           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
-          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure</small></span>
+          <span className="brand__lockup">
+            <strong>UIAdapt</strong>
+            <span className="brand__meta">
+              <small>Adaptive UI Infrastructure</small>
+              {release && <span className="release-badge">{release} · {buildId}</span>}
+            </span>
+          </span>
         </a>
         <p className="header-story">Behavior-aware presentation layer</p>
         <div className="header-tools">

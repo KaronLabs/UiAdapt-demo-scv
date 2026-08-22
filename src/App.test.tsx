@@ -9,6 +9,17 @@ describe("adaptive storefront UI contract", () => {
     vi.unstubAllGlobals();
   });
 
+  it("shows the release build identity without changing the brand contract", () => {
+    const { container } = render(<App />);
+    const header = container.querySelector(".site-header");
+
+    expect(header).toHaveTextContent(
+      `${import.meta.env.VITE_UIADAPT_RELEASE} · ${import.meta.env.VITE_UIADAPT_BUILD_ID}`,
+    );
+    expect(header).toHaveTextContent("Adaptive UI Infrastructure");
+    expect(screen.getByRole("link", { name: "UIAdapt 홈" })).toBeInTheDocument();
+  });
+
   it("renders the canonical products and keeps diagnostics collapsed", () => {
     const { container } = render(<App />);
     expect(screen.getByRole("link", { name: "UIAdapt 홈" })).toBeInTheDocument();

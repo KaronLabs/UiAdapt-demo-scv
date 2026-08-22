@@ -63,6 +63,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .brand__lockup { display: grid; line-height: 1.1; }
 .brand__lockup strong { font-size: 20px; font-weight: 760; letter-spacing: -0.02em; }
 .brand__lockup small { margin-top: 4px; color: var(--graphite); font: 500 12px var(--mono); }
+.brand__meta { display: flex; align-items: center; gap: 7px; }
+.release-badge { padding: 2px 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--cobalt); font: 500 10px var(--mono); white-space: nowrap; }
 .header-story { margin: 0; color: var(--graphite); font: 500 12px var(--mono); letter-spacing: 0.02em; }
 .header-tools { display: flex; align-items: center; justify-self: end; gap: 18px; }
 .adaptive-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 650; cursor: pointer; position: relative; }
@@ -253,6 +255,8 @@ footer p { margin: 0; }
   .brand__mark { width: 28px; height: 28px; }
   .brand__lockup strong { font-size: 18px; }
   .brand__lockup small { font-size: 12px; }
+  .brand__meta { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .release-badge { padding-inline: 4px; font-size: 9px; }
   .adaptive-toggle > span:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; }
   .hero { min-height: 0; padding: 46px 20px 36px; }
   .hero h1 { font-size: 52px; letter-spacing: -0.025em; }
