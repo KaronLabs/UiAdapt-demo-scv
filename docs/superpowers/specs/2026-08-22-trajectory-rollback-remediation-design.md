@@ -40,4 +40,3 @@ Rollback readiness is capability-aware. A target containing `server/uiadapt-api.
 - No Distribution Engine threshold or state-selection changes.
 - No new session lifecycle or `MIXED` enum.
 - No deployment, service restart, or production database mutation.
-

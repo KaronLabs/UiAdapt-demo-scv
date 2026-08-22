@@ -63,4 +63,3 @@
 - [ ] Run `UIADAPT_INTEGRATION=1 npm run test:api-integration` against disposable MySQL with zero skips.
 - [ ] Record exact target SHA, commands, return codes, bounded output, UTC timestamps, changed-file digest, and residual limitations in the retrial petition.
 - [ ] Commit only scoped source, tests, design, plan, and retrial petition; push the branch after fresh verification.
-
