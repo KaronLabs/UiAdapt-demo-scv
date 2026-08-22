@@ -142,6 +142,7 @@ jobs:
         run: |
           set -eu
           export UIADAPT_MYSQL_PASSWORD="$(openssl rand -hex 32)"
+          echo "::add-mask::$UIADAPT_MYSQL_PASSWORD"
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/001-uiadapt-demo.sql
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo < db/002-uiadapt-snapshot-adaptive.sql
           mysql --protocol=tcp -h 127.0.0.1 -uroot uiadapt_demo <<SQL

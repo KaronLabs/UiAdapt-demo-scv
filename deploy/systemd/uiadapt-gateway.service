@@ -1,7 +1,6 @@
 [Unit]
 Description=UIAdapt password gateway
 Requires=uiadapt-static.service
-Wants=uiadapt-api.service
 After=uiadapt-static.service uiadapt-api.service
 
 [Service]

@@ -367,7 +367,7 @@ test("defines hardened static and gateway systemd units for the exact current re
 
   assertCommonServiceContract(gatewayService);
   assert.match(gatewayService, /^Requires=uiadapt-static\.service$/m);
-  assert.match(gatewayService, /^Wants=uiadapt-api\.service$/m);
+  assert.doesNotMatch(gatewayService, /^Wants=uiadapt-api\.service$/m);
   assert.match(gatewayService, /^After=uiadapt-static\.service uiadapt-api\.service$/m);
   assert.match(
     gatewayService,
@@ -426,6 +426,20 @@ test("runs deployment contracts in the Node 22 and Node 24 verification jobs", a
   assert.match(apiIntegrationJob, /MYSQL_ALLOW_EMPTY_PASSWORD: "yes"/);
   assert.match(apiIntegrationJob, /openssl rand -hex 32/);
   assert.match(apiIntegrationJob, /GITHUB_ENV/);
+  const generateIndex = apiIntegrationJob.indexOf(
+    'export UIADAPT_MYSQL_PASSWORD="$(openssl rand -hex 32)"',
+  );
+  const maskIndex = apiIntegrationJob.indexOf(
+    'echo "::add-mask::$UIADAPT_MYSQL_PASSWORD"',
+  );
+  const githubEnvIndex = apiIntegrationJob.indexOf(
+    'echo "UIADAPT_MYSQL_PASSWORD=$UIADAPT_MYSQL_PASSWORD" >> "$GITHUB_ENV"',
+  );
+  assert.notEqual(generateIndex, -1);
+  assert.notEqual(maskIndex, -1);
+  assert.notEqual(githubEnvIndex, -1);
+  assert.ok(generateIndex < maskIndex);
+  assert.ok(maskIndex < githubEnvIndex);
   assert.doesNotMatch(apiIntegrationJob, /UIADAPT_CI_MYSQL_(?:ROOT|APP)_PASSWORD/);
   assert.match(apiIntegrationJob, /db\/001-uiadapt-demo\.sql/);
   assert.match(apiIntegrationJob, /db\/002-uiadapt-snapshot-adaptive\.sql/);
@@ -847,7 +861,7 @@ test("API-capable switch and rollback retain strict API and database health", as
       2,
       `${name} must require authenticated API and database health on its primary and recovery paths`,
     );
-    assert.match(script, new RegExp(`if test -f "\\$[^\"]+/server/uiadapt-api\\.mjs"; then\\r?\\n\\s*${authHelper} "http://127\\.0\\.0\\.1:4180/api/uiadapt/health"`), `${name} must gate API health on target capability`);
+    assert.match(script, new RegExp(`if test -f "\\$[^"]+/server/uiadapt-api\\.mjs"; then\\r?\\n\\s*${authHelper} "http://127\\.0\\.0\\.1:4180/api/uiadapt/health"`), `${name} must gate API health on target capability`);
   }
 });
 
