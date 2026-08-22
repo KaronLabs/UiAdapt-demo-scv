@@ -19,6 +19,25 @@ async function settleVisualEvidence(page: Page) {
   await page.evaluate(() => document.fonts.ready);
 }
 
+async function startReplayAndWait(page: Page) {
+  const replayResponse = page.waitForResponse((response) => {
+    const request = response.request();
+    if (
+      request.method() !== "POST"
+      || new URL(response.url()).pathname !== "/api/uiadapt/sessions"
+      || !response.ok()
+    ) {
+      return false;
+    }
+
+    const body = request.postDataJSON() as { source?: string };
+    return body.source === "REPLAY";
+  });
+
+  await page.getByTestId("live-demo-cta").click();
+  await replayResponse;
+}
+
 type EvidencePage = Page & {
   __consoleErrors?: string[];
   __externalRequests?: string[];
@@ -249,7 +268,7 @@ test("reviewed text contrast remains WCAG AA in inactive and PURCHASE_INTENT-mut
     ".state-step:not(.is-current):not(.is-past) strong",
     ":root",
   );
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(21_000);
   const mutedBodyContrast = await contrastFor(
     ".product-card--muted .product-card__detail",
@@ -276,7 +295,7 @@ test("nested deployment path loads assets, reloads, and runs the replay", async 
   expect(assetResponses.some(({ url, status }) => /WantedSansVariable[^/]*\.woff2(?:\?|$)/.test(url) && status === 200)).toBe(true);
   expect((page as EvidencePage).__assetFailures ?? []).toEqual([]);
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(11_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
 });
@@ -304,7 +323,7 @@ test("the canonical replay changes presentation without changing product data", 
     expect(balance.widthRatio).toBeGreaterThanOrEqual(0.45);
     expect(balance.widthRatio).toBeLessThanOrEqual(0.55);
   }
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(11_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("COMPARE");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "COMPARE");
@@ -340,7 +359,7 @@ test("the canonical replay changes presentation without changing product data", 
 
 test("COMPARE is visible in the main stage and PURCHASE_INTENT becomes decision support", async ({ page }, testInfo) => {
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(11_000);
   const comparePanel = page.locator(".demo-stage .comparison-panel.is-visible");
   await expect(comparePanel).toBeVisible();
@@ -367,7 +386,7 @@ test("Adaptive OFF keeps the same detected state but baseline presentation", asy
   await page.clock.install();
   const exploreDescription = await page.locator(".storefront__heading > p").textContent();
   await page.getByRole("checkbox", { name: /Adaptive UI/i }).uncheck();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(21_000);
   await expect(page.locator('[data-current="true"] strong')).toHaveText("PURCHASE_INTENT");
   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "EXPLORE");
@@ -377,7 +396,7 @@ test("Adaptive OFF keeps the same detected state but baseline presentation", asy
 
 test("active product control survives the comparison transition", async ({ page }) => {
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   const price = page.getByRole("button", { name: "Aurora One 가격 확인" });
   await price.focus();
   await expect(price).toBeFocused();
@@ -415,7 +434,7 @@ test("keyboard-only path starts, pauses, resets, and records a product action", 
 
 test("Pause and Resume preserve virtual progress", async ({ page }) => {
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(11_000);
   await page.getByRole("button", { name: "Pause" }).click();
   await page.clock.fastForward(20_000);
@@ -427,7 +446,7 @@ test("Pause and Resume preserve virtual progress", async ({ page }) => {
 
 test("Reset cancels every stale Replay timer", async ({ page }) => {
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(3_000);
 
   const resetNotBeforeMs = await page.evaluate(() => Date.now());
@@ -461,7 +480,7 @@ test("Reset cancels every stale Replay timer", async ({ page }) => {
 
 test("manual takeover cancels the remaining Replay timers", async ({ page }) => {
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(1_000);
   await page.getByRole("button", { name: "Aurora One 가격 확인" }).click();
   await page.getByText("Developer View").click();
@@ -473,7 +492,7 @@ test("manual takeover cancels the remaining Replay timers", async ({ page }) => 
 
 test("Stop preserves state and cancels the remaining Replay timers", async ({ page }) => {
   await page.clock.install();
-  await page.getByTestId("live-demo-cta").click();
+  await startReplayAndWait(page);
   await page.clock.fastForward(11_000);
   await page.getByRole("button", { name: "Stop" }).click();
   await page.getByText("Developer View").click();
