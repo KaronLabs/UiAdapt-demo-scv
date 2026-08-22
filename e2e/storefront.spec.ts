@@ -239,6 +239,19 @@ test("reviewed layout keeps laptop cards balanced and mobile evidence controls i
   }
 });
 
+test("PURCHASE_INTENT keeps all desktop product cards equal width", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-1440", "desktop equal-width contract");
+  await page.clock.install();
+  await startReplayAndWait(page);
+  await page.clock.fastForward(21_000);
+  await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT");
+
+  const widths = await page.locator(".product-card").evaluateAll((cards) =>
+    cards.map((card) => (card as HTMLElement).getBoundingClientRect().width),
+  );
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+});
+
 test("reviewed text contrast remains WCAG AA in inactive and PURCHASE_INTENT-muted states", async ({ page }) => {
   await page.clock.install();
   const contrastFor = (selector: string, backgroundSelector: string) => page.evaluate(

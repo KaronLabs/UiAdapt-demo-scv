@@ -174,7 +174,7 @@ main { width: min(1600px, 100%); margin: 0 auto; }
 .button--quiet { background: transparent; }
 .button--quiet.is-active { border-color: var(--cobalt); color: var(--cobalt); background: var(--cobalt-soft); }
 .button--primary { margin-left: auto; border-color: var(--carbon); background: var(--carbon); color: white; }
-.product-grid[data-state="PURCHASE_INTENT"] { grid-template-columns: 1.4fr 0.8fr 0.8fr; }
+.product-grid[data-state="PURCHASE_INTENT"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .product-card--focused { border-color: rgba(7, 94, 184, 0.55); box-shadow: 0 0 0 4px rgba(7, 94, 184, 0.08), 0 24px 60px rgba(7, 94, 184, 0.14); }
 .product-card--focused .product-card__visual { min-height: 320px; }
 .product-card--focused .product-art { transform: scale(1.06); }

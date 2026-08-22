@@ -12,7 +12,7 @@ describe("adaptive storefront UI contract", () => {
   it("renders the canonical products and keeps diagnostics collapsed", () => {
     const { container } = render(<App />);
     expect(screen.getByRole("link", { name: "UIAdapt 홈" })).toBeInTheDocument();
-    expect(container.querySelector(".site-header .brand__lockup small")).toHaveTextContent(/^Adaptive UI Infrastructure · R9$/);
+    expect(container.querySelector(".site-header .brand__lockup small")).toHaveTextContent(/^Adaptive UI Infrastructure · R10$/);
     expect(container.querySelector(".site-header .cart-button")).not.toBeInTheDocument();
     expect(container.querySelector(".demo-stage .cart-button")).toBeInTheDocument();
     expect(container.querySelector(".demo-stage__header")).toHaveTextContent("샘플 상점 · Atelier Audio");

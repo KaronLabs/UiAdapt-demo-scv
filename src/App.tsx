@@ -88,7 +88,7 @@ function App() {
       <header className="site-header">
         <a className="brand" href="#main-content" aria-label="UIAdapt 홈">
           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
-          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure · R9</small></span>
+          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure · R10</small></span>
         </a>
         <p className="header-story">Behavior-aware presentation layer</p>
         <div className="header-tools">
