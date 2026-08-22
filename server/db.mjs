@@ -226,7 +226,7 @@ export function createDbAdapter(pool) {
         );
         const previous = previousRows[0];
         let previousSnapshot = null;
-        if (normalized.transition && previous) {
+        if (previous) {
           const [snapshotRows] = await connection.execute(
             `SELECT sequence_no, detected_state, candidate_state, candidate_persistence
              FROM uiadapt_distribution_snapshots

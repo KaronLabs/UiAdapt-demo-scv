@@ -62,6 +62,56 @@ test("rolls back a correlated trajectory when snapshot insertion fails", async (
   assert.equal(sqlCalls.every(({ query }) => !query.includes("'event-1'") && query.includes("?")), true);
 });
 
+test("rejects a forged non-transition detected-state change", async () => {
+  const payload = {
+    ...frame(),
+    sequenceNo: 2,
+    event: { ...frame().event, id: "event-2", atMs: 600 },
+    snapshot: {
+      ...frame().snapshot,
+      eventCount: 2,
+      windowSize: 2,
+      counts: { BROWSE: 2, DETAIL: 0, COMPARE: 0, DECISION: 0, CART_INTENT: 0 },
+      detectedState: "COMPARE",
+      appliedState: "COMPARE",
+    },
+  };
+  const queries = [];
+  const connection = {
+    async beginTransaction() {},
+    async commit() {},
+    async rollback() {},
+    release() {},
+    async execute(query) {
+      queries.push(query);
+      if (query.includes("FROM uiadapt_sessions WHERE session_id = ? FOR UPDATE")) {
+        return [[{ session_id: SESSION_ID, event_source: "REPLAY", adaptive_enabled: 1 }], []];
+      }
+      if (query.includes("WHERE session_id = ? AND (sequence_no = ? OR event_id = ?)")) return [[], []];
+      if (query.includes("SELECT sequence_no, at_ms")) {
+        return [[{ sequence_no: 1, at_ms: 500 }], []];
+      }
+      if (query.includes("SELECT sequence_no, detected_state")) {
+        return [[{
+          sequence_no: 1,
+          detected_state: "EXPLORE",
+          candidate_state: "EXPLORE",
+          candidate_persistence: 0,
+        }], []];
+      }
+      if (query.includes("INSERT INTO")) return [{ affectedRows: 1 }, []];
+      throw new Error(`UNEXPECTED_QUERY:${query}`);
+    },
+  };
+  const db = createDbAdapter({ async getConnection() { return connection; } });
+
+  await assert.rejects(
+    () => db.appendTrajectory(payload),
+    (error) => error.code === "TRAJECTORY_INCONSISTENT",
+  );
+  assert.equal(queries.some((query) => query.includes("INSERT INTO")), false);
+});
+
 test("treats a retry as duplicate after MySQL DECIMAL storage rounds telemetry floats", async () => {
   const reference = { BROWSE: 0.5, DETAIL: 0.2, COMPARE: 0.15, DECISION: 0.1, CART_INTENT: 0.05 };
   const steps = [
@@ -239,6 +289,19 @@ test("rejects a forged transition before minimum evidence and before writing", a
     (error) => error.code === "TRAJECTORY_INCONSISTENT",
   );
   assert.equal(queries.some((query) => query.includes("INSERT INTO")), false);
+});
+
+test("rejects a later non-transition frame with missing previous snapshot continuity data", () => {
+  const payload = {
+    ...frame(),
+    sequenceNo: 2,
+    snapshot: { ...frame().snapshot, eventCount: 2 },
+  };
+
+  assert.throws(
+    () => assertTrajectoryContinuity(payload, { sequence_no: 1, at_ms: 500 }),
+    (error) => error.code === "TRAJECTORY_INCONSISTENT",
+  );
 });
 
 test("accepts a transition with the required preceding persistence frame", () => {

@@ -270,7 +270,16 @@ export function assertTrajectoryPolicy(payload, adaptiveEnabled) {
 }
 
 export function assertTrajectoryContinuity(payload, previous) {
-  if (payload.transition === null) return payload;
+  if (payload.transition === null) {
+    if (
+      (previous === null && payload.sequenceNo !== 1)
+      || (previous !== null && Number(previous.sequence_no) !== payload.sequenceNo - 1)
+      || payload.snapshot.detectedState !== (previous === null ? "EXPLORE" : previous.detected_state)
+    ) {
+      semantic("TRAJECTORY_INCONSISTENT");
+    }
+    return payload;
+  }
 
   if (
     payload.snapshot.eventCount < MINIMUM_EVIDENCE
