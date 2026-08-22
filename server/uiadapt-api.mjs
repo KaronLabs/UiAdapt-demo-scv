@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { URL } from "node:url";
@@ -31,6 +31,14 @@ export function resolveApiHost(env = process.env) {
   const host = env.UIADAPT_API_HOST ?? "127.0.0.1";
   if (host !== "127.0.0.1") throw new Error("UIADAPT_API_LOOPBACK_ONLY");
   return host;
+}
+
+export function isDirectExecution(entryPath, modulePath) {
+  try {
+    return Boolean(entryPath) && realpathSync(entryPath) === realpathSync(modulePath);
+  } catch {
+    return false;
+  }
 }
 
 function matchTrajectoryPath(pathname) {
@@ -95,7 +103,7 @@ export function createUiAdaptServer(options) {
   return createServer(createUiAdaptHandler(options));
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isDirectExecution(process.argv[1], fileURLToPath(import.meta.url))) {
   const { pool, db } = createDatabaseFromEnv();
   const server = createUiAdaptServer({ db });
   const host = resolveApiHost();

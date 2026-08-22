@@ -1,10 +1,24 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { after, before, test } from "node:test";
-import { createUiAdaptHandler, resolveApiHost } from "./uiadapt-api.mjs";
+import { fileURLToPath } from "node:url";
+import { createUiAdaptHandler, isDirectExecution, resolveApiHost } from "./uiadapt-api.mjs";
 
 const SESSION_ID = "11111111-1111-4111-8111-111111111111";
 const FORGED_SESSION_ID = "22222222-2222-4222-8222-222222222222";
+
+test("recognizes a symlinked API module as a direct execution entry", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "uiadapt-api-"));
+  const apiModule = fileURLToPath(new URL("./uiadapt-api.mjs", import.meta.url));
+  const symlinkedEntry = join(directory, "uiadapt-api.mjs");
+  symlinkSync(apiModule, symlinkedEntry);
+  t.after(() => rmSync(directory, { force: true, recursive: true }));
+
+  assert.equal(isDirectExecution(symlinkedEntry, apiModule), true);
+});
 
 function session(overrides = {}) {
   return {
