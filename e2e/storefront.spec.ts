@@ -429,7 +429,30 @@ test("Reset cancels every stale Replay timer", async ({ page }) => {
   await page.clock.install();
   await page.getByTestId("live-demo-cta").click();
   await page.clock.fastForward(3_000);
+
+  const resetNotBeforeMs = await page.evaluate(() => Date.now());
+  const resetResponse = page.waitForResponse((response) => {
+    const request = response.request();
+    if (
+      request.method() !== "POST"
+      || new URL(response.url()).pathname !== "/api/uiadapt/sessions"
+      || !response.ok()
+    ) {
+      return false;
+    }
+
+    const body = request.postDataJSON() as {
+      source?: string;
+      startedAtMs?: number;
+    };
+
+    return body.source === "USER"
+      && typeof body.startedAtMs === "number"
+      && body.startedAtMs >= resetNotBeforeMs;
+  });
+
   await page.getByRole("button", { name: "Reset" }).click();
+  await resetResponse;
   await page.clock.fastForward(30_000);
   await page.getByText("Developer View").click();
   await expect(page.getByTestId("event-count")).toHaveText("0");
