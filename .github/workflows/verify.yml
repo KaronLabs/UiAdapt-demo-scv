@@ -58,6 +58,11 @@ jobs:
       - name: Install Chromium and system dependencies
         run: npx playwright install --with-deps chromium
 
+      - name: Install video evidence inspector
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+
       - name: Nested-path browser tests
         run: npm run test:e2e
 
