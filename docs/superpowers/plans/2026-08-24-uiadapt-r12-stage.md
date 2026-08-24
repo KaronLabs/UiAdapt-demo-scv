@@ -4,7 +4,9 @@
 
 **Goal:** Deliver a deterministic, catalog-backed React Stage Mode at `/stage`, mechanically matching the approved 1920x1080 visual contract and producing reproducible SSIM and video evidence.
 
-**Architecture:** Route-specific dynamic imports isolate the existing storefront CSS from a new namespaced Stage application. A pure `snapshotAt(elapsedMs)` function replays canonical domain events through `runtimeReducer`; a small controller selects elapsed time. Approved Expo KPI copy is explicitly separated from measured domain attributes.
+**Architecture:** The final implementation keeps the storefront mount synchronous to preserve its existing focus contract, while Stage dynamically loads its component and namespaced CSS after removing storefront styles. Stage preserves the immutable mock's font stacks and platform-fallback render condition; an attempted local-WOFF load was rejected after it drove all three SSIM scores below 0.85. A pure `snapshotAt(elapsedMs)` function delivers unchanged canonical domain events on a Stage-specific cue schedule through `runtimeReducer`; a small controller selects elapsed time. Approved Expo KPI copy is explicitly separated from measured domain attributes.
+
+**Final-scope note:** R12 is reviewed logically as `b26658b..HEAD`. The requested PR targets `main` and is stacked on open R11 PR #2, so the physical PR diff includes R11 until PR #2 merges. The publication report must disclose both scopes.
 
 **Stack:** React 19, TypeScript 6, Vite 8, Playwright 1.62 with Chrome 145, Vitest, `ssim.js`, `pngjs`, ffprobe.
 
@@ -48,7 +50,7 @@
 1. Write focused controller tests for play, pause, resume, reset, clamping at 27s, and keyboard 1/2/3 jumps.
 2. Confirm the focused controller test is RED.
 3. Implement the controller with `requestAnimationFrame`, monotonic elapsed accounting, cleanup on unmount, and pure snapshot reconstruction.
-4. Implement a pathname branch for `/stage` and `/uiadapt_demo/stage`; dynamically load Stage or existing App and its route-specific stylesheet.
+4. Implement a pathname branch for `/stage` and `/uiadapt_demo/stage`; keep the existing App synchronous, and dynamically load the Stage component and Stage stylesheet.
 5. Render semantic controls and fullscreen action. Expose state, elapsed, completion, domain count, and domain score as root data attributes.
 6. Run focused unit tests to GREEN.
 
@@ -75,10 +77,11 @@
 
 1. Add exact dev-only dependencies `ssim.js@3.5.0` and `pngjs@7.0.0`.
 2. Implement dimension-checked SSIM reporting and fail below 0.85; emit all three heatmaps on any failure.
-3. Implement Chrome145 captures after fonts settle and finite animations complete. Reject attempted external requests.
+3. Implement Chrome145 captures after the approved font stack settles and finite animations complete. Reject attempted external requests for the browser-context lifetime and redact request query strings from failures.
 4. Capture EXPLORE/COMPARE/PURCHASE_INTENT at the keyboard checkpoints and run SSIM.
 5. If any score is below 0.85, inspect the generated diff heatmaps, change only Stage JSX/CSS, and repeat.
-6. Record one real-time 27-second screencast and verify resolution/duration with ffprobe without trimming.
+6. Record one real-time 27-second screencast and verify VP8/VP9 WebM codec/container, resolution, and duration with ffprobe without trimming.
+7. Generate into a fresh run directory and publish evidence only after capture and SSIM both pass.
 7. Commit tools and generated evidence as `test(r12): add stage visual evidence`.
 
 ## Task 6: Run independent verification and regression

@@ -15,6 +15,7 @@ function parseArguments(argv) {
     actualDir: path.join(ROOT, "review/r12/evidence"),
     baselineDir: path.join(ROOT, "review/r12/baseline"),
     outputDir: path.join(ROOT, "review/r12/evidence"),
+    reportActualDir: null,
     threshold: 0.85,
     json: false,
   };
@@ -30,6 +31,7 @@ function parseArguments(argv) {
     if (argument === "--actual-dir") options.actualDir = path.resolve(value);
     else if (argument === "--baseline-dir") options.baselineDir = path.resolve(value);
     else if (argument === "--output-dir") options.outputDir = path.resolve(value);
+    else if (argument === "--report-actual-dir") options.reportActualDir = path.resolve(value);
     else if (argument === "--threshold") options.threshold = Number(value);
     else throw new Error(`Unknown argument: ${argument}`);
     index += 1;
@@ -117,7 +119,10 @@ async function main() {
       ssim: comparison.score.toFixed(4),
       passed: comparison.passed,
       baseline: path.relative(ROOT, comparison.baselinePath),
-      actual: path.relative(ROOT, comparison.actualPath),
+      actual: path.relative(
+        ROOT,
+        path.join(options.reportActualDir ?? options.actualDir, path.basename(comparison.actualPath)),
+      ),
     }])),
     heatmaps: heatmaps.map((heatmapPath) => path.relative(ROOT, heatmapPath)),
   };

@@ -15,12 +15,18 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact review target
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -74,6 +80,7 @@ jobs:
           curl --fail --location --retry 3 \
             --output "$CHROME_ARCHIVE" \
             "https://storage.googleapis.com/chrome-for-testing-public/145.0.7632.117/linux64/chrome-linux64.zip"
+          echo "b373fbc7cc71922082febe41fe413e02bb6c4ae31b6b6626ddb2c764289ef15d  $CHROME_ARCHIVE" | sha256sum --check --strict
           mkdir -p "$CHROME_ROOT"
           unzip -q "$CHROME_ARCHIVE" -d "$CHROME_ROOT"
           CF_CHROME_BIN="$CHROME_ROOT/chrome-linux64/chrome"
@@ -86,6 +93,7 @@ jobs:
         run: npm run test:e2e:stage
 
       - name: R12 Stage SSIM and recording evidence
+        id: stage_evidence
         run: npm run stage:evidence
 
       - name: Production dependency audit
@@ -96,7 +104,7 @@ jobs:
       - name: Check diff whitespace
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
             EMPTY_TREE="$(git hash-object -t tree /dev/null)"
@@ -107,16 +115,23 @@ jobs:
 
       - name: Upload verification artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: uiadapt-v4.1-verification-${{ github.sha }}
+          name: uiadapt-v4.1-verification-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             test-results/
             playwright-report/
             dist/
-            review/r12/evidence/
             audit-results.txt
           if-no-files-found: ignore
+
+      - name: Upload current-run Stage evidence
+        if: steps.stage_evidence.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: uiadapt-r12-stage-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: review/r12/evidence/
+          if-no-files-found: error
 
   runtime-contract:
     runs-on: ubuntu-latest
@@ -124,9 +139,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact review target
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
@@ -158,10 +180,17 @@ jobs:
           --health-retries=10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact review target
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm

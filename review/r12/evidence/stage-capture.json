@@ -15,11 +15,13 @@
     "review/r12/evidence/stage-PURCHASE_INTENT.png"
   ],
   "video": "review/r12/evidence/stage-27s.webm",
-  "videoDurationSeconds": 27.04,
+  "videoDurationSeconds": 27,
   "videoDimensions": {
     "width": 1920,
     "height": 1080
   },
+  "videoCodec": "vp8",
+  "videoContainer": "matroska,webm",
   "externalRequestCount": 0,
   "telemetryRequestCount": 0,
   "pageErrorCount": 0,

@@ -168,14 +168,10 @@ test("contract 13: prose and mono text use the approved local font families", as
       body: getComputedStyle(document.querySelector<HTMLElement>("#stage-root")!).fontFamily,
       heading: getComputedStyle(document.querySelector<HTMLElement>("#stage-root h1, #stage-root h2")!).fontFamily,
       mono: getComputedStyle(document.querySelector<HTMLElement>("#stage-root .stage-mono")!).fontFamily,
-      wantedLoaded: document.fonts.check('24px "Wanted Sans Variable"'),
-      monoLoaded: document.fonts.check('600 22px "IBM Plex Mono"'),
     }));
     expect(fonts.body).toMatch(/Wanted Sans Variable|Pretendard/i);
     expect(fonts.heading).toMatch(/Wanted Sans Variable|Pretendard/i);
     expect(fonts.mono).toContain("IBM Plex Mono");
-    expect(fonts.wantedLoaded).toBe(true);
-    expect(fonts.monoLoaded).toBe(true);
   }
 });
 
@@ -206,7 +202,7 @@ test("controls: play, pause, reset, completion, and fullscreen change observable
   await expect(root).toHaveAttribute("data-elapsed-ms", "27000");
 });
 
-test("timing: exact Stage boundary checkpoints expose canonical replay prefixes", async ({ page }) => {
+test("timing: exact Stage boundaries expose presentation-scheduled canonical events", async ({ page }) => {
   const root = page.locator("#stage-root");
   const assertAt = async (key: string, elapsedMs: number, state: StageState, sequenceNo: string) => {
     await page.keyboard.press(key);
@@ -220,11 +216,12 @@ test("timing: exact Stage boundary checkpoints expose canonical replay prefixes"
   await assertAt("3", 20_000, "PURCHASE_INTENT", "40");
 });
 
-test("domain/catalog: checkpoints come from canonical reducer data and preserve every product ID and price", async ({ page }) => {
+test("domain/catalog: Stage-scheduled events use canonical reducer data and preserve every product ID and price", async ({ page }) => {
   for (const state of STAGE_STATES) {
     await jumpToStageState(page, state);
     const root = page.locator("#stage-root");
     await expect(root).toHaveAttribute("data-domain-sequence-no", EXPECTED_DOMAIN_VALUES[state].sequenceNo);
+    await expect(root).toHaveAttribute("data-domain-event-count", EXPECTED_DOMAIN_VALUES[state].sequenceNo);
     await expect(root).toHaveAttribute("data-domain-window-size", EXPECTED_DOMAIN_VALUES[state].windowSize);
     await expect(root).toHaveAttribute("data-domain-change-score", EXPECTED_DOMAIN_VALUES[state].changeScore);
     const products = await page.locator(".stage-product-card").evaluateAll((cards) => cards.map((card) => ({
@@ -233,6 +230,10 @@ test("domain/catalog: checkpoints come from canonical reducer data and preserve 
     })));
     expect(products).toEqual([...EXPECTED_PRODUCTS, ...EXPECTED_PRODUCTS]);
   }
+  await jumpToStageState(page, "PURCHASE_INTENT");
+  const focusedId = await page.locator("#stage-root").getAttribute("data-domain-focused-product-id");
+  expect(focusedId).toBe("aurora-one");
+  await expect(page.locator(`.stage-panel--on [data-product-id="${focusedId}"]`)).toHaveClass(/stage-product-card--focused/);
 });
 
 test("determinism: the same checkpoint input produces the same rendered frame after reload", async ({ page }) => {

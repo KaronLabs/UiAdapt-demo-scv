@@ -10,9 +10,12 @@ import { setTimeout } from "node:timers";
 import { fileURLToPath, URL } from "node:url";
 
 import { chromium } from "playwright";
+import { validateVideoProbe } from "./video-contract.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const EVIDENCE_DIR = path.join(ROOT, "review/r12/evidence");
+const EVIDENCE_DIR = path.resolve(
+  process.env.UIADAPT_STAGE_EVIDENCE_DIR ?? path.join(ROOT, "review/r12/evidence"),
+);
 const CHROME_BIN = process.env.CF_CHROME_BIN ?? "/home/ubuntu/opt/chrome145/chrome";
 const EXPECTED_CHROME = "145.0.7632.117";
 const STATES = Object.freeze([
@@ -75,12 +78,16 @@ async function stopProcess(processHandle) {
   if (processHandle.exitCode === null) processHandle.kill("SIGKILL");
 }
 
+function requestLabel(url) {
+  return `${url.origin}${url.pathname}`;
+}
+
 async function probeVideo(videoPath) {
   return new Promise((resolve, reject) => {
     const child = spawn("ffprobe", [
       "-v", "error",
       "-select_streams", "v:0",
-      "-show_entries", "stream=width,height:format=duration",
+      "-show_entries", "stream=width,height,codec_name:format=duration,format_name",
       "-of", "json",
       videoPath,
     ], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
@@ -147,12 +154,12 @@ async function main() {
     const pageErrors = [];
     const consoleErrors = [];
 
-    page.on("request", (request) => {
+    context.on("request", (request) => {
       const url = new URL(request.url());
       if (url.protocol !== "data:" && url.protocol !== "blob:" && url.origin !== origin) {
-        externalRequests.push(request.url());
+        externalRequests.push(requestLabel(url));
       }
-      if (url.pathname.startsWith("/api/uiadapt/")) telemetryRequests.push(request.url());
+      if (url.pathname.startsWith("/api/uiadapt/")) telemetryRequests.push(requestLabel(url));
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("console", (message) => {
@@ -205,6 +212,9 @@ async function main() {
       { timeout: 35_000 },
     );
     await page.screencast.stop();
+    await page.waitForTimeout(500);
+    await page.close({ runBeforeUnload: true });
+    await new Promise((resolve) => setTimeout(resolve, 250));
 
     if (externalRequests.length > 0 || telemetryRequests.length > 0) {
       throw new Error(`Network contract failed: ${JSON.stringify({ externalRequests, telemetryRequests })}`);
@@ -214,14 +224,7 @@ async function main() {
     }
 
     const probe = await probeVideo(videoPath);
-    const stream = probe.streams?.[0];
-    const duration = Number(probe.format?.duration);
-    if (stream?.width !== 1920 || stream?.height !== 1080) {
-      throw new Error(`Video dimensions must be 1920x1080: ${JSON.stringify(probe)}`);
-    }
-    if (!Number.isFinite(duration) || duration < 26.5 || duration > 30) {
-      throw new Error(`Video duration is outside the untrimmed 27-second run: ${duration}`);
-    }
+    const video = validateVideoProbe(probe);
 
     const result = {
       schema: "uiadapt-r12-stage-capture-v1",
@@ -229,8 +232,10 @@ async function main() {
       viewport,
       screenshots: STATES.map(({ state }) => `review/r12/evidence/stage-${state}.png`),
       video: "review/r12/evidence/stage-27s.webm",
-      videoDurationSeconds: duration,
-      videoDimensions: { width: stream.width, height: stream.height },
+      videoDurationSeconds: video.duration,
+      videoDimensions: { width: video.width, height: video.height },
+      videoCodec: video.codec,
+      videoContainer: video.container,
       externalRequestCount: externalRequests.length,
       telemetryRequestCount: telemetryRequests.length,
       pageErrorCount: pageErrors.length,

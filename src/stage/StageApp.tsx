@@ -1,6 +1,6 @@
 import { ProductArt } from "../components/ProductArt";
 import { PRODUCTS } from "../domain/catalog";
-import type { AdaptiveState, Product } from "../domain/types";
+import type { AdaptiveState, Product, ProductId } from "../domain/types";
 import { STAGE_PRESENTATION } from "./stageReplay";
 import { useStageController } from "./useStageController";
 
@@ -10,13 +10,14 @@ const currency = new Intl.NumberFormat("ko-KR", {
   maximumFractionDigits: 0,
 });
 
-function ProductCard({ product, adaptive, state }: {
+function ProductCard({ product, adaptive, state, focusedProductId }: {
   product: Product;
   adaptive: boolean;
   state: AdaptiveState;
+  focusedProductId: ProductId | null;
 }) {
   const compare = adaptive && state === "COMPARE" && product.id !== "halo-air";
-  const focused = adaptive && state === "PURCHASE_INTENT" && product.id === "aurora-one";
+  const focused = adaptive && state === "PURCHASE_INTENT" && product.id === focusedProductId;
 
   return (
     <article
@@ -36,11 +37,21 @@ function ProductCard({ product, adaptive, state }: {
   );
 }
 
-function ProductCards({ adaptive, state }: { adaptive: boolean; state: AdaptiveState }) {
+function ProductCards({ adaptive, state, focusedProductId = null }: {
+  adaptive: boolean;
+  state: AdaptiveState;
+  focusedProductId?: ProductId | null;
+}) {
   return (
     <div className="stage-product-grid">
       {PRODUCTS.map((product) => (
-        <ProductCard key={product.id} product={product} adaptive={adaptive} state={state} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          adaptive={adaptive}
+          state={state}
+          focusedProductId={focusedProductId}
+        />
       ))}
     </div>
   );
@@ -85,8 +96,9 @@ function CompareView() {
   );
 }
 
-function PurchaseView() {
-  const product = PRODUCTS[0];
+function PurchaseView({ focusedProductId }: { focusedProductId: ProductId | null }) {
+  const product = PRODUCTS.find(({ id }) => id === focusedProductId);
+  if (!product) return null;
   return (
     <div className="stage-state-view stage-decision" data-stage-state-view="PURCHASE_INTENT">
       <div className="stage-decision-tiles">
@@ -100,7 +112,11 @@ function PurchaseView() {
   );
 }
 
-function AdaptivePanel({ state, policyLabel }: { state: AdaptiveState; policyLabel: string }) {
+function AdaptivePanel({ state, policyLabel, focusedProductId }: {
+  state: AdaptiveState;
+  policyLabel: string;
+  focusedProductId: ProductId | null;
+}) {
   return (
     <article className="stage-panel stage-panel--on">
       <header className="stage-panel-head">
@@ -110,9 +126,9 @@ function AdaptivePanel({ state, policyLabel }: { state: AdaptiveState; policyLab
       <div className="stage-state-slot">
         <ExploreView />
         <CompareView />
-        <PurchaseView />
+        <PurchaseView focusedProductId={focusedProductId} />
       </div>
-      <ProductCards adaptive state={state} />
+      <ProductCards adaptive state={state} focusedProductId={focusedProductId} />
     </article>
   );
 }
@@ -132,8 +148,10 @@ export default function StageApp() {
       data-playback={controller.playback}
       data-elapsed-ms={controller.elapsedMs}
       data-domain-sequence-no={controller.snapshot.sequenceNo}
+      data-domain-event-count={controller.snapshot.distribution.eventCount}
       data-domain-window-size={controller.snapshot.distribution.windowSize}
       data-domain-change-score={controller.snapshot.distribution.changeScore}
+      data-domain-focused-product-id={controller.snapshot.focusedProductId ?? ""}
       data-demo-complete={controller.playback === "COMPLETED"}
     >
       <header className="stage-chrome">
@@ -153,7 +171,11 @@ export default function StageApp() {
       <section className="stage-comparison" aria-label="Adaptive 적용 전후 비교">
         <StaticPanel />
         <div className="stage-seam" aria-hidden="true"><i /></div>
-        <AdaptivePanel state={state} policyLabel={presentation.policyLabel} />
+        <AdaptivePanel
+          state={state}
+          policyLabel={presentation.policyLabel}
+          focusedProductId={controller.snapshot.focusedProductId}
+        />
       </section>
 
       <footer className="stage-rail">
