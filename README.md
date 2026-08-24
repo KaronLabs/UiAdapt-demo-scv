@@ -1,3 +1,5 @@
+join pplar39
+
 # UIAdapt Investor Stage
 
 UIAdapt는 추천 결과를 바꾸는 엔진이 아니라, 관찰된 행동 분포에 맞춰 같은 정보를 탐색·비교·결정지원 형태로 재구성하는 Adaptive UI infrastructure 데모입니다.
