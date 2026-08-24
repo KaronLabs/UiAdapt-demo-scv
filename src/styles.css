@@ -386,7 +386,8 @@ footer p { margin: 0; }
   left: 0;
   width: 100%;
   height: 3px;
-  border-radius: 28px 28px 0 0;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
   background: var(--beam);
   opacity: 0;
   transform: scaleX(0);
@@ -394,7 +395,8 @@ footer p { margin: 0; }
   pointer-events: none;
 }
 .app[data-replay="RUNNING"] .hero__console::after,
-.app[data-replay="PAUSED"] .hero__console::after { opacity: 1; animation: replay-progress 27s linear forwards; }
+.app[data-replay="PAUSED"] .hero__console::after,
+.app[data-replay="COMPLETED"] .hero__console::after { opacity: 1; animation: replay-progress 27s linear forwards; }
 .app[data-replay="PAUSED"] .hero__console::after { animation-play-state: paused; }
 @keyframes replay-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
@@ -439,7 +441,8 @@ footer p { margin: 0; }
 }
 
 /* ── state stage: progress connectors, current pill, ripple ── */
-.state-step.is-current > span { padding: 2px 7px; border-radius: 999px; background: var(--cobalt); color: #fff; }
+.state-step > span { padding: 2px 7px; border-radius: 999px; background: transparent; }
+.state-step.is-current > span { background: var(--cobalt); color: #fff; }
 .state-step.is-past:not(:last-child)::after { height: 2px; background: var(--beam); }
 .state-step.is-current:not(:last-child)::after { background: linear-gradient(90deg, var(--cobalt), var(--line)); }
 .state-message__dot { position: relative; }
@@ -476,7 +479,7 @@ footer p { margin: 0; }
 .product-card { position: relative; animation: card-in 600ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
 .product-card:nth-child(2) { animation-delay: 90ms; }
 .product-card:nth-child(3) { animation-delay: 180ms; }
-@keyframes card-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes card-in { from { filter: blur(6px); transform: translateY(14px); } to { filter: blur(0); transform: none; } }
 .product-card__visual::after {
   content: "";
   position: absolute;
@@ -547,8 +550,10 @@ footer::before { content: ""; position: absolute; top: -1px; left: 5vw; right: 5
 @media (max-width: 680px) {
   .hero::before,
   .hero__console::before,
-  .product-grid::after,
-  .causal-system::after { animation: none; }
+  .state-message__dot::after,
+  .app[data-replay="IDLE"] .button--watch,
+  .app[data-replay="RUNNING"] .causal-system::after { animation: none; }
+  .product-card--focused::before { animation-duration: 12s; }
   .product-card__visual::after { display: none; }
   .hero__console .js-tilt-glare { border-radius: 22px; }
 }
