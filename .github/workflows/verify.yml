@@ -116,7 +116,13 @@ jobs:
             EMPTY_TREE="$(git hash-object -t tree /dev/null)"
             git diff --check "$EMPTY_TREE" "$HEAD_SHA" -- . ':(exclude)evidence/**'
           else
-            git diff --check "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)evidence/**'
+            git diff --check "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)evidence/**' || {
+              DIFF_STATUS=$?
+              if git merge-base "$BASE_SHA" "$HEAD_SHA" >/dev/null; then
+                exit "$DIFF_STATUS"
+              fi
+              git diff --check "$BASE_SHA" "$HEAD_SHA" -- . ':(exclude)evidence/**'
+            }
           fi
 
       - name: Upload verification artifacts

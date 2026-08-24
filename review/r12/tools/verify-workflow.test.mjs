@@ -18,4 +18,8 @@ test("fetches the PR base branch history before a three-dot whitespace compariso
     whitespaceStep.indexOf("git fetch --no-tags origin \"+refs/heads/$BASE_REF")
       < whitespaceStep.indexOf("git diff --check \"$BASE_SHA...$HEAD_SHA\""),
   );
+  assert.match(
+    whitespaceStep,
+    /git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA"[^\n]* \|\| \{[\s\S]*if git merge-base "\$BASE_SHA" "\$HEAD_SHA" >\/dev\/null; then[\s\S]*exit "\$DIFF_STATUS"[\s\S]*git diff --check "\$BASE_SHA" "\$HEAD_SHA"/,
+  );
 });
