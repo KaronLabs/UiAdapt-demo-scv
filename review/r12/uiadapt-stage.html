@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>UIAdapt 심사 무대 · R12</title>
+<style>
+:root{
+  --navy:#0b1b33; --ink:#f5f8fb; --ink2:rgba(245,248,251,.72);
+  --cobalt:#3d8bff; --cobalt-text:#5b9eff; --cobalt-deep:#0a3f7a; --gold:#f2c75c; --paper:#fcfdfc; --carbon:#142126; --graphite:#3f4d53;
+  --sans:"Wanted Sans Variable","Wanted Sans","Pretendard Variable",Pretendard,"Segoe UI Variable","Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1920px;height:1080px;overflow:hidden}
+body{background:var(--navy);color:var(--ink);font-family:var(--sans);font-size:30px;line-height:1.3;word-break:keep-all}
+.mono{font-family:var(--mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+button{font:inherit;border:0;cursor:default}
+/* state visibility */
+.sAi,.sBi,.sCi{display:none}
+body[data-state="EXPLORE"] .sA,body[data-state="COMPARE"] .sB,body[data-state="PURCHASE_INTENT"] .sC{display:block}
+body[data-state="EXPLORE"] .slot-empty.sA{display:flex}
+body[data-state="COMPARE"] .cmp.sB{display:grid}
+body[data-state="PURCHASE_INTENT"] .dec.sC{display:grid}
+body[data-state="EXPLORE"] .sAi,body[data-state="COMPARE"] .sBi,body[data-state="PURCHASE_INTENT"] .sCi{display:inline}
+
+/* ── chrome 70 ── */
+.chrome{height:70px;display:flex;align-items:center;justify-content:space-between;gap:32px;padding:0 28px}
+.chrome>strong{font-size:24px;font-weight:700;white-space:nowrap}
+.chrome>span{font-size:24px;font-weight:500;color:var(--ink2);white-space:nowrap}
+.live{display:flex;align-items:center;gap:12px;font-style:normal;white-space:nowrap}
+.live i{width:12px;height:12px;border-radius:50%;background:var(--cobalt)}
+.live b{color:var(--ink)}
+
+/* ── KPI 150 ── */
+.kpis{height:150px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:0 28px}
+.kpi{display:flex;flex-direction:column;justify-content:space-between;padding:16px 18px;border-radius:14px;background:rgba(245,248,251,.06)}
+.kl{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.kl>span{font-size:24px;font-weight:600}
+.kl>b{color:var(--ink2)}
+.kv{font-size:76px;font-weight:800;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv--txt{font-size:30px;font-weight:700;line-height:1.2;white-space:normal}
+.c-cb{color:var(--cobalt-text)}.c-gd{color:var(--gold)}
+body[data-state="EXPLORE"] .c-cb,body[data-state="EXPLORE"] .c-gd{color:var(--ink)}
+
+/* ── stage 760 ── */
+.stage{height:760px;display:grid;grid-template-columns:928px 8px 928px;padding:8px 28px;align-items:stretch}
+.seam{position:relative;background:rgba(245,248,251,.10);overflow:hidden}
+.seam i{position:absolute;left:0;width:100%;height:45%;background:linear-gradient(180deg,transparent,var(--cobalt),transparent);opacity:0}
+body[data-state="COMPARE"] .seam i,body[data-state="PURCHASE_INTENT"] .seam i{animation:beamDown 600ms ease-out 1}
+@keyframes beamDown{0%{opacity:1;top:-45%}100%{opacity:0;top:100%}}
+.panel{height:744px;background:var(--paper);color:var(--carbon);border-radius:20px;padding:24px}
+.phead{height:52px;display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
+.phead h2{font-size:44px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap}
+.phead .mono{color:var(--graphite);white-space:nowrap}
+.slot{height:220px;border-radius:14px;background:rgba(20,33,38,.05);margin-bottom:16px;overflow:hidden}
+.slot-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.slot-empty strong{font-size:30px;font-weight:600;color:var(--graphite);white-space:nowrap;line-height:1.2}
+.slot-empty .mono{color:var(--graphite);white-space:nowrap;line-height:1.2}
+/* comparison table (state B, right slot) */
+.cmp{height:100%;padding:12px 16px;display:grid;grid-template-rows:repeat(5,1fr)}
+.crow{display:grid;grid-template-columns:200px 1fr 1fr;align-items:center;gap:14px;padding:0 12px;border-radius:8px;font-size:24px}
+.crow:nth-child(odd){background:rgba(20,33,38,.045)}
+.crow>span{color:var(--graphite)}
+.crow>b{font-weight:700}
+.chead{background:none !important}
+.chead>span{font-weight:600}
+.chead>b{font-weight:800;color:var(--cobalt-deep)}
+/* decision support (state C, right slot) */
+.dec{height:100%;display:grid;grid-template-columns:1fr 232px;gap:16px;padding:14px 16px;align-items:center}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:#fff;border-radius:10px;padding:10px 14px;display:grid;gap:4px}
+.tile span{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--graphite)}
+.tile b{font-size:24px;font-weight:700}
+.buy{height:64px;border-radius:999px;background:var(--carbon);color:#fff;font-size:24px;font-weight:700}
+/* cards */
+.cards{height:392px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{position:relative;display:flex;flex-direction:column;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 28px rgba(20,33,38,.08)}
+.art{flex:1;display:grid;place-items:center;background:linear-gradient(155deg,rgba(220,236,249,.78),rgba(241,244,243,.5) 56%,rgba(210,185,140,.13))}
+.art svg{width:190px;height:auto}
+.cbody{padding:12px 16px 16px}
+.cbody h3{font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15}
+.cbody strong{display:block;margin-top:4px;font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.cbody p{margin-top:6px;font-size:30px;font-weight:500;line-height:1.3;color:var(--graphite)}
+.chip{display:none;position:absolute;top:12px;left:12px;z-index:2;padding:6px 14px;border-radius:999px;font-size:24px;font-weight:700}
+.chip--cmp{background:var(--cobalt-deep);color:var(--ink)}
+.chip--gold{background:var(--gold);color:var(--navy)}
+body[data-state="COMPARE"] .panel--on .card[data-p="aurora"] .chip--cmp,
+body[data-state="COMPARE"] .panel--on .card[data-p="nova"] .chip--cmp{display:inline-block;animation:slotIn 400ms ease-out 1}
+body[data-state="PURCHASE_INTENT"] .panel--on .card[data-p="aurora"]{box-shadow:inset 0 0 0 4px var(--gold),0 10px 28px rgba(20,33,38,.1)}
+body[data-state="PURCHASE_INTENT"] .panel--on .card[data-p="aurora"] .chip--gold{display:inline-block;animation:goldIn 700ms ease-out 1}
+body[data-state="PURCHASE_INTENT"] .panel--on .card[data-p="nova"],
+body[data-state="PURCHASE_INTENT"] .panel--on .card[data-p="halo"]{filter:saturate(.6);box-shadow:none}
+.slot .sB,.slot .sC{animation:slotIn 400ms ease-out 1}
+@keyframes slotIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes goldIn{from{opacity:0}to{opacity:1}}
+/* state visibility for slot blocks — placed after component base rules so hide wins */
+.sA,.sB,.sC{display:none !important}
+body[data-state="EXPLORE"] .sA,body[data-state="COMPARE"] .sB,body[data-state="PURCHASE_INTENT"] .sC{display:block !important}
+body[data-state="EXPLORE"] .slot-empty.sA{display:flex !important}
+body[data-state="COMPARE"] .cmp.sB{display:grid !important}
+body[data-state="PURCHASE_INTENT"] .dec.sC{display:grid !important}
+
+/* ── rail 100 ── */
+.rail{height:100px;padding:8px 28px 4px;display:grid;grid-template-rows:64px 24px}
+.ctrl{display:flex;justify-content:space-between;align-items:center;gap:32px}
+.pipe{display:grid;gap:4px}
+.pipe>.mono{color:var(--ink2);line-height:1}
+.steps{display:flex;align-items:center;gap:14px;line-height:1.2}
+.step{font-size:24px;font-weight:700;line-height:1.2;padding:2px 14px;border-radius:999px}
+.steps i{font-family:var(--mono);font-size:22px;font-weight:600;font-style:normal;color:var(--ink2)}
+body[data-state="EXPLORE"] .step[data-s="1"]{background:var(--ink);color:var(--navy)}
+body[data-state="COMPARE"] .step[data-s="4"]{background:var(--ink);color:var(--navy)}
+body[data-state="PURCHASE_INTENT"] .step[data-s="4"]{background:var(--gold);color:var(--navy)}
+.btns{display:flex;gap:12px}
+.btns button{height:64px;padding:0 26px;border-radius:12px;background:rgba(245,248,251,.12);color:var(--ink);font-size:24px;font-weight:700}
+.btns .bp{background:var(--ink);color:var(--navy)}
+.cap{font-size:24px;line-height:24px;font-weight:500;color:var(--ink2)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0s !important;transition-duration:0s !important}}
+</style>
+</head>
+<body data-state="EXPLORE">
+
+<header class="chrome">
+  <strong>UIAdapt · 심사 무대 · R12</strong>
+  <span>특허 출원 기반 적응형 UI 인프라</span>
+  <em class="live"><i></i><b class="mono"><span>LIVE </span><span class="sAi">00:03</span><span class="sBi">00:12</span><span class="sCi">00:20</span> / 00:27</b></em>
+</header>
+
+<section class="kpis">
+  <div class="kpi">
+    <div class="kl"><span>행동 신호</span><b class="mono"><span class="sAi">3.0s</span><span class="sBi">11.5s</span><span class="sCi">20.0s</span></b></div>
+    <div class="kv kv--txt"><span class="sAi">상품 조회 · Halo Air</span><span class="sBi">비교에 추가 · Nova Pro</span><span class="sCi">배송 확인 · Aurora One</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kl"><span>상태</span><b class="mono"><span class="sAi">EXPLORE</span><span class="sBi">COMPARE</span><span class="sCi">PURCHASE_INTENT</span></b></div>
+    <div class="kv"><span class="sAi">탐색</span><span class="sBi c-cb">비교</span><span class="sCi c-gd">구매 결정</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kl"><span>근거</span><b class="mono">최근 20 이벤트</b></div>
+    <div class="kv"><span class="sAi">6 / 15</span><span class="sBi">17 / 15</span><span class="sCi">20 / 15</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kl"><span>변화 점수</span><b class="mono">진입 ≥ 0.30</b></div>
+    <div class="kv"><span class="sAi">0.08</span><span class="sBi c-cb">0.41</span><span class="sCi c-cb">0.67</span></div>
+  </div>
+  <div class="kpi">
+    <div class="kl"><span>재구성 횟수</span><b class="mono">누적</b></div>
+    <div class="kv"><span class="sAi">0회</span><span class="sBi c-gd">1회</span><span class="sCi c-gd">2회</span></div>
+  </div>
+</section>
+
+<section class="stage">
+  <article class="panel panel--off">
+    <div class="phead"><h2>적용 전 · Adaptive OFF</h2><span class="mono">presentation: EXPLORE 고정</span></div>
+    <div class="slot">
+      <div class="slot-empty"><strong>적용 안 함 · 대기</strong><span class="mono">policy: suppressed</span></div>
+    </div>
+    <div class="cards">
+      <figure class="card" data-p="aurora">
+        <div class="art"><svg viewBox="0 0 320 300" aria-hidden="true"><defs><radialGradient id="a-halo" cx="50%" cy="48%" r="52%"><stop offset="0%" stop-color="#8bb9d6" stop-opacity=".42"></stop><stop offset="100%" stop-color="#8bb9d6" stop-opacity="0"></stop></radialGradient><linearGradient id="a-shell" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#202a30"></stop><stop offset="72%" stop-color="#11191d"></stop><stop offset="100%" stop-color="#c7aa7a"></stop></linearGradient></defs><ellipse cx="160" cy="152" rx="143" ry="136" fill="url(#a-halo)"></ellipse><path d="M82 154 C75 38 245 38 238 154" fill="none" stroke="url(#a-shell)" stroke-width="25" stroke-linecap="round"></path><path d="M92 145 C102 128 111 123 126 122" fill="none" stroke="#c7aa7a" stroke-width="8" stroke-linecap="round"></path><path d="M228 145 C218 128 209 123 194 122" fill="none" stroke="#c7aa7a" stroke-width="8" stroke-linecap="round"></path><rect x="55" y="137" width="84" height="126" rx="38" fill="url(#a-shell)"></rect><rect x="68" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect><rect x="181" y="137" width="84" height="126" rx="38" fill="url(#a-shell)"></rect><rect x="194" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect><ellipse cx="160" cy="274" rx="94" ry="10" fill="#172126" opacity=".13"></ellipse></svg></div>
+        <figcaption class="cbody"><h3>Aurora One</h3><strong>₩329,000</strong><p>깊은 정숙함, 넓게 열린 사운드.</p></figcaption>
+      </figure>
+      <figure class="card" data-p="nova">
+        <div class="art"><svg viewBox="0 0 320 300" aria-hidden="true"><defs><radialGradient id="n-halo" cx="50%" cy="48%" r="52%"><stop offset="0%" stop-color="#a9c5d5" stop-opacity=".42"></stop><stop offset="100%" stop-color="#a9c5d5" stop-opacity="0"></stop></radialGradient><linearGradient id="n-shell" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#354149"></stop><stop offset="72%" stop-color="#11191d"></stop><stop offset="100%" stop-color="#b8c3c8"></stop></linearGradient></defs><ellipse cx="160" cy="152" rx="143" ry="136" fill="url(#n-halo)"></ellipse><path d="M78 154 C72 42 247 42 242 154" fill="none" stroke="url(#n-shell)" stroke-width="25" stroke-linecap="round"></path><path d="M92 145 C102 128 111 123 126 122" fill="none" stroke="#b8c3c8" stroke-width="8" stroke-linecap="round"></path><path d="M228 145 C218 128 209 123 194 122" fill="none" stroke="#b8c3c8" stroke-width="8" stroke-linecap="round"></path><g transform="rotate(-4 96 192)"><rect x="55" y="137" width="84" height="126" rx="24" fill="url(#n-shell)"></rect><rect x="68" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect></g><g transform="rotate(4 224 192)"><rect x="181" y="137" width="84" height="126" rx="24" fill="url(#n-shell)"></rect><rect x="194" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect></g><ellipse cx="160" cy="274" rx="94" ry="10" fill="#172126" opacity=".13"></ellipse></svg></div>
+        <figcaption class="cbody"><h3>Nova Pro</h3><strong>₩279,000</strong><p>움직임에 맞춰 조율되는 선명함.</p></figcaption>
+      </figure>
+      <figure class="card" data-p="halo">
+        <div class="art"><svg viewBox="0 0 320 300" aria-hidden="true"><defs><radialGradient id="h-halo" cx="50%" cy="48%" r="52%"><stop offset="0%" stop-color="#e4a78d" stop-opacity=".42"></stop><stop offset="100%" stop-color="#e4a78d" stop-opacity="0"></stop></radialGradient><linearGradient id="h-shell" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e5dfd1"></stop><stop offset="72%" stop-color="#11191d"></stop><stop offset="100%" stop-color="#9c745f"></stop></linearGradient></defs><ellipse cx="160" cy="152" rx="143" ry="136" fill="url(#h-halo)"></ellipse><path d="M91 150 C87 53 231 53 228 151" fill="none" stroke="url(#h-shell)" stroke-width="19" stroke-linecap="round"></path><path d="M92 145 C102 128 111 123 126 122" fill="none" stroke="#9c745f" stroke-width="8" stroke-linecap="round"></path><path d="M228 145 C218 128 209 123 194 122" fill="none" stroke="#9c745f" stroke-width="8" stroke-linecap="round"></path><rect x="55" y="137" width="72" height="112" rx="38" fill="url(#h-shell)"></rect><rect x="68" y="151" width="47" height="84" rx="26" fill="#0f171b" opacity=".9"></rect><rect x="193" y="137" width="72" height="112" rx="38" fill="url(#h-shell)"></rect><rect x="206" y="151" width="47" height="84" rx="26" fill="#0f171b" opacity=".9"></rect><ellipse cx="160" cy="274" rx="94" ry="10" fill="#172126" opacity=".13"></ellipse></svg></div>
+        <figcaption class="cbody"><h3>Halo Air</h3><strong>₩199,000</strong><p>가볍게 쓰고, 오래 듣는 리듬.</p></figcaption>
+      </figure>
+    </div>
+  </article>
+
+  <div class="seam"><i></i></div>
+
+  <article class="panel panel--on">
+    <div class="phead"><h2>적용 후 · Adaptive ON</h2><span class="mono"><span class="sAi">policy: 대기</span><span class="sBi">policy: 적용 · COMPARE</span><span class="sCi">policy: 적용 · PURCHASE_INTENT</span></span></div>
+    <div class="slot">
+      <div class="slot-empty sA"><strong>신호 수집 중</strong><span class="mono">evidence 6 / 15</span></div>
+      <div class="cmp sB">
+        <div class="crow chead"><span>기준</span><b>Aurora One</b><b>Nova Pro</b></div>
+        <div class="crow"><span>가격</span><b>₩329,000</b><b>₩279,000</b></div>
+        <div class="crow"><span>배터리</span><b>40시간</b><b>36시간</b></div>
+        <div class="crow"><span>노이즈 제어</span><b>Hybrid ANC</b><b>Adaptive ANC</b></div>
+        <div class="crow"><span>배송</span><b>내일 무료배송</b><b>2일 내 무료배송</b></div>
+      </div>
+      <div class="dec sC">
+        <div class="tiles">
+          <div class="tile"><span>가격</span><b>₩329,000</b></div>
+          <div class="tile"><span>배송</span><b>내일 무료배송</b></div>
+          <div class="tile"><span>재고</span><b>18개</b></div>
+          <div class="tile"><span>색상</span><b>Graphite · Sand · Cobalt</b></div>
+        </div>
+        <button class="buy" type="button">장바구니에 담기</button>
+      </div>
+    </div>
+    <div class="cards">
+      <figure class="card" data-p="aurora">
+        <span class="chip chip--cmp">비교 중</span><span class="chip chip--gold">재구성됨</span>
+        <div class="art"><svg viewBox="0 0 320 300" aria-hidden="true"><ellipse cx="160" cy="152" rx="143" ry="136" fill="url(#a-halo)"></ellipse><path d="M82 154 C75 38 245 38 238 154" fill="none" stroke="url(#a-shell)" stroke-width="25" stroke-linecap="round"></path><path d="M92 145 C102 128 111 123 126 122" fill="none" stroke="#c7aa7a" stroke-width="8" stroke-linecap="round"></path><path d="M228 145 C218 128 209 123 194 122" fill="none" stroke="#c7aa7a" stroke-width="8" stroke-linecap="round"></path><rect x="55" y="137" width="84" height="126" rx="38" fill="url(#a-shell)"></rect><rect x="68" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect><rect x="181" y="137" width="84" height="126" rx="38" fill="url(#a-shell)"></rect><rect x="194" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect><ellipse cx="160" cy="274" rx="94" ry="10" fill="#172126" opacity=".13"></ellipse></svg></div>
+        <figcaption class="cbody"><h3>Aurora One</h3><strong>₩329,000</strong><p>깊은 정숙함, 넓게 열린 사운드.</p></figcaption>
+      </figure>
+      <figure class="card" data-p="nova">
+        <span class="chip chip--cmp">비교 중</span>
+        <div class="art"><svg viewBox="0 0 320 300" aria-hidden="true"><ellipse cx="160" cy="152" rx="143" ry="136" fill="url(#n-halo)"></ellipse><path d="M78 154 C72 42 247 42 242 154" fill="none" stroke="url(#n-shell)" stroke-width="25" stroke-linecap="round"></path><path d="M92 145 C102 128 111 123 126 122" fill="none" stroke="#b8c3c8" stroke-width="8" stroke-linecap="round"></path><path d="M228 145 C218 128 209 123 194 122" fill="none" stroke="#b8c3c8" stroke-width="8" stroke-linecap="round"></path><g transform="rotate(-4 96 192)"><rect x="55" y="137" width="84" height="126" rx="24" fill="url(#n-shell)"></rect><rect x="68" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect></g><g transform="rotate(4 224 192)"><rect x="181" y="137" width="84" height="126" rx="24" fill="url(#n-shell)"></rect><rect x="194" y="151" width="58" height="96" rx="26" fill="#0f171b" opacity=".9"></rect></g><ellipse cx="160" cy="274" rx="94" ry="10" fill="#172126" opacity=".13"></ellipse></svg></div>
+        <figcaption class="cbody"><h3>Nova Pro</h3><strong>₩279,000</strong><p>움직임에 맞춰 조율되는 선명함.</p></figcaption>
+      </figure>
+      <figure class="card" data-p="halo">
+        <div class="art"><svg viewBox="0 0 320 300" aria-hidden="true"><ellipse cx="160" cy="152" rx="143" ry="136" fill="url(#h-halo)"></ellipse><path d="M91 150 C87 53 231 53 228 151" fill="none" stroke="url(#h-shell)" stroke-width="19" stroke-linecap="round"></path><path d="M92 145 C102 128 111 123 126 122" fill="none" stroke="#9c745f" stroke-width="8" stroke-linecap="round"></path><path d="M228 145 C218 128 209 123 194 122" fill="none" stroke="#9c745f" stroke-width="8" stroke-linecap="round"></path><rect x="55" y="137" width="72" height="112" rx="38" fill="url(#h-shell)"></rect><rect x="68" y="151" width="47" height="84" rx="26" fill="#0f171b" opacity=".9"></rect><rect x="193" y="137" width="72" height="112" rx="38" fill="url(#h-shell)"></rect><rect x="206" y="151" width="47" height="84" rx="26" fill="#0f171b" opacity=".9"></rect><ellipse cx="160" cy="274" rx="94" ry="10" fill="#172126" opacity=".13"></ellipse></svg></div>
+        <figcaption class="cbody"><h3>Halo Air</h3><strong>₩199,000</strong><p>가볍게 쓰고, 오래 듣는 리듬.</p></figcaption>
+      </figure>
+    </div>
+  </article>
+</section>
+
+<footer class="rail">
+  <div class="ctrl">
+    <div class="pipe">
+      <b class="mono">Behavior → State → Policy → Interface</b>
+      <div class="steps"><span class="step" data-s="1">행동</span><i>→</i><span class="step" data-s="2">상태</span><i>→</i><span class="step" data-s="3">정책</span><i>→</i><span class="step" data-s="4">화면</span></div>
+    </div>
+    <div class="btns">
+      <button class="bp" type="button">▶ 27초 데모</button>
+      <button type="button">일시정지</button>
+      <button type="button">처음부터</button>
+      <button type="button">전체화면</button>
+    </div>
+  </div>
+  <p class="cap">결정론적 리플레이 · 테스트 데이터 · 상품 ID/가격 불변</p>
+</footer>
+
+<script>
+(function(){
+  var ok=["EXPLORE","COMPARE","PURCHASE_INTENT"];
+  var p=new URLSearchParams(location.search).get("state");
+  if(p&&ok.indexOf(p)>-1)document.body.dataset.state=p;
+  addEventListener("keydown",function(e){
+    var m={"1":"EXPLORE","2":"COMPARE","3":"PURCHASE_INTENT"}[e.key];
+    if(m)document.body.dataset.state=m;
+  });
+})();
+</script>
+<script>
+(function(){
+function runAudit(){
+  var old=document.getElementById("audit-panel");if(old)old.remove();
+  var STATES=["EXPLORE","COMPARE","PURCHASE_INTENT"];
+  var EXPECT={EXPLORE:["00:03","6 / 15","0.08","0회"],COMPARE:["00:12","17 / 15","0.41","1회"],PURCHASE_INTENT:["00:20","20 / 15","0.67","2회"]};
+  function f(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}
+  function lum(c){return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2])}
+  function parseC(s){var m=s&&s.match(/[\d.]+/g);if(!m)return null;var a=m.map(Number);if(a.length===3)a.push(1);return a}
+  function mix(fg,bg){var a=fg[3];return[a*fg[0]+(1-a)*bg[0],a*fg[1]+(1-a)*bg[1],a*fg[2]+(1-a)*bg[2],1]}
+  function effBg(el){var stack=[],n=el;while(n&&n.nodeType===1){var c=parseC(getComputedStyle(n).backgroundColor);if(c&&c[3]>0){stack.push(c);if(c[3]>=1)break}n=n.parentElement}
+    var bg=[11,27,51,1];for(var i=stack.length-1;i>=0;i--)bg=mix(stack[i],bg);return bg}
+  function ratio(a,b){var x=lum(a),y=lum(b);return(Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)}
+  function vis(el){if(!el)return false;var r=el.getBoundingClientRect();if(r.width<1||r.height<1)return false;var cs=getComputedStyle(el);return cs.visibility!=="hidden"&&cs.display!=="none"}
+  function sel(e){var s=e.tagName.toLowerCase();if(e.id)s+="#"+e.id;if(e.classList.length)s+="."+[].join.call(e.classList,".");return s}
+  function setState(s){document.body.dataset.state=s;void document.body.offsetHeight}
+  var init=document.body.dataset.state;
+  var R=[];function row(n,name,pass,detail){R.push({n:n,name:name,pass:pass,detail:detail||""})}
+  var sigs={},slotHs={},cardWs={},sw={},smallFails=[],contrastFails=[],lineFails=[],valueFails=[],scrollFail="";
+  STATES.forEach(function(st){
+    setState(st);
+    var de=document.documentElement;
+    if(de.scrollWidth>1920||de.scrollHeight>1080)scrollFail+=st+": "+de.scrollWidth+"×"+de.scrollHeight+" ";
+    sw[st]={A:vis(document.querySelector(".slot-empty.sA")),B:vis(document.querySelector(".cmp.sB")),C:vis(document.querySelector(".dec.sC"))};
+    var tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),node;
+    while(node=tw.nextNode()){
+      if(!node.nodeValue.trim())continue;
+      var el=node.parentElement;
+      if(!el||el.closest("#audit-panel")||el.closest("svg"))continue;
+      if(!vis(el))continue;
+      var cs=getComputedStyle(el),fs=parseFloat(cs.fontSize);
+      var mono=/mono|consolas|courier/i.test(cs.fontFamily);
+      if(fs<24&&!(mono&&fs>=22))smallFails.push(st+" "+sel(el)+" "+fs+"px");
+      var col=parseC(cs.color),bg=effBg(el);
+      if(col){if(col[3]<1)col=mix(col,bg);
+        var rt=ratio(col,bg),need=fs>=32?4.5:7;
+        if(rt<need)contrastFails.push(st+" "+sel(el)+" "+rt.toFixed(2)+"<"+need+" ["+node.nodeValue.trim().slice(0,10)+"]")}
+    }
+    var off=document.querySelector(".panel--off");
+    sigs[st]=off.outerHTML.length+"|"+[].map.call(off.querySelectorAll("*"),function(e){var r=e.getBoundingClientRect();return Math.round(r.x)+","+Math.round(r.y)+","+Math.round(r.width)+","+Math.round(r.height)}).join(";");
+    slotHs[st]=[].map.call(document.querySelectorAll(".slot"),function(e){return Math.round(e.getBoundingClientRect().height)}).join("/");
+    cardWs[st]=[].map.call(document.querySelectorAll(".cards .card"),function(e){return Math.round(e.getBoundingClientRect().width)}).join("/");
+    [].forEach.call(document.querySelectorAll("body *"),function(e){
+      if(e.closest("#audit-panel")||e.closest("svg")||!vis(e))return;
+      var cs=getComputedStyle(e);
+      ["Top","Right","Bottom","Left"].forEach(function(sd){var w=parseFloat(cs["border"+sd+"Width"]);var c=parseC(cs["border"+sd+"Color"]);if(w>0&&w<4&&c&&c[3]>0)lineFails.push(st+" "+sel(e)+" border "+w+"px")});
+      var bgc=parseC(cs.backgroundColor);
+      if(bgc&&bgc[3]>0){var r=e.getBoundingClientRect();
+        if((r.height>=1&&r.height<=3&&r.width>40)||(r.width>=1&&r.width<=3&&r.height>40))lineFails.push(st+" "+sel(e)+" strip "+Math.round(r.width)+"×"+Math.round(r.height))}
+    });
+    var txt=document.body.innerText;
+    EXPECT[st].forEach(function(v){if(txt.indexOf(v)===-1)valueFails.push(st+" 누락: "+v)});
+  });
+  setState(init||"EXPLORE");
+  row(1,"프레임 1920×1080 · 스크롤 없음",!scrollFail,scrollFail||(document.documentElement.scrollWidth+"×"+document.documentElement.scrollHeight));
+  var okS=sw.EXPLORE.A&&!sw.EXPLORE.B&&!sw.EXPLORE.C&&!sw.COMPARE.A&&sw.COMPARE.B&&!sw.COMPARE.C&&!sw.PURCHASE_INTENT.A&&!sw.PURCHASE_INTENT.B&&sw.PURCHASE_INTENT.C;
+  row(2,"data-state 3상태 전환",okS,JSON.stringify(sw));
+  row(3,"24px 미만 텍스트 0개 (mono≥22 예외)",smallFails.length===0,smallFails.slice(0,8).join(" | ")||("0개"));
+  row(4,"대비 ≥32px→4.5:1 / 미만→7:1",contrastFails.length===0,contrastFails.slice(0,10).join(" | ")||"위반 0개");
+  row(5,"좌 패널 3상태 동일(outerHTML+rects)",sigs.EXPLORE===sigs.COMPARE&&sigs.COMPARE===sigs.PURCHASE_INTENT,"서명 길이 "+sigs.EXPLORE.length);
+  row(6,"슬롯 높이 220 고정",slotHs.EXPLORE==="220/220"&&slotHs.COMPARE==="220/220"&&slotHs.PURCHASE_INTENT==="220/220",JSON.stringify(slotHs));
+  row(7,"카드 폭 3상태 동일",cardWs.EXPLORE===cardWs.COMPARE&&cardWs.COMPARE===cardWs.PURCHASE_INTENT,JSON.stringify(cardWs));
+  row(8,"1~3px 선 없음 · border 0 또는 ≥4px",lineFails.length===0,lineFails.slice(0,8).join(" | ")||"위반 0개");
+  row(9,"상태별 스펙 값 일치",valueFails.length===0,valueFails.join(" | ")||"A/B/C 전부 포함");
+  var res=performance.getEntriesByType("resource").filter(function(r){return /^https?:/.test(r.name)});
+  row(10,"외부 요청 0",res.length===0,res.length?res.map(function(r){return r.name}).join(" "):"0건");
+  var hov=0,inf=0;
+  [].forEach.call(document.styleSheets,function(ss){try{
+    (function walk(rules){[].forEach.call(rules,function(r){
+      if(r.selectorText&&r.selectorText.indexOf(":hover")>-1)hov++;
+      if(r.style&&/infinite/.test((r.style.animation||"")+" "+(r.style.animationIterationCount||"")))inf++;
+      if(r.cssRules)walk(r.cssRules)})})(ss.cssRules)}catch(e){}});
+  row(11,":hover 규칙 0",hov===0,hov+"개");
+  row(12,"무한 애니메이션 0",inf===0,inf+"개");
+  var fonts=["body",".kv",".phead h2",".kl b",".buy"].map(function(q){var e=document.querySelector(q);return q+"→"+(e?getComputedStyle(e).fontFamily.split(",")[0].replace(/"/g,""):"-")});
+  var avail=["Wanted Sans Variable","Pretendard","Segoe UI","IBM Plex Mono","Consolas"].filter(function(n){try{return document.fonts.check('24px "'+n+'"')}catch(e){return false}});
+  row(13,"적용 폰트(정보)",true,fonts.join(" · ")+" / 가용: "+(avail.join(", ")||"시스템 기본"));
+  var fails=R.filter(function(r){return!r.pass}).length;
+  var p=document.createElement("div");p.id="audit-panel";
+  p.style.cssText="position:fixed;right:0;top:0;width:640px;height:1080px;overflow:auto;background:#000;color:#0f0;font:16px/1.45 monospace;padding:16px;z-index:99999;white-space:pre-wrap";
+  p.textContent="UIAdapt 자기 검증 · FAIL "+fails+"건 · 순회: EXPLORE→COMPARE→PURCHASE_INTENT\n\n"+R.map(function(r){return(r.pass?"PASS":"FAIL")+" "+r.n+") "+r.name+(r.detail?"\n      "+r.detail:"")}).join("\n\n");
+  document.body.appendChild(p);
+  window.__audit=R;
+  return R;
+}
+window.__runAudit=runAudit;
+if(new URLSearchParams(location.search).get("audit")==="1"){
+  if(document.readyState==="complete")runAudit();else addEventListener("load",runAudit);
+}
+})();
+</script>
+</body>
+</html>
