@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,10 @@ import { publishEvidenceDirectory } from "./evidence-publication.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const REVIEW_DIR = path.join(ROOT, "review/r12");
 const TARGET_DIR = path.join(REVIEW_DIR, "evidence");
+const FAILURE_DIR = path.resolve(
+  process.env.UIADAPT_STAGE_FAILURE_DIR ?? path.join(REVIEW_DIR, "evidence-failure"),
+);
+const SSIM_THRESHOLD = process.env.UIADAPT_STAGE_SSIM_THRESHOLD ?? "0.85";
 
 function run(command, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -34,8 +38,20 @@ async function main() {
       "--actual-dir", stagedDirectory,
       "--output-dir", stagedDirectory,
       "--report-actual-dir", TARGET_DIR,
+      "--threshold", SSIM_THRESHOLD,
     ]);
     await publishEvidenceDirectory(stagedDirectory, TARGET_DIR);
+    await rm(FAILURE_DIR, { force: true, recursive: true });
+  } catch (error) {
+    try {
+      await access(stagedDirectory);
+      await publishEvidenceDirectory(stagedDirectory, FAILURE_DIR);
+    } catch (diagnosticError) {
+      if (diagnosticError.code !== "ENOENT") {
+        if (error instanceof Error && error.cause === undefined) error.cause = diagnosticError;
+      }
+    }
+    throw error;
   } finally {
     await rm(runDirectory, { force: true, recursive: true });
   }

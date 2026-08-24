@@ -4,7 +4,7 @@
 
 **Goal:** Deliver a deterministic, catalog-backed React Stage Mode at `/stage`, mechanically matching the approved 1920x1080 visual contract and producing reproducible SSIM and video evidence.
 
-**Architecture:** The final implementation keeps the storefront mount synchronous to preserve its existing focus contract, while Stage dynamically loads its component and namespaced CSS after removing storefront styles. Stage preserves the immutable mock's font stacks and platform-fallback render condition; an attempted local-WOFF load was rejected after it drove all three SSIM scores below 0.85. A pure `snapshotAt(elapsedMs)` function delivers unchanged canonical domain events on a Stage-specific cue schedule through `runtimeReducer`; a small controller selects elapsed time. Approved Expo KPI copy is explicitly separated from measured domain attributes.
+**Architecture:** The final implementation keeps the storefront mount synchronous to preserve its existing focus contract, while Stage dynamically loads its component and namespaced CSS after removing storefront styles. Stage preserves the immutable mock's font stacks and platform-fallback render condition because the approved standalone mock contains no font-face source. A pure `snapshotAt(elapsedMs)` function delivers unchanged canonical domain events on a Stage-specific cue schedule through `runtimeReducer`; a small controller selects elapsed time. Approved Expo KPI copy is explicitly separated from measured domain attributes.
 
 **Final-scope note:** R12 is reviewed logically as `b26658b..HEAD`. The requested PR targets `main` and is stacked on open R11 PR #2, so the physical PR diff includes R11 until PR #2 merges. The publication report must disclose both scopes.
 

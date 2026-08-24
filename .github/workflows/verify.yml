@@ -122,11 +122,12 @@ jobs:
             test-results/
             playwright-report/
             dist/
+            review/r12/evidence-failure/
             audit-results.txt
           if-no-files-found: ignore
 
       - name: Upload current-run Stage evidence
-        if: steps.stage_evidence.outcome == 'success'
+        if: always() && steps.stage_evidence.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: uiadapt-r12-stage-evidence-${{ github.event.pull_request.head.sha || github.sha }}
