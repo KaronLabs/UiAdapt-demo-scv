@@ -5,13 +5,17 @@ import test from "node:test";
 
 const ROOT = path.resolve(import.meta.dirname, "../../..");
 
-test("fetches the exact PR base before a three-dot whitespace comparison", async () => {
+test("fetches the PR base branch history before a three-dot whitespace comparison", async () => {
   const workflow = await readFile(path.join(ROOT, ".github/workflows/verify.yml"), "utf8");
   const whitespaceStep = workflow.slice(workflow.indexOf("- name: Check diff whitespace"));
 
-  assert.match(whitespaceStep, /git fetch --no-tags origin "\$BASE_SHA"/);
+  assert.match(whitespaceStep, /BASE_REF: \$\{\{ github\.event\.pull_request\.base\.ref \}\}/);
+  assert.match(
+    whitespaceStep,
+    /git fetch --no-tags origin "\+refs\/heads\/\$BASE_REF:refs\/remotes\/origin\/\$BASE_REF"/,
+  );
   assert.ok(
-    whitespaceStep.indexOf("git fetch --no-tags origin \"$BASE_SHA\"")
+    whitespaceStep.indexOf("git fetch --no-tags origin \"+refs/heads/$BASE_REF")
       < whitespaceStep.indexOf("git diff --check \"$BASE_SHA...$HEAD_SHA\""),
   );
 });
