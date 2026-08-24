@@ -20,6 +20,6 @@ test("fetches the PR base branch history before a three-dot whitespace compariso
   );
   assert.match(
     whitespaceStep,
-    /git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA"[^\n]* \|\| \{[\s\S]*if git merge-base "\$BASE_SHA" "\$HEAD_SHA" >\/dev\/null; then[\s\S]*exit "\$DIFF_STATUS"[\s\S]*git diff --check "\$BASE_SHA" "\$HEAD_SHA"/,
+    /git diff --check "\$BASE_SHA\.\.\.\$HEAD_SHA"[^\n]* 2>\/dev\/null \|\| \{[\s\S]*if git merge-base "\$BASE_SHA" "\$HEAD_SHA" >\/dev\/null; then[\s\S]*exit "\$DIFF_STATUS"[\s\S]*git diff --check "\$BASE_SHA" "\$HEAD_SHA"/,
   );
 });
