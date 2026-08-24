@@ -305,3 +305,256 @@ footer p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; }
 }
+
+/* ═══════════════════════════ R11 visual layer ═══════════════════════════
+   Additive only. No selector renames, no geometry changes at rest.
+   Every effect keys off state already in the DOM (.app--*, [data-replay],
+   [data-state], .is-current/.is-past, .product-card--focused). */
+:root {
+  --cobalt-deep: #0a3f7a;
+  --beam: linear-gradient(90deg, var(--cobalt), var(--signal) 55%, var(--alloy));
+  --glass: rgba(252, 253, 252, 0.66);
+}
+@property --ring-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes ring-spin { to { --ring-angle: 360deg; } }
+
+::selection { background: var(--cobalt-soft); color: var(--carbon); }
+::-webkit-scrollbar { width: 11px; }
+::-webkit-scrollbar-track { background: var(--mineral); }
+::-webkit-scrollbar-thumb { background: #9eaaae; border: 3px solid var(--mineral); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cobalt); }
+
+/* ── hero: aurora ground + drawn underline ── */
+.hero { position: relative; isolation: isolate; }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -12% -6% 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(52% 60% at 18% 30%, rgba(220, 236, 249, 0.95), transparent 70%),
+    radial-gradient(38% 46% at 88% 78%, rgba(210, 185, 140, 0.22), transparent 70%);
+  animation: aurora-drift 40s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-2%, 3%, 0); } }
+.hero h1 span { position: relative; }
+.hero h1 span::after {
+  content: "";
+  position: absolute;
+  left: 0.02em;
+  right: 0.06em;
+  bottom: 0.03em;
+  height: 0.055em;
+  border-radius: 999px;
+  background: var(--beam);
+  opacity: 0.55;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: underline-draw 900ms 500ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes underline-draw { to { transform: scaleX(1); } }
+
+/* ── brand mark: equaliser while the replay runs ── */
+.brand__mark i { transform-origin: bottom center; }
+.app[data-replay="RUNNING"] .brand__mark i { animation: eq-bounce 900ms ease-in-out infinite alternate; }
+.app[data-replay="RUNNING"] .brand__mark i:nth-child(2) { animation-delay: 150ms; }
+.app[data-replay="RUNNING"] .brand__mark i:nth-child(3) { animation-delay: 300ms; }
+@keyframes eq-bounce { from { transform: scaleY(0.55); } to { transform: scaleY(1); } }
+
+/* ── console: edge light, 27s progress line, beam arrows, scan sweep ── */
+.hero__console { position: relative; }
+.hero__console .js-tilt-glare { border-radius: 28px; }
+.hero__console::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from var(--ring-angle), rgba(95, 170, 241, 0), rgba(95, 170, 241, 0.55), rgba(210, 185, 140, 0.35), rgba(95, 170, 241, 0));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: ring-spin 14s linear infinite;
+}
+.hero__console::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 28px 28px 0 0;
+  background: var(--beam);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+}
+.app[data-replay="RUNNING"] .hero__console::after,
+.app[data-replay="PAUSED"] .hero__console::after { opacity: 1; animation: replay-progress 27s linear forwards; }
+.app[data-replay="PAUSED"] .hero__console::after { animation-play-state: paused; }
+@keyframes replay-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.app[data-replay="RUNNING"] .causal-trace b { animation: beam-pulse 1.8s ease-in-out infinite; }
+.app[data-replay="RUNNING"] .causal-trace b:nth-of-type(2) { animation-delay: 0.6s; }
+.app[data-replay="RUNNING"] .causal-trace b:nth-of-type(3) { animation-delay: 1.2s; }
+@keyframes beam-pulse {
+  0%, 100% { color: var(--signal); text-shadow: none; transform: translateX(0); }
+  50% { color: #fff; text-shadow: 0 0 12px var(--signal); transform: translateX(3px); }
+}
+.causal-system::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(95, 170, 241, 0.16) 50%, transparent 70%);
+  transform: translateX(-100%);
+}
+.app[data-replay="RUNNING"] .causal-system::after { opacity: 1; animation: scan-sweep 5s linear infinite; }
+@keyframes scan-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.causal-trace > div { transition: box-shadow 260ms ease, border-color 260ms ease; }
+.app--compare .causal-trace > div:nth-of-type(4) { border-color: rgba(95, 170, 241, 0.6); box-shadow: inset 0 2px 0 var(--signal); }
+.app--purchase_intent .causal-trace > div:nth-of-type(4) { border-color: rgba(210, 185, 140, 0.7); box-shadow: inset 0 2px 0 var(--alloy); }
+
+/* ── live CTA: shimmer on hover, soft invite ring while idle ── */
+.button--watch { position: relative; overflow: hidden; }
+.button--watch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 700ms ease;
+  pointer-events: none;
+}
+.button--watch:hover::after { transform: translateX(120%); }
+.app[data-replay="IDLE"] .button--watch { animation: cta-invite 2.6s ease-in-out infinite; }
+@keyframes cta-invite {
+  0%, 100% { box-shadow: 0 12px 28px rgba(7, 94, 184, 0.3), 0 0 0 0 rgba(7, 94, 184, 0.35); }
+  50% { box-shadow: 0 12px 28px rgba(7, 94, 184, 0.3), 0 0 0 10px rgba(7, 94, 184, 0); }
+}
+
+/* ── state stage: progress connectors, current pill, ripple ── */
+.state-step.is-current > span { padding: 2px 7px; border-radius: 999px; background: var(--cobalt); color: #fff; }
+.state-step.is-past:not(:last-child)::after { height: 2px; background: var(--beam); }
+.state-step.is-current:not(:last-child)::after { background: linear-gradient(90deg, var(--cobalt), var(--line)); }
+.state-message__dot { position: relative; }
+.state-message__dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--cobalt);
+  opacity: 0;
+  animation: dot-ripple 2.6s ease-out infinite;
+}
+@keyframes dot-ripple { 0% { transform: scale(0.6); opacity: 0.7; } 100% { transform: scale(2.6); opacity: 0; } }
+
+/* ── storefront: light sweep on state change ── */
+.product-grid { position: relative; }
+.product-grid::after {
+  content: "";
+  position: absolute;
+  inset: -18px;
+  z-index: 3;
+  border-radius: 28px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(95, 170, 241, 0.22) 50%, transparent 62%);
+  transform: translateX(-110%);
+}
+.product-grid[data-state="COMPARE"]::after { animation: sweep-compare 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) 1; }
+.product-grid[data-state="PURCHASE_INTENT"]::after { animation: sweep-intent 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) 1; }
+@keyframes sweep-compare { 0% { opacity: 1; transform: translateX(-110%); } 100% { opacity: 0; transform: translateX(110%); } }
+@keyframes sweep-intent { 0% { opacity: 1; transform: translateX(-110%); } 100% { opacity: 0; transform: translateX(110%); } }
+
+/* ── product cards: staggered entrance, pointer light, parallax art, focus ring ── */
+.product-card { position: relative; animation: card-in 600ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.product-card:nth-child(2) { animation-delay: 90ms; }
+.product-card:nth-child(3) { animation-delay: 180ms; }
+@keyframes card-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.product-card__visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 40%), rgba(255, 255, 255, 0.55), transparent 60%);
+  mix-blend-mode: soft-light;
+  transition: opacity 260ms ease;
+}
+.product-card:hover .product-card__visual::after { opacity: 1; }
+.product-card:hover .product-art { transform: translate(calc(var(--px, 0) * 6px), calc(-4px + var(--py, 0) * 4px)) scale(1.012); }
+.product-card--focused::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: conic-gradient(from var(--ring-angle), var(--cobalt), var(--signal), var(--alloy), var(--cobalt));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: ring-spin 4s linear infinite;
+}
+.product-card__price .text-action { font-variant-numeric: tabular-nums; }
+.color-chip { transition: border-color 180ms ease, background 180ms ease; }
+.color-chip:hover { border-color: rgba(7, 94, 184, 0.45); background: var(--glass); }
+.color-chip .swatch { transition: transform 180ms ease, box-shadow 180ms ease; }
+.color-chip:hover .swatch { transform: scale(1.3); box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--cobalt); }
+.button--primary:hover { background: var(--cobalt-deep); border-color: var(--cobalt-deep); }
+.cart-button span { animation: badge-pop 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes badge-pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+/* ── adaptive panels: blur-in (opacity + filter only — no geometry) ── */
+.comparison-panel.is-visible,
+.decision-support { animation: panel-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+@keyframes panel-in { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: blur(0); } }
+.comparison-row:not(.comparison-row--head) { transition: background 160ms ease; }
+.comparison-row:not(.comparison-row--head):hover { background: rgba(255, 255, 255, 0.05); }
+
+/* ── explainers: chevron + open fade ── */
+.explainers summary { transition: background 200ms ease; }
+.explainers summary:hover { background: rgba(7, 94, 184, 0.04); }
+.explainers summary::after {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-right: 1.5px solid var(--graphite);
+  border-bottom: 1.5px solid var(--graphite);
+  transform: rotate(45deg);
+  transition: transform 240ms ease;
+}
+.explainers details[open] summary::after { transform: rotate(225deg); }
+.explainers details[open] .why-grid,
+.explainers details[open] .developer-grid { animation: panel-in 320ms ease backwards; }
+
+/* ── toast + footer ── */
+.transition-toast { border-left: 3px solid var(--alloy); background: rgba(20, 33, 38, 0.92); backdrop-filter: blur(10px); }
+footer { position: relative; }
+footer::before { content: ""; position: absolute; top: -1px; left: 5vw; right: 5vw; height: 1px; background: var(--beam); opacity: 0.5; }
+
+/* ── small screens: drop the expensive layers ── */
+@media (max-width: 680px) {
+  .hero::before,
+  .hero__console::before,
+  .product-grid::after,
+  .causal-system::after { animation: none; }
+  .product-card__visual::after { display: none; }
+  .hero__console .js-tilt-glare { border-radius: 22px; }
+}
+
+/* ── reduced motion: the progress line must not jump to "complete" ── */
+@media (prefers-reduced-motion: reduce) {
+  .app[data-replay] .hero__console::after { animation: none; opacity: 0; }
+  .hero h1 span::after { transform: scaleX(1); }
+}
