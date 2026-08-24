@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import VanillaTilt from "vanilla-tilt";
 import { PRODUCTS } from "./domain/catalog";
 import { derivePolicy } from "./domain/runtime";
 import type { AdaptiveState, ProductId } from "./domain/types";
@@ -69,6 +70,18 @@ function App() {
   const replayIsActive = state.replayStatus === "RUNNING" || state.replayStatus === "PAUSED";
   const demoStageRef = useRef<HTMLElement>(null);
   const hasScrolledToStageRef = useRef(false);
+  const consoleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = consoleRef.current;
+    if (!node || typeof window.matchMedia !== "function") return;
+    const prefers = (query: string) => window.matchMedia(query).matches;
+    if (prefers("(prefers-reduced-motion: reduce)") || prefers("(pointer: coarse)")) return;
+    VanillaTilt.init(node, { max: 4, speed: 900, perspective: 1200, glare: true, "max-glare": 0.12 });
+    return () => {
+      (node as HTMLDivElement & { vanillaTilt?: { destroy: () => void } }).vanillaTilt?.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     if (state.replayStatus === "IDLE") {
@@ -119,7 +132,7 @@ function App() {
               <strong>Different presentation</strong>
             </div>
           </div>
-          <div className="hero__console" aria-label="UIAdapt 데모 제어">
+          <div className="hero__console" aria-label="UIAdapt 데모 제어" ref={consoleRef}>
             <div className="causal-system">
               <SignalRibbon state={state.appliedState} />
               <div className="causal-trace" data-testid="causal-trace" aria-label="Behavior → State → Policy → Interface">

@@ -140,4 +140,24 @@ describe("adaptive storefront UI contract", () => {
     expect(after).toHaveTextContent("1");
     expect(after).not.toBe(before);
   });
+
+  it("does not initialise console tilt when reduced motion is preferred", () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(),
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+    const { container } = render(<App />);
+    expect(container.querySelector(".hero__console .js-tilt-glare")).not.toBeInTheDocument();
+  });
+
+  it("initialises console tilt with glare for fine pointers without reduced motion", () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: false,
+      media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(),
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+    const { container } = render(<App />);
+    expect(container.querySelector(".hero__console .js-tilt-glare")).toBeInTheDocument();
+  });
 });
