@@ -1,3 +1,4 @@
+import type { PointerEvent } from "react";
 import type { Product, BehaviorEventType } from "../domain/types";
 import { ProductArt } from "./ProductArt";
 
@@ -11,6 +12,24 @@ interface ProductCardProps {
 
 const currency = new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 });
 
+const POINTER_VARS = ["--mx", "--my", "--px", "--py"] as const;
+
+function writePointerVars(event: PointerEvent<HTMLElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const x = (event.clientX - rect.left) / rect.width;
+  const y = (event.clientY - rect.top) / rect.height;
+  const style = event.currentTarget.style;
+  style.setProperty("--mx", `${(x * 100).toFixed(1)}%`);
+  style.setProperty("--my", `${(y * 100).toFixed(1)}%`);
+  style.setProperty("--px", ((x - 0.5) * 2).toFixed(3));
+  style.setProperty("--py", ((y - 0.5) * 2).toFixed(3));
+}
+
+function clearPointerVars(event: PointerEvent<HTMLElement>) {
+  for (const name of POINTER_VARS) event.currentTarget.style.removeProperty(name);
+}
+
 export function ProductCard({ product, focused, compared, muted, onEvent }: ProductCardProps) {
   return (
     <article
@@ -18,6 +37,8 @@ export function ProductCard({ product, focused, compared, muted, onEvent }: Prod
       data-product-id={product.id}
       data-focused={focused}
       data-product-contract={JSON.stringify(product)}
+      onPointerMove={writePointerVars}
+      onPointerLeave={clearPointerVars}
     >
       <div className="product-card__visual">
         <span className="product-card__edition">Atelier wireless</span>
