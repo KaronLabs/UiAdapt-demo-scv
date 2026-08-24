@@ -72,7 +72,9 @@ jobs:
           mkdir -p "$CHROME_ROOT"
           unzip -q "$CHROME_ARCHIVE" -d "$CHROME_ROOT"
           CF_CHROME_BIN="$CHROME_ROOT/chrome-linux64/chrome"
-          test "$("$CF_CHROME_BIN" --version)" = "Google Chrome for Testing 145.0.7632.117"
+          CHROME_VERSION="$("$CF_CHROME_BIN" --version)"
+          printf 'Chrome gate: %s\n' "$CHROME_VERSION"
+          [[ "$CHROME_VERSION" =~ ^Google\ Chrome\ for\ Testing\ 145\.0\.7632\.117[[:space:]]*$ ]]
           echo "CF_CHROME_BIN=$CF_CHROME_BIN" >> "$GITHUB_ENV"
 
       - name: R12 Stage contract tests
