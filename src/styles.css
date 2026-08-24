@@ -538,6 +538,7 @@ footer p { margin: 0; }
   transition: transform 240ms ease;
 }
 .explainers details[open] summary::after { transform: rotate(225deg); }
+.explainers summary > :first-child { margin-right: auto; }
 .explainers details[open] .why-grid,
 .explainers details[open] .developer-grid { animation: panel-in 320ms ease backwards; }
 

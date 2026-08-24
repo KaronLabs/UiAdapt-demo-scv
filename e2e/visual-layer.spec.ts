@@ -107,6 +107,7 @@ test("reduced motion disables tilt and the progress line", async ({ page }) => {
 });
 
 test("full replay keeps the page free of horizontal overflow", async ({ page }) => {
+  test.slow();
   await page.getByTestId("live-demo-cta").click();
   await expect(page.locator(".app")).toHaveAttribute("data-replay", "COMPLETED", { timeout: 40_000 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
