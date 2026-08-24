@@ -12,7 +12,7 @@ describe("adaptive storefront UI contract", () => {
   it("renders the canonical products and keeps diagnostics collapsed", () => {
     const { container } = render(<App />);
     expect(screen.getByRole("link", { name: "UIAdapt 홈" })).toBeInTheDocument();
-    expect(container.querySelector(".site-header .brand__lockup small")).toHaveTextContent(/^Adaptive UI Infrastructure · R10$/);
+    expect(container.querySelector(".site-header .brand__lockup small")).toHaveTextContent(/^Adaptive UI Infrastructure · R11$/);
     expect(container.querySelector(".site-header .cart-button")).not.toBeInTheDocument();
     expect(container.querySelector(".demo-stage .cart-button")).toBeInTheDocument();
     expect(container.querySelector(".demo-stage__header")).toHaveTextContent("샘플 상점 · Atelier Audio");
@@ -117,5 +117,27 @@ describe("adaptive storefront UI contract", () => {
     fireEvent.click(screen.getByTestId("live-demo-cta"));
     fireEvent.click(screen.getByRole("button", { name: "Aurora One 가격 확인" }));
     expect(screen.getByTestId("replay-status")).toHaveTextContent("직접 탐색을 시작해 데모 재생을 멈췄습니다.");
+  });
+
+  it("exposes the replay status on the app root for the visual layer", () => {
+    const { container } = render(<App />);
+    const root = container.querySelector(".app");
+    expect(root).toHaveAttribute("data-replay", "IDLE");
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
+    expect(root).toHaveAttribute("data-replay", "RUNNING");
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(root).toHaveAttribute("data-replay", "PAUSED");
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(root).toHaveAttribute("data-replay", "IDLE");
+  });
+
+  it("remounts the bag badge when the cart count changes so its pop animation replays", () => {
+    const { container } = render(<App />);
+    const before = container.querySelector(".demo-stage .cart-button span");
+    expect(before).toHaveTextContent("0");
+    fireEvent.click(screen.getAllByRole("button", { name: "장바구니 담기" })[0]);
+    const after = container.querySelector(".demo-stage .cart-button span");
+    expect(after).toHaveTextContent("1");
+    expect(after).not.toBe(before);
   });
 });

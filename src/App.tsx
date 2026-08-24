@@ -84,11 +84,11 @@ function App() {
   }, [state.replayStatus]);
 
   return (
-    <div className={`app app--${state.appliedState.toLowerCase()}`}>
+    <div className={`app app--${state.appliedState.toLowerCase()}`} data-replay={state.replayStatus}>
       <header className="site-header">
         <a className="brand" href="#main-content" aria-label="UIAdapt 홈">
           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
-          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure · R10</small></span>
+          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure · R11</small></span>
         </a>
         <p className="header-story">Behavior-aware presentation layer</p>
         <div className="header-tools">
@@ -177,7 +177,7 @@ function App() {
               <span className="demo-stage__label">동일한 상품과 행동으로 검증하는 적응형 상점 무대</span>
             </div>
             <button type="button" className="cart-button" aria-label={`장바구니, 상품 ${cartCount}개`}>
-              Bag <span>{cartCount}</span>
+              Bag <span key={cartCount}>{cartCount}</span>
             </button>
           </div>
 
