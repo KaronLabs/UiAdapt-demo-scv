@@ -5,7 +5,7 @@ import { snapshotAt, STAGE_PRESENTATION } from "./stageReplay";
 const CHECKPOINTS = [
   { elapsedMs: 0, sequenceNo: 0, windowSize: 0, score: 0, state: "EXPLORE", transitions: 0 },
   { elapsedMs: 3_000, sequenceNo: 6, windowSize: 6, score: 0.5, state: "EXPLORE", transitions: 0 },
-  { elapsedMs: 12_000, sequenceNo: 24, windowSize: 20, score: 0.45, state: "COMPARE", transitions: 1 },
+  { elapsedMs: 12_000, sequenceNo: 23, windowSize: 20, score: 0.45, state: "COMPARE", transitions: 1 },
   { elapsedMs: 20_000, sequenceNo: 40, windowSize: 20, score: 0.7, state: "PURCHASE_INTENT", transitions: 2 },
   { elapsedMs: 27_000, sequenceNo: 48, windowSize: 20, score: 0.85, state: "PURCHASE_INTENT", transitions: 2 },
 ] as const;
@@ -31,6 +31,21 @@ describe("Stage replay model", () => {
     expect(snapshotAt(Number.POSITIVE_INFINITY)).toEqual(snapshotAt(27_000));
     expect(snapshotAt(99_000)).toEqual(snapshotAt(27_000));
   });
+
+  it.each([
+    { elapsedMs: 11_999, sequenceNo: 21, state: "EXPLORE" },
+    { elapsedMs: 12_000, sequenceNo: 23, state: "COMPARE" },
+    { elapsedMs: 19_999, sequenceNo: 36, state: "COMPARE" },
+    { elapsedMs: 20_000, sequenceNo: 40, state: "PURCHASE_INTENT" },
+  ] as const)(
+    "changes state only at the approved $elapsedMs ms Stage boundary",
+    ({ elapsedMs, sequenceNo, state }) => {
+      const snapshot = snapshotAt(elapsedMs);
+
+      expect(snapshot.sequenceNo).toBe(sequenceNo);
+      expect(snapshot.detectedState).toBe(state);
+    },
+  );
 
   it("is deterministic and does not mutate the product catalog", () => {
     const catalogBefore = PRODUCTS.map(({ id, price }) => ({ id, price }));

@@ -51,13 +51,23 @@ function clampElapsedMs(elapsedMs: number): number {
   return Math.min(REPLAY_DURATION_MS, Math.max(0, elapsedMs));
 }
 
+function stageEventTime(sequenceNo: number): number {
+  // Reschedule delivery only; runtimeReducer still receives each canonical event unchanged and in order.
+  if (sequenceNo <= 6) return sequenceNo * 500;
+  if (sequenceNo <= 21) return 3_000 + Math.floor(((sequenceNo - 6) * 9_000) / 16);
+  if (sequenceNo <= 23) return 12_000;
+  if (sequenceNo <= 36) return 12_000 + Math.floor(((sequenceNo - 23) * 8_000) / 14);
+  if (sequenceNo <= 40) return 20_000;
+  return 20_000 + Math.floor(((sequenceNo - 40) * 7_000) / 8);
+}
+
 export function snapshotAt(elapsedMs: number): RuntimeSnapshot {
   const clampedElapsedMs = clampElapsedMs(elapsedMs);
   let snapshot = createInitialRuntime(true, "stage-replay");
   snapshot = runtimeReducer(snapshot, { type: "RESET_FOR_REPLAY", sessionId: "stage-replay" });
 
-  for (const event of REPLAY_EVENTS) {
-    if (event.atMs > clampedElapsedMs) break;
+  for (const [index, event] of REPLAY_EVENTS.entries()) {
+    if (stageEventTime(index + 1) > clampedElapsedMs) break;
     snapshot = runtimeReducer(snapshot, {
       type: "RECORD_EVENT",
       event,

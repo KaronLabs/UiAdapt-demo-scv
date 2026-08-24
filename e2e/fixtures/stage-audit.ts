@@ -12,7 +12,7 @@ export const EXPECTED_STAGE_VALUES = {
 
 export const EXPECTED_DOMAIN_VALUES = {
   EXPLORE: { sequenceNo: "6", windowSize: "6", changeScore: "0.5" },
-  COMPARE: { sequenceNo: "24", windowSize: "20", changeScore: "0.45" },
+  COMPARE: { sequenceNo: "23", windowSize: "20", changeScore: "0.45" },
   PURCHASE_INTENT: { sequenceNo: "40", windowSize: "20", changeScore: "0.7" },
 } as const;
 
@@ -190,6 +190,24 @@ export async function visibleLineAudit(page: Page) {
         || (rect.width >= 1 && rect.width <= 3 && rect.height > 40)
       )) {
         issues.push(`${element.tagName.toLowerCase()} strip ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      }
+    });
+    document.querySelectorAll<SVGGraphicsElement>("#stage-root svg *").forEach((element) => {
+      const style = getComputedStyle(element);
+      const strokeWidth = Number.parseFloat(style.strokeWidth);
+      const strokeAlpha = Number.parseFloat(style.strokeOpacity) * Number.parseFloat(style.opacity);
+      if (style.stroke === "none" || !(strokeWidth > 0) || !(strokeAlpha > 0) || !visible(element as unknown as HTMLElement)) {
+        return;
+      }
+      const matrix = element.getScreenCTM();
+      if (!matrix) return;
+      const scaleX = Math.hypot(matrix.a, matrix.b);
+      const scaleY = Math.hypot(matrix.c, matrix.d);
+      const renderedWidth = style.vectorEffect === "non-scaling-stroke"
+        ? strokeWidth
+        : strokeWidth * Math.min(scaleX, scaleY);
+      if (renderedWidth < 4) {
+        issues.push(`${element.tagName.toLowerCase()} stroke ${renderedWidth.toFixed(4)}px`);
       }
     });
     return issues;

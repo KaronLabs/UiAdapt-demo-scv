@@ -58,6 +58,26 @@ jobs:
       - name: Nested-path browser tests
         run: npm run test:e2e
 
+      - name: Install exact Chrome 145 for the R12 Stage gate
+        run: |
+          set -euo pipefail
+          CHROME_ARCHIVE="$RUNNER_TEMP/chrome-145.zip"
+          CHROME_ROOT="$RUNNER_TEMP/chrome-145"
+          curl --fail --location --retry 3 \
+            --output "$CHROME_ARCHIVE" \
+            "https://storage.googleapis.com/chrome-for-testing-public/145.0.7632.117/linux64/chrome-linux64.zip"
+          mkdir -p "$CHROME_ROOT"
+          unzip -q "$CHROME_ARCHIVE" -d "$CHROME_ROOT"
+          CF_CHROME_BIN="$CHROME_ROOT/chrome-linux64/chrome"
+          test "$("$CF_CHROME_BIN" --version)" = "Google Chrome for Testing 145.0.7632.117"
+          echo "CF_CHROME_BIN=$CF_CHROME_BIN" >> "$GITHUB_ENV"
+
+      - name: R12 Stage contract tests
+        run: npm run test:e2e:stage
+
+      - name: R12 Stage SSIM and recording evidence
+        run: npm run stage:evidence
+
       - name: Production dependency audit
         run: |
           set -o pipefail
@@ -84,6 +104,7 @@ jobs:
             test-results/
             playwright-report/
             dist/
+            review/r12/evidence/
             audit-results.txt
           if-no-files-found: ignore
 

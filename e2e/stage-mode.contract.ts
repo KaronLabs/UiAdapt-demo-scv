@@ -206,6 +206,20 @@ test("controls: play, pause, reset, completion, and fullscreen change observable
   await expect(root).toHaveAttribute("data-elapsed-ms", "27000");
 });
 
+test("timing: exact Stage boundary checkpoints expose canonical replay prefixes", async ({ page }) => {
+  const root = page.locator("#stage-root");
+  const assertAt = async (key: string, elapsedMs: number, state: StageState, sequenceNo: string) => {
+    await page.keyboard.press(key);
+    await expect(root).toHaveAttribute("data-elapsed-ms", String(elapsedMs));
+    await expect(root).toHaveAttribute("data-state", state);
+    await expect(root).toHaveAttribute("data-domain-sequence-no", sequenceNo);
+  };
+
+  await assertAt("1", 3_000, "EXPLORE", "6");
+  await assertAt("2", 12_000, "COMPARE", "23");
+  await assertAt("3", 20_000, "PURCHASE_INTENT", "40");
+});
+
 test("domain/catalog: checkpoints come from canonical reducer data and preserve every product ID and price", async ({ page }) => {
   for (const state of STAGE_STATES) {
     await jumpToStageState(page, state);
