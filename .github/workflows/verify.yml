@@ -43,6 +43,9 @@ jobs:
       - name: Deployment contract tests
         run: npm run test:deployment
 
+      - name: Stage physical entry contract
+        run: npm run test:stage-entry
+
       - name: Verify build bases
         run: npm run verify:build-bases
 

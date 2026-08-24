@@ -29,8 +29,8 @@ export default defineConfig({
   },
   projects: [{ name: "stage-chrome145" }],
   webServer: {
-    command: "npm run build && npm run preview",
-    url: "http://127.0.0.1:8766/uiadapt_demo/",
+    command: "npm run build:nwg && serve --no-clipboard --no-port-switching --listen tcp://127.0.0.1:8766 www",
+    url: "http://127.0.0.1:8766/uiadapt_demo/stage/",
     reuseExistingServer: false,
     stdout: "pipe",
     stderr: "pipe",

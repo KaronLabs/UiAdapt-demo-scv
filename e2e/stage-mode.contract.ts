@@ -44,7 +44,7 @@ test.afterEach(async ({ page }) => {
 test("route and browser: logical /stage mounts under the deployment base in exact Chrome 145", async ({ browser, page }) => {
   expect(browser.version()).toBe(EXPECTED_CHROME_VERSION);
   expect(page.viewportSize()).toEqual(STAGE_VIEWPORT);
-  await expect(page).toHaveURL(/\/uiadapt_demo\/stage$/);
+  await expect(page).toHaveURL(/\/uiadapt_demo\/stage\/$/);
   await expect(page.locator("#stage-root")).toBeVisible();
 });
 

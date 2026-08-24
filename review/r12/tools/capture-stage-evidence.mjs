@@ -52,7 +52,7 @@ async function waitForUrl(url, processHandle) {
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
     if (processHandle.exitCode !== null) {
-      throw new Error(`Vite preview exited before readiness with code ${processHandle.exitCode}`);
+      throw new Error(`Static server exited before readiness with code ${processHandle.exitCode}`);
     }
     try {
       const response = await fetch(url);
@@ -62,7 +62,7 @@ async function waitForUrl(url, processHandle) {
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error(`Timed out waiting for preview: ${url}`);
+  throw new Error(`Timed out waiting for static server: ${url}`);
 }
 
 async function stopProcess(processHandle) {
@@ -105,25 +105,25 @@ async function probeVideo(videoPath) {
 
 async function main() {
   await mkdir(EVIDENCE_DIR, { recursive: true });
-  await run("npm", ["run", "build"]);
+  await run("npm", ["run", "build:nwg"]);
 
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
-  const stageUrl = `${origin}/uiadapt_demo/stage`;
-  const viteBin = path.join(ROOT, "node_modules/vite/bin/vite.js");
-  const preview = spawn(process.execPath, [
-    viteBin,
-    "preview",
-    "--host", "127.0.0.1",
-    "--port", String(port),
-    "--strictPort",
+  const stageUrl = `${origin}/uiadapt_demo/stage/`;
+  const serveBin = path.join(ROOT, "node_modules/serve/build/main.js");
+  const staticServer = spawn(process.execPath, [
+    serveBin,
+    "--no-clipboard",
+    "--no-port-switching",
+    "--listen", `tcp://127.0.0.1:${port}`,
+    "www",
   ], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
-  preview.stdout.on("data", (chunk) => process.stderr.write(`[preview] ${chunk}`));
-  preview.stderr.on("data", (chunk) => process.stderr.write(`[preview] ${chunk}`));
+  staticServer.stdout.on("data", (chunk) => process.stderr.write(`[static] ${chunk}`));
+  staticServer.stderr.on("data", (chunk) => process.stderr.write(`[static] ${chunk}`));
 
   let browser;
   try {
-    await waitForUrl(stageUrl, preview);
+    await waitForUrl(stageUrl, staticServer);
     browser = await chromium.launch({
       executablePath: CHROME_BIN,
       headless: true,
@@ -245,7 +245,7 @@ async function main() {
     await context.close();
   } finally {
     if (browser) await browser.close();
-    await stopProcess(preview);
+    await stopProcess(staticServer);
   }
 }
 

@@ -44,7 +44,7 @@ export function observeStageNetwork(page: Page): StageNetworkEvidence {
 }
 
 export async function openStage(page: Page) {
-  await page.goto("/uiadapt_demo/stage");
+  await page.goto("/uiadapt_demo/stage/");
   const root = page.locator("#stage-root");
   await expect(root, "the /stage route must mount the real Stage application").toHaveCount(1, { timeout: 1_000 });
   await page.evaluate(() => document.fonts.ready);
