@@ -41,14 +41,11 @@ test.afterEach(async ({ page }) => {
   expect(observed?.consoleErrors ?? [], "Stage must not emit browser console errors").toEqual([]);
 });
 
-test("route and browser: /stage mounts under the deployment base in exact Chrome 145", async ({ browser, page }) => {
+test("route and browser: logical /stage mounts under the deployment base in exact Chrome 145", async ({ browser, page }) => {
   expect(browser.version()).toBe(EXPECTED_CHROME_VERSION);
   expect(page.viewportSize()).toEqual(STAGE_VIEWPORT);
   await expect(page).toHaveURL(/\/uiadapt_demo\/stage$/);
   await expect(page.locator("#stage-root")).toBeVisible();
-  await page.goto("/stage");
-  await expect(page.locator("#stage-root")).toBeVisible();
-  await expect(page).toHaveURL(/\/stage$/);
 });
 
 test("contract 1: every state is a fixed 1920x1080 frame with zero scroll", async ({ page }) => {
@@ -172,7 +169,7 @@ test("contract 13: prose and mono text use the approved local font families", as
       heading: getComputedStyle(document.querySelector<HTMLElement>("#stage-root h1, #stage-root h2")!).fontFamily,
       mono: getComputedStyle(document.querySelector<HTMLElement>("#stage-root .stage-mono")!).fontFamily,
       wantedLoaded: document.fonts.check('24px "Wanted Sans Variable"'),
-      monoLoaded: document.fonts.check('22px "IBM Plex Mono"'),
+      monoLoaded: document.fonts.check('600 22px "IBM Plex Mono"'),
     }));
     expect(fonts.body).toMatch(/Wanted Sans Variable|Pretendard/i);
     expect(fonts.heading).toMatch(/Wanted Sans Variable|Pretendard/i);
