@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:stage": "playwright test --config=playwright.stage.config.ts",
     "verify:build-bases": "node scripts/verify-build-bases.mjs",
     "stage:nwg": "node scripts/stage-nwg.mjs",
     "build:nwg": "npm run build && npm run stage:nwg",
