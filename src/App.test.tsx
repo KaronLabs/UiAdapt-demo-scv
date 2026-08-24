@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { StrictMode } from "react";
 import App from "./App";
 
 describe("adaptive storefront UI contract", () => {
@@ -159,5 +160,15 @@ describe("adaptive storefront UI contract", () => {
     })));
     const { container } = render(<App />);
     expect(container.querySelector(".hero__console .js-tilt-glare")).toBeInTheDocument();
+  });
+
+  it("keeps a single console glare node across StrictMode effect double-invocation", () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: false,
+      media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(),
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+    const { container } = render(<StrictMode><App /></StrictMode>);
+    expect(container.querySelectorAll(".hero__console .js-tilt-glare")).toHaveLength(1);
   });
 });

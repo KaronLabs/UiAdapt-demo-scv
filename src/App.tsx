@@ -80,6 +80,7 @@ function App() {
     VanillaTilt.init(node, { max: 4, speed: 900, perspective: 1200, glare: true, "max-glare": 0.12 });
     return () => {
       (node as HTMLDivElement & { vanillaTilt?: { destroy: () => void } }).vanillaTilt?.destroy();
+      node.querySelectorAll(".js-tilt-glare").forEach((glare) => glare.remove());
     };
   }, []);
 
