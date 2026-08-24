@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "./entry.css";
 
 const stagePath = /^\/(?:uiadapt_demo\/)?stage\/?$/.test(window.location.pathname);
 
