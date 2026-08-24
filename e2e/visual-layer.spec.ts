@@ -113,3 +113,25 @@ test("full replay keeps the page free of horizontal overflow", async ({ page }) 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("PURCHASE_INTENT keeps desktop cards equal width at true rest", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-1440", "desktop equal-width contract");
+  test.slow();
+  await page.getByTestId("live-demo-cta").click();
+  await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT", { timeout: 40_000 });
+  // wait for every finite animation/transition on the cards (and their pseudo-elements) to actually finish
+  await page.locator(".product-card").evaluateAll(async (cards) => {
+    const finite = cards.flatMap((card) =>
+      card.getAnimations({ subtree: true }).filter((animation) => {
+        const timing = animation.effect?.getTiming();
+        return timing !== undefined && timing.iterations !== Infinity;
+      }),
+    );
+    await Promise.all(finite.map((animation) => animation.finished.catch(() => undefined)));
+  });
+  await page.waitForTimeout(300);
+  const widths = await page.locator(".product-card").evaluateAll((cards) =>
+    cards.map((card) => card.getBoundingClientRect().width),
+  );
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+});
