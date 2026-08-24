@@ -37,7 +37,6 @@ async function main() {
       "review/r12/tools/measure-stage-ssim.mjs",
       "--actual-dir", stagedDirectory,
       "--output-dir", stagedDirectory,
-      "--report-actual-dir", TARGET_DIR,
       "--threshold", SSIM_THRESHOLD,
     ]);
     await publishEvidenceDirectory(stagedDirectory, TARGET_DIR);

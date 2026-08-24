@@ -10,11 +10,11 @@
     "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.0.0 Safari/537.36"
   },
   "screenshots": [
-    "review/r12/evidence/stage-EXPLORE.png",
-    "review/r12/evidence/stage-COMPARE.png",
-    "review/r12/evidence/stage-PURCHASE_INTENT.png"
+    "stage-EXPLORE.png",
+    "stage-COMPARE.png",
+    "stage-PURCHASE_INTENT.png"
   ],
-  "video": "review/r12/evidence/stage-27s.webm",
+  "video": "stage-27s.webm",
   "videoDurationSeconds": 27,
   "videoDimensions": {
     "width": 1920,

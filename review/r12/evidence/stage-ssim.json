@@ -11,19 +11,19 @@
       "ssim": "0.9985",
       "passed": true,
       "baseline": "review/r12/baseline/stage-EXPLORE.png",
-      "actual": "review/r12/evidence/stage-EXPLORE.png"
+      "actual": "stage-EXPLORE.png"
     },
     "COMPARE": {
       "ssim": "0.9949",
       "passed": true,
       "baseline": "review/r12/baseline/stage-COMPARE.png",
-      "actual": "review/r12/evidence/stage-COMPARE.png"
+      "actual": "stage-COMPARE.png"
     },
     "PURCHASE_INTENT": {
       "ssim": "0.9985",
       "passed": true,
       "baseline": "review/r12/baseline/stage-PURCHASE_INTENT.png",
-      "actual": "review/r12/evidence/stage-PURCHASE_INTENT.png"
+      "actual": "stage-PURCHASE_INTENT.png"
     }
   },
   "heatmaps": []
