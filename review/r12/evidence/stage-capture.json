@@ -1,0 +1,29 @@
+{
+  "schema": "uiadapt-r12-stage-capture-v1",
+  "chromeVersion": "145.0.7632.117",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1,
+    "scrollWidth": 1920,
+    "scrollHeight": 1080,
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.0.0 Safari/537.36"
+  },
+  "screenshots": [
+    "stage-EXPLORE.png",
+    "stage-COMPARE.png",
+    "stage-PURCHASE_INTENT.png"
+  ],
+  "video": "stage-27s.webm",
+  "videoDurationSeconds": 27,
+  "videoDimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "videoCodec": "vp8",
+  "videoContainer": "matroska,webm",
+  "externalRequestCount": 0,
+  "telemetryRequestCount": 0,
+  "pageErrorCount": 0,
+  "consoleErrorCount": 0
+}
