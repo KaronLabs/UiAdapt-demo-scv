@@ -1,0 +1,423 @@
+### npm run lint
+
+> uiadapt-adaptive-storefront-theater@4.1.0 lint
+> eslint .
+
+### npm test
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /mnt/nvme-hot/ne/UiAdapt-demo-scv
+
+
+ Test Files  9 passed (9)
+      Tests  67 passed (67)
+   Start at  15:42:14
+   Duration  1.93s (transform 852ms, setup 1.02s, import 1.03s, tests 1.05s, environment 5.32s)
+
+### npm run test:api
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:api
+> node --test server/*.test.mjs
+
+✔ fails closed when no MySQL credential source exists (1.33423ms)
+✔ rolls back a correlated trajectory when snapshot insertion fails (1.538767ms)
+✔ releases the connection when beginning a transaction fails (0.272869ms)
+✔ rejects a forged non-transition detected-state change (0.42799ms)
+✔ treats a retry as duplicate after MySQL DECIMAL storage rounds telemetry floats (2.002892ms)
+✔ rejects a forged transition before minimum evidence and before writing (0.402658ms)
+✔ rejects a later non-transition frame with missing previous snapshot continuity data (0.135457ms)
+✔ accepts a transition with the required preceding persistence frame (0.227803ms)
+✔ rejects a transition when the current candidate is ineligible (0.164605ms)
+✔ rejects a non-transition snapshot with impossible persistence (0.237428ms)
+✔ accepts an ineligible candidate with no pending persistence (0.117783ms)
+✔ requires snapshot Adaptive state and enforces its applied state (0.5275ms)
+✔ accepts REPLAY then USER while rejecting source reversion and USER-session REPLAY (0.197117ms)
+✔ enforces eligible candidate persistence recurrence (0.187762ms)
+✔ defines exactly four InnoDB utf8mb4 telemetry tables without server-side decision logic (1.06187ms)
+✔ upgrades existing snapshots through nullable add, session backfill, then NOT NULL (0.806379ms)
+﹣ MySQL integration is unavailable without disposable CI configuration (0.597745ms) # UIADAPT_INTEGRATION is not 1
+✔ recognizes a symlinked API module as a direct execution entry (7.768693ms)
+✔ fails closed when the API host is not loopback (0.659186ms)
+✔ returns health and fails closed at the API boundary when DB is unavailable (22.336807ms)
+✔ returns 400 for malformed JSON and wrong content type (10.482906ms)
+✔ returns 413 for an oversized body (3.872532ms)
+✔ returns 400 for malformed UUID, sequence, and score and 422 for semantic enums (12.185677ms)
+✔ rejects a trajectory whose event, sequence, window, and distribution disagree (6.96473ms)
+✔ creates sessions idempotently and rejects conflicting metadata (6.393339ms)
+✔ accepts a trajectory, makes exact retry idempotent, and rejects conflict (7.929124ms)
+✔ returns an ordered, secret-free trajectory (2.719794ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 214.338854
+### npm run test:gateway
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:gateway
+> node --test scripts/password-gateway.test.mjs
+
+✔ fails closed when the required password is missing (3.324967ms)
+✔ reads the password file with exactly one trailing LF or CRLF removed (7.314161ms)
+✔ fails closed on a missing password file even when an environment password exists (1.301721ms)
+✔ fails closed on an empty password file (1.411116ms)
+✔ fails closed on an unreadable password-file target (0.982967ms)
+✔ does not expose either password source when password-file startup fails (58.256942ms)
+✔ keeps the direct environment password compatible when no file is configured (0.382842ms)
+✔ starts and authenticates when executed through a symlinked current release (136.78114ms)
+✔ rejects missing and incorrect credentials without contacting upstream (9.709533ms)
+✔ redirects an authenticated root request to the nested demo path (7.343389ms)
+✔ proxies authenticated requests without forwarding the authorization secret (15.072679ms)
+✔ keeps absolute-form and scheme-relative request targets on the configured upstream (6.453002ms)
+✔ rejects an authenticated malformed HTTP target and remains available (5.728983ms)
+✔ rejects unauthenticated websocket upgrades before contacting upstream (4.139785ms)
+✔ proxies authenticated websocket upgrades to the fixed upstream without authorization (4.089651ms)
+✔ rejects an authenticated malformed websocket target and remains available (4.287982ms)
+✔ routes authenticated API prefixes to fixed 4181 upstream and preserves static routing (10.436493ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 354.190673
+### npm run test:deployment
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:deployment
+> node --test scripts/nwg-deployment-contract.test.mjs
+
+✔ pins a non-SPA static server to the production loopback endpoint (9.88216ms)
+✔ defines hardened static and gateway systemd units for the exact current release (2.932449ms)
+✔ runs deployment contracts in the Node 22 and Node 24 verification jobs (1.411928ms)
+✔ uses an empty-tree diff only for an all-zero first-push base (0.718079ms)
+✔ runs verification pushes for main, R8 remediation, and the distribution candidate (2.750476ms)
+✔ README records the investor-stage contract and the complete safe verification order (0.858951ms)
+✔ release runbook records version-addressed deployment, readiness, rollback, and measured live status (2.808998ms)
+✔ documented switch and rollback poll bounded readiness after every restart (1071.812474ms)
+✔ API-capable switch and rollback retain strict API and database health (1.19859ms)
+✔ documented automatic switch preserves failure while recovering an API-absent R8 target (21.133673ms)
+✔ automatic rollback, manual rollback, and manual recovery branch on target API capability (0.751021ms)
+✔ runbook applies numbered snapshot migration before the API-capable R9 switch (0.644392ms)
+✔ manual rollback and recovery execute capability-specific service and health contracts (104.355518ms)
+✔ documented auth helper enforces a total wall-clock deadline against trickle responses (244.996683ms)
+✔ tracked threat model states the enforced controls and accepted operational gaps (0.963826ms)
+✔ preserves the existing target when source validation or copying fails (3.793333ms)
+✔ behavior: canonical integration preserves the real project www tree (2971.253887ms)
+✔ project www preservation probe is read-only (0.675313ms)
+✔ behavior: canonical integration rejects a project www staging mutation (1.188586ms)
+✔ behavior: canonical integration rejects an explicitly occupied dynamic static port (7454.438658ms)
+✔ behavior: canonical integration succeeds while port 5173 is externally occupied (2869.000266ms)
+✔ canonical integration owns staging and cleanup below a temporary root (1.063334ms)
+✔ canonical build:nwg release is served through the static and gateway contracts (2920.454442ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17756.729397
+### npm run verify:build-bases
+
+> uiadapt-adaptive-storefront-theater@4.1.0 verify:build-bases
+> node scripts/verify-build-bases.mjs
+
+
+> uiadapt-adaptive-storefront-theater@4.1.0 build
+> tsc -b && vite build
+
+vite v8.2.1 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                       0.74 kB │ gzip:  0.49 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff         5.61 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff         5.62 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff       5.77 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff       5.82 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2        5.86 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2        6.04 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2      6.91 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2      6.97 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2          8.35 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2          8.46 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff             13.14 kB
+dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff             13.15 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2        13.34 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2        13.43 kB
+dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2            14.70 kB
+dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2            14.88 kB
+dist/assets/WantedSansVariable-eIorJFXx.woff2                     1,289.29 kB
+dist/assets/index-CFJzK1ke.css                                       33.58 kB │ gzip:  7.88 kB
+dist/assets/index-D1bMBbNP.js                                       236.13 kB │ gzip: 73.01 kB
+
+✓ built in 130ms
+PASS build: 2 asset URL(s) use /uiadapt_demo/assets/; favicon /uiadapt_demo/favicon.svg served as image/svg+xml
+
+> uiadapt-adaptive-storefront-theater@4.1.0 build:pages
+> tsc -b && vite build --base=/
+
+vite v8.2.1 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                       0.70 kB │ gzip:  0.47 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff         5.61 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff         5.62 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff       5.77 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff       5.82 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2        5.86 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2        6.04 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2      6.91 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2      6.97 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2          8.35 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2          8.46 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff             13.14 kB
+dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff             13.15 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2        13.34 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2        13.43 kB
+dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2            14.70 kB
+dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2            14.88 kB
+dist/assets/WantedSansVariable-eIorJFXx.woff2                     1,289.29 kB
+dist/assets/index-CMs3XHMg.css                                       33.31 kB │ gzip:  7.86 kB
+dist/assets/index-BRTdac2l.js                                       236.13 kB │ gzip: 73.01 kB
+
+✓ built in 126ms
+PASS build:pages: 2 asset URL(s) use /assets/; favicon /favicon.svg served as image/svg+xml
+### npm run build
+
+> uiadapt-adaptive-storefront-theater@4.1.0 build
+> tsc -b && vite build
+
+vite v8.2.1 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                       0.74 kB │ gzip:  0.49 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff         5.61 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff         5.62 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff       5.77 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff       5.82 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2        5.86 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2        6.04 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2      6.91 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2      6.97 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2          8.35 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2          8.46 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff             13.14 kB
+dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff             13.15 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2        13.34 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2        13.43 kB
+dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2            14.70 kB
+dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2            14.88 kB
+dist/assets/WantedSansVariable-eIorJFXx.woff2                     1,289.29 kB
+dist/assets/index-CFJzK1ke.css                                       33.58 kB │ gzip:  7.88 kB
+dist/assets/index-D1bMBbNP.js                                       236.13 kB │ gzip: 73.01 kB
+
+✓ built in 127ms
+### npm run build:nwg
+
+> uiadapt-adaptive-storefront-theater@4.1.0 build:nwg
+> npm run build && npm run stage:nwg
+
+
+> uiadapt-adaptive-storefront-theater@4.1.0 build
+> tsc -b && vite build
+
+vite v8.2.1 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                       0.74 kB │ gzip:  0.49 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff         5.61 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff         5.62 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff       5.77 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff       5.82 kB
+dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2        5.86 kB
+dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2        6.04 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2      6.91 kB
+dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2      6.97 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff           7.20 kB
+dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2          8.35 kB
+dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2          8.46 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff         11.76 kB
+dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff             13.14 kB
+dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff             13.15 kB
+dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2        13.34 kB
+dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2        13.43 kB
+dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2            14.70 kB
+dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2            14.88 kB
+dist/assets/WantedSansVariable-eIorJFXx.woff2                     1,289.29 kB
+dist/assets/index-CFJzK1ke.css                                       33.58 kB │ gzip:  7.88 kB
+dist/assets/index-D1bMBbNP.js                                       236.13 kB │ gzip: 73.01 kB
+
+✓ built in 149ms
+
+> uiadapt-adaptive-storefront-theater@4.1.0 stage:nwg
+> node scripts/stage-nwg.mjs
+
+### npm run test:e2e
+
+> uiadapt-adaptive-storefront-theater@4.1.0 test:e2e
+> playwright test
+
+[WebServer] 
+[WebServer] > uiadapt-adaptive-storefront-theater@4.1.0 build
+[WebServer] > tsc -b && vite build
+[WebServer] 
+[WebServer] vite v8.2.1 building client environment for production...
+[WebServer] transforming...
+[WebServer] ✓ 33 modules transformed.
+[WebServer] rendering chunks...
+[WebServer] computing gzip size...
+[WebServer] dist/index.html                                                       0.74 kB │ gzip:  0.49 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff         5.61 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff         5.62 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff       5.77 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff       5.82 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2        5.86 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2        6.04 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2      6.91 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2      6.97 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff           7.20 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff           7.20 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2          8.35 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2          8.46 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff         11.76 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff         11.76 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff             13.14 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff             13.15 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2        13.34 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2        13.43 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2            14.70 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2            14.88 kB
+[WebServer] dist/assets/WantedSansVariable-eIorJFXx.woff2                     1,289.29 kB
+[WebServer] dist/assets/index-CFJzK1ke.css                                       33.58 kB │ gzip:  7.88 kB
+[WebServer] dist/assets/index-D1bMBbNP.js                                       236.13 kB │ gzip: 73.01 kB
+[WebServer] 
+[WebServer] ✓ built in 127ms
+[WebServer] 
+[WebServer] > uiadapt-adaptive-storefront-theater@4.1.0 preview
+[WebServer] > vite preview --host 127.0.0.1 --port 8766
+[WebServer] 
+[WebServer]   ➜  Local:   http://127.0.0.1:8766/uiadapt_demo/
+
+Running 87 tests using 6 workers
+
+  ✓   1 [mobile-390] › e2e/visual-layer.spec.ts:32:1 › header carries the R11 release label (556ms)
+  ✓   2 [laptop-1024] › e2e/visual-layer.spec.ts:32:1 › header carries the R11 release label (671ms)
+  ✓   5 [desktop-1440] › e2e/visual-layer.spec.ts:32:1 › header carries the R11 release label (680ms)
+  ✓   4 [mobile-390] › e2e/storefront.spec.ts:122:1 › storefront is responsive, local-only, and diagnostics are collapsed (948ms)
+  ✓   7 [mobile-390] › e2e/visual-layer.spec.ts:36:1 › app root mirrors replay status for the visual layer (494ms)
+  ✓   8 [laptop-1024] › e2e/visual-layer.spec.ts:36:1 › app root mirrors replay status for the visual layer (671ms)
+  ✓   9 [desktop-1440] › e2e/visual-layer.spec.ts:36:1 › app root mirrors replay status for the visual layer (704ms)
+  ✓   6 [laptop-1024] › e2e/storefront.spec.ts:122:1 › storefront is responsive, local-only, and diagnostics are collapsed (1.4s)
+  ✓   3 [desktop-1440] › e2e/storefront.spec.ts:122:1 › storefront is responsive, local-only, and diagnostics are collapsed (1.5s)
+  ✓  10 [mobile-390] › e2e/storefront.spec.ts:132:1 › Developer View exposes distribution evidence and policy status (518ms)
+  ✓  14 [laptop-1024] › e2e/storefront.spec.ts:132:1 › Developer View exposes distribution evidence and policy status (771ms)
+  ✓  15 [desktop-1440] › e2e/storefront.spec.ts:132:1 › Developer View exposes distribution evidence and policy status (782ms)
+  ✓  16 [mobile-390] › e2e/storefront.spec.ts:143:1 › keeps local behavior responsive when the telemetry API degrades (1.8s)
+  ✓  19 [mobile-390] › e2e/storefront.spec.ts:161:1 › investor stage uses the local Wanted Sans type scale and causal thesis (509ms)
+  ✓  13 [desktop-1440] › e2e/visual-layer.spec.ts:42:1 › console draws the 27s progress line while running and pauses with the replay (2.6s)
+  ✓  18 [desktop-1440] › e2e/storefront.spec.ts:143:1 › keeps local behavior responsive when the telemetry API degrades (1.9s)
+  ✓  20 [mobile-390] › e2e/storefront.spec.ts:225:1 › reviewed layout keeps laptop cards balanced and mobile evidence controls intact (488ms)
+  ✓  11 [mobile-390] › e2e/visual-layer.spec.ts:42:1 › console draws the 27s progress line while running and pauses with the replay (3.5s)
+  -  23 [mobile-390] › e2e/storefront.spec.ts:242:1 › PURCHASE_INTENT keeps all desktop product cards equal width
+  ✓  21 [desktop-1440] › e2e/visual-layer.spec.ts:54:1 › causal arrows pulse only while the replay runs (775ms)
+  ✓  22 [desktop-1440] › e2e/storefront.spec.ts:161:1 › investor stage uses the local Wanted Sans type scale and causal thesis (752ms)
+  ✓  24 [mobile-390] › e2e/visual-layer.spec.ts:54:1 › causal arrows pulse only while the replay runs (567ms)
+  ✓  12 [laptop-1024] › e2e/visual-layer.spec.ts:42:1 › console draws the 27s progress line while running and pauses with the replay (3.9s)
+  ✓  25 [mobile-390] › e2e/storefront.spec.ts:255:1 › reviewed text contrast remains WCAG AA in inactive and PURCHASE_INTENT-muted states (784ms)
+  ✓  27 [desktop-1440] › e2e/storefront.spec.ts:225:1 › reviewed layout keeps laptop cards balanced and mobile evidence controls intact (683ms)
+  ✓  17 [laptop-1024] › e2e/storefront.spec.ts:143:1 › keeps local behavior responsive when the telemetry API degrades (3.5s)
+  ✓  29 [laptop-1024] › e2e/visual-layer.spec.ts:54:1 › causal arrows pulse only while the replay runs (746ms)
+  ✓  32 [laptop-1024] › e2e/storefront.spec.ts:161:1 › investor stage uses the local Wanted Sans type scale and causal thesis (714ms)
+  ✓  30 [mobile-390] › e2e/storefront.spec.ts:294:1 › nested deployment path loads assets, reloads, and runs the replay (1.1s)
+  ✓  31 [desktop-1440] › e2e/storefront.spec.ts:242:1 › PURCHASE_INTENT keeps all desktop product cards equal width (1.0s)
+  ✓  34 [laptop-1024] › e2e/storefront.spec.ts:225:1 › reviewed layout keeps laptop cards balanced and mobile evidence controls intact (629ms)
+  ✓  35 [mobile-390] › e2e/storefront.spec.ts:316:1 › production index declares and serves a local favicon at the nested base (463ms)
+  ✓  36 [desktop-1440] › e2e/storefront.spec.ts:255:1 › reviewed text contrast remains WCAG AA in inactive and PURCHASE_INTENT-muted states (880ms)
+  -  37 [laptop-1024] › e2e/storefront.spec.ts:242:1 › PURCHASE_INTENT keeps all desktop product cards equal width
+  ✓  40 [laptop-1024] › e2e/storefront.spec.ts:255:1 › reviewed text contrast remains WCAG AA in inactive and PURCHASE_INTENT-muted states (697ms)
+  ✓  38 [mobile-390] › e2e/storefront.spec.ts:327:1 › the canonical replay changes presentation without changing product data (1.5s)
+  ✓  39 [desktop-1440] › e2e/storefront.spec.ts:294:1 › nested deployment path loads assets, reloads, and runs the replay (1.1s)
+  ✓  43 [desktop-1440] › e2e/storefront.spec.ts:316:1 › production index declares and serves a local favicon at the nested base (566ms)
+  ✓  41 [laptop-1024] › e2e/storefront.spec.ts:294:1 › nested deployment path loads assets, reloads, and runs the replay (1.0s)
+  ✓  42 [mobile-390] › e2e/storefront.spec.ts:373:1 › COMPARE is visible in the main stage and PURCHASE_INTENT becomes decision support (729ms)
+  ✓  46 [mobile-390] › e2e/storefront.spec.ts:390:1 › UIAdapt and the sample merchant are named separately (423ms)
+  ✓  45 [laptop-1024] › e2e/storefront.spec.ts:316:1 › production index declares and serves a local favicon at the nested base (540ms)
+  ✓  47 [mobile-390] › e2e/storefront.spec.ts:398:1 › Adaptive OFF keeps the same detected state but baseline presentation (744ms)
+  ✓  49 [mobile-390] › e2e/storefront.spec.ts:410:1 › active product control survives the comparison transition (533ms)
+  ✓  44 [desktop-1440] › e2e/storefront.spec.ts:327:1 › the canonical replay changes presentation without changing product data (2.3s)
+  ✓  48 [laptop-1024] › e2e/storefront.spec.ts:327:1 › the canonical replay changes presentation without changing product data (2.0s)
+  ✓  50 [mobile-390] › e2e/storefront.spec.ts:421:1 › keyboard-only path starts, pauses, resets, and records a product action (882ms)
+  ✓  51 [desktop-1440] › e2e/storefront.spec.ts:373:1 › COMPARE is visible in the main stage and PURCHASE_INTENT becomes decision support (894ms)
+  ✓  52 [laptop-1024] › e2e/storefront.spec.ts:373:1 › COMPARE is visible in the main stage and PURCHASE_INTENT becomes decision support (778ms)
+  ✓  54 [desktop-1440] › e2e/storefront.spec.ts:390:1 › UIAdapt and the sample merchant are named separately (607ms)
+  ✓  55 [laptop-1024] › e2e/storefront.spec.ts:390:1 › UIAdapt and the sample merchant are named separately (511ms)
+  ✓  56 [desktop-1440] › e2e/storefront.spec.ts:398:1 › Adaptive OFF keeps the same detected state but baseline presentation (881ms)
+  ✓  57 [laptop-1024] › e2e/storefront.spec.ts:398:1 › Adaptive OFF keeps the same detected state but baseline presentation (874ms)
+  ✓  58 [desktop-1440] › e2e/storefront.spec.ts:410:1 › active product control survives the comparison transition (700ms)
+  ✓  59 [laptop-1024] › e2e/storefront.spec.ts:410:1 › active product control survives the comparison transition (677ms)
+  ✓  61 [laptop-1024] › e2e/storefront.spec.ts:421:1 › keyboard-only path starts, pauses, resets, and records a product action (1.1s)
+  ✓  60 [desktop-1440] › e2e/storefront.spec.ts:421:1 › keyboard-only path starts, pauses, resets, and records a product action (1.3s)
+  ✓  53 [mobile-390] › e2e/storefront.spec.ts:448:1 › Pause and Resume preserve virtual progress (4.1s)
+  ✓  63 [desktop-1440] › e2e/storefront.spec.ts:448:1 › Pause and Resume preserve virtual progress (2.5s)
+  ✓  64 [mobile-390] › e2e/storefront.spec.ts:460:1 › Reset cancels every stale Replay timer (2.9s)
+  ✓  62 [laptop-1024] › e2e/storefront.spec.ts:448:1 › Pause and Resume preserve virtual progress (4.3s)
+  ✓  65 [desktop-1440] › e2e/storefront.spec.ts:460:1 › Reset cancels every stale Replay timer (2.9s)
+  ✓  66 [mobile-390] › e2e/storefront.spec.ts:494:1 › manual takeover cancels the remaining Replay timers (2.8s)
+  ✓  68 [desktop-1440] › e2e/storefront.spec.ts:494:1 › manual takeover cancels the remaining Replay timers (1.6s)
+  ✓  67 [laptop-1024] › e2e/storefront.spec.ts:460:1 › Reset cancels every stale Replay timer (3.0s)
+  ✓  69 [mobile-390] › e2e/storefront.spec.ts:506:1 › Stop preserves state and cancels the remaining Replay timers (2.6s)
+  ✓  26 [desktop-1440] › e2e/visual-layer.spec.ts:62:1 › storefront light sweep is keyed to the applied state (19.7s)
+  ✓  28 [mobile-390] › e2e/visual-layer.spec.ts:62:1 › storefront light sweep is keyed to the applied state (19.4s)
+  ✓  33 [laptop-1024] › e2e/visual-layer.spec.ts:62:1 › storefront light sweep is keyed to the applied state (19.6s)
+  ✓  70 [desktop-1440] › e2e/storefront.spec.ts:506:1 › Stop preserves state and cancels the remaining Replay timers (2.8s)
+  ✓  72 [desktop-1440] › e2e/visual-layer.spec.ts:72:1 › cards enter with a stagger and keep equal geometry at rest (1.5s)
+  ✓  73 [mobile-390] › e2e/visual-layer.spec.ts:72:1 › cards enter with a stagger and keep equal geometry at rest (1.3s)
+  ✓  71 [laptop-1024] › e2e/storefront.spec.ts:494:1 › manual takeover cancels the remaining Replay timers (2.9s)
+  ✓  74 [laptop-1024] › e2e/visual-layer.spec.ts:72:1 › cards enter with a stagger and keep equal geometry at rest (1.5s)
+  ✓  76 [mobile-390] › e2e/visual-layer.spec.ts:83:1 › fine pointer gets a tilting console that returns to rest (2.0s)
+  ✓  75 [desktop-1440] › e2e/visual-layer.spec.ts:83:1 › fine pointer gets a tilting console that returns to rest (2.2s)
+  ✓  79 [mobile-390] › e2e/visual-layer.spec.ts:98:1 › reduced motion disables tilt and the progress line (648ms)
+  ✓  80 [desktop-1440] › e2e/visual-layer.spec.ts:98:1 › reduced motion disables tilt and the progress line (772ms)
+  ✓  77 [laptop-1024] › e2e/storefront.spec.ts:506:1 › Stop preserves state and cancels the remaining Replay timers (2.8s)
+  ✓  78 [laptop-1024] › e2e/visual-layer.spec.ts:83:1 › fine pointer gets a tilting console that returns to rest (2.1s)
+  ✓  83 [laptop-1024] › e2e/visual-layer.spec.ts:98:1 › reduced motion disables tilt and the progress line (775ms)
+  ✓  81 [mobile-390] › e2e/visual-layer.spec.ts:109:1 › full replay keeps the page free of horizontal overflow (27.6s)
+  -  85 [mobile-390] › e2e/visual-layer.spec.ts:117:1 › PURCHASE_INTENT keeps desktop cards equal width at true rest
+  ✓  82 [desktop-1440] › e2e/visual-layer.spec.ts:109:1 › full replay keeps the page free of horizontal overflow (27.9s)
+  ✓  84 [laptop-1024] › e2e/visual-layer.spec.ts:109:1 › full replay keeps the page free of horizontal overflow (27.7s)
+  -  87 [laptop-1024] › e2e/visual-layer.spec.ts:117:1 › PURCHASE_INTENT keeps desktop cards equal width at true rest
+  ✓  86 [desktop-1440] › e2e/visual-layer.spec.ts:117:1 › PURCHASE_INTENT keeps desktop cards equal width at true rest (19.9s)
+
+  4 skipped
+  83 passed (1.3m)
+### npm audit --omit=dev --audit-level=high
+found 0 vulnerabilities
+### git diff --check

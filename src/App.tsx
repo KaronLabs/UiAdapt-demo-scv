@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import VanillaTilt from "vanilla-tilt";
 import { PRODUCTS } from "./domain/catalog";
 import { derivePolicy } from "./domain/runtime";
 import type { AdaptiveState, ProductId } from "./domain/types";
@@ -69,6 +70,19 @@ function App() {
   const replayIsActive = state.replayStatus === "RUNNING" || state.replayStatus === "PAUSED";
   const demoStageRef = useRef<HTMLElement>(null);
   const hasScrolledToStageRef = useRef(false);
+  const consoleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const node = consoleRef.current;
+    if (!node || typeof window.matchMedia !== "function") return;
+    const prefers = (query: string) => window.matchMedia(query).matches;
+    if (prefers("(prefers-reduced-motion: reduce)") || prefers("(pointer: coarse)")) return;
+    VanillaTilt.init(node, { max: 4, speed: 900, perspective: 1200, glare: true, "max-glare": 0.12 });
+    return () => {
+      (node as HTMLDivElement & { vanillaTilt?: { destroy: () => void } }).vanillaTilt?.destroy();
+      node.querySelectorAll(".js-tilt-glare").forEach((glare) => glare.remove());
+    };
+  }, []);
 
   useEffect(() => {
     if (state.replayStatus === "IDLE") {
@@ -84,11 +98,11 @@ function App() {
   }, [state.replayStatus]);
 
   return (
-    <div className={`app app--${state.appliedState.toLowerCase()}`}>
+    <div className={`app app--${state.appliedState.toLowerCase()}`} data-replay={state.replayStatus}>
       <header className="site-header">
         <a className="brand" href="#main-content" aria-label="UIAdapt 홈">
           <span className="brand__mark" aria-hidden="true"><i /><i /><i /></span>
-          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure · R10</small></span>
+          <span className="brand__lockup"><strong>UIAdapt</strong><small>Adaptive UI Infrastructure · R11</small></span>
         </a>
         <p className="header-story">Behavior-aware presentation layer</p>
         <div className="header-tools">
@@ -119,7 +133,7 @@ function App() {
               <strong>Different presentation</strong>
             </div>
           </div>
-          <div className="hero__console" aria-label="UIAdapt 데모 제어">
+          <div className="hero__console" aria-label="UIAdapt 데모 제어" ref={consoleRef}>
             <div className="causal-system">
               <SignalRibbon state={state.appliedState} />
               <div className="causal-trace" data-testid="causal-trace" aria-label="Behavior → State → Policy → Interface">
@@ -177,7 +191,7 @@ function App() {
               <span className="demo-stage__label">동일한 상품과 행동으로 검증하는 적응형 상점 무대</span>
             </div>
             <button type="button" className="cart-button" aria-label={`장바구니, 상품 ${cartCount}개`}>
-              Bag <span>{cartCount}</span>
+              Bag <span key={cartCount}>{cartCount}</span>
             </button>
           </div>
 

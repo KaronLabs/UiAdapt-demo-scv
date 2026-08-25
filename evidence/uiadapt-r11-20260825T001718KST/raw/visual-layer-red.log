@@ -1,0 +1,241 @@
+[WebServer] 
+[WebServer] > uiadapt-adaptive-storefront-theater@4.1.0 build
+[WebServer] > tsc -b && vite build
+[WebServer] 
+[WebServer] vite v8.2.1 building client environment for production...
+[WebServer] transforming...
+[WebServer] ✓ 32 modules transformed.
+[WebServer] rendering chunks...
+[WebServer] computing gzip size...
+[WebServer] dist/index.html                                                       0.74 kB │ gzip:  0.48 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-500-normal-C8zxqsMH.woff         5.61 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-400-normal-DDuiU_S-.woff         5.62 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BIfNGwUT.woff       5.77 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-DMdlQ8Kv.woff       5.82 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-400-normal-BulugwFq.woff2        5.86 kB
+[WebServer] dist/assets/ibm-plex-mono-vietnamese-500-normal-DZ4AoWbu.woff2        6.04 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-400-normal-xuaO2J-f.woff2      6.91 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-ext-500-normal-BqneJy0T.woff2      6.97 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-400-normal-CEL4l2ZJ.woff           7.20 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-500-normal-Ael50iVv.woff           7.20 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-400-normal-BSMlKf0J.woff2          8.35 kB
+[WebServer] dist/assets/ibm-plex-mono-cyrillic-500-normal-Bq9vWWag.woff2          8.46 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-400-normal-D3D2R8hC.woff         11.76 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-500-normal-CZ70TYgx.woff         11.76 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff             13.14 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-500-normal-CB9ihrfo.woff             13.15 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-400-normal-BmRBH3aV.woff2        13.34 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-ext-500-normal-CAhNIIs5.woff2        13.43 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2            14.70 kB
+[WebServer] dist/assets/ibm-plex-mono-latin-500-normal-DSY6xOcd.woff2            14.88 kB
+[WebServer] dist/assets/WantedSansVariable-eIorJFXx.woff2                     1,289.29 kB
+[WebServer] dist/assets/index-Blrgk5CG.css                                       23.89 kB │ gzip:  5.88 kB
+[WebServer] dist/assets/index-DV06e2sn.js                                       226.90 kB │ gzip: 70.64 kB
+[WebServer] 
+[WebServer] ✓ built in 123ms
+[WebServer] 
+[WebServer] > uiadapt-adaptive-storefront-theater@4.1.0 preview
+[WebServer] > vite preview --host 127.0.0.1 --port 8766
+[WebServer] 
+[WebServer]   ➜  Local:   http://127.0.0.1:8766/uiadapt_demo/
+
+Running 9 tests using 1 worker
+
+  ✓  1 [desktop-1440] › e2e/visual-layer.spec.ts:32:1 › header carries the R11 release label (406ms)
+  ✓  2 [desktop-1440] › e2e/visual-layer.spec.ts:36:1 › app root mirrors replay status for the visual layer (370ms)
+  ✘  3 [desktop-1440] › e2e/visual-layer.spec.ts:42:1 › console draws the 27s progress line while running and pauses with the replay (5.5s)
+  ✘  4 [desktop-1440] › e2e/visual-layer.spec.ts:54:1 › causal arrows pulse only while the replay runs (5.6s)
+  ✘  5 [desktop-1440] › e2e/visual-layer.spec.ts:62:1 › storefront light sweep is keyed to the applied state (12.1s)
+  ✘  6 [desktop-1440] › e2e/visual-layer.spec.ts:72:1 › cards enter with a stagger and keep equal geometry at rest (5.4s)
+  ✘  7 [desktop-1440] › e2e/visual-layer.spec.ts:83:1 › fine pointer gets a tilting console that returns to rest (5.5s)
+  ✓  8 [desktop-1440] › e2e/visual-layer.spec.ts:98:1 › reduced motion disables tilt and the progress line (682ms)
+  ✓  9 [desktop-1440] › e2e/visual-layer.spec.ts:109:1 › full replay keeps the page free of horizontal overflow (27.6s)
+
+
+  1) [desktop-1440] › e2e/visual-layer.spec.ts:42:1 › console draws the 27s progress line while running and pauses with the replay 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "replay-progress"
+    Received: "none"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      43 |   expect(await pseudoStyle(page, ".hero__console", "::after", "animation-name")).toBe("none");
+      44 |   await page.getByTestId("live-demo-cta").click();
+    > 45 |   await expect.poll(() => pseudoStyle(page, ".hero__console", "::after", "animation-name")).toBe("replay-progress");
+         |                                                                                             ^
+      46 |   expect(await pseudoStyle(page, ".hero__console", "::after", "animation-duration")).toBe("27s");
+      47 |   expect(await pseudoStyle(page, ".hero__console", "::after", "animation-play-state")).toBe("running");
+      48 |   await page.getByRole("button", { name: "Pause" }).click();
+        at /mnt/nvme-hot/ne/UiAdapt-demo-scv/e2e/visual-layer.spec.ts:45:93
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/visual-layer-console-draws-cb9e0--and-pauses-with-the-replay-desktop-1440/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/visual-layer-console-draws-cb9e0--and-pauses-with-the-replay-desktop-1440/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/visual-layer-console-draws-cb9e0--and-pauses-with-the-replay-desktop-1440/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/visual-layer-console-draws-cb9e0--and-pauses-with-the-replay-desktop-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop-1440] › e2e/visual-layer.spec.ts:54:1 › causal arrows pulse only while the replay runs 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.causal-trace b').first()
+    Expected: "beam-pulse"
+    Received: "none"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" with timeout 5000ms
+      - waiting for locator('.causal-trace b').first()
+        14 × locator resolved to <b aria-hidden="true">→</b>
+           - unexpected value "none"
+
+
+      56 |   await expect(arrow).toHaveCSS("animation-name", "none");
+      57 |   await page.getByTestId("live-demo-cta").click();
+    > 58 |   await expect(arrow).toHaveCSS("animation-name", "beam-pulse");
+         |                       ^
+      59 |   await expect(page.locator(".causal-trace b").nth(2)).toHaveCSS("animation-delay", "1.2s");
+      60 | });
+      61 |
+        at /mnt/nvme-hot/ne/UiAdapt-demo-scv/e2e/visual-layer.spec.ts:58:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/visual-layer-causal-arrows-pulse-only-while-the-replay-runs-desktop-1440/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/visual-layer-causal-arrows-pulse-only-while-the-replay-runs-desktop-1440/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/visual-layer-causal-arrows-pulse-only-while-the-replay-runs-desktop-1440/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/visual-layer-causal-arrows-pulse-only-while-the-replay-runs-desktop-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [desktop-1440] › e2e/visual-layer.spec.ts:62:1 › storefront light sweep is keyed to the applied state 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "sweep-compare"
+    Received: "none"
+
+      64 |   await page.getByTestId("live-demo-cta").click();
+      65 |   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "COMPARE", { timeout: 20_000 });
+    > 66 |   expect(await pseudoStyle(page, ".product-grid", "::after", "animation-name")).toBe("sweep-compare");
+         |                                                                                 ^
+      67 |   await expect(page.locator(".product-grid")).toHaveAttribute("data-state", "PURCHASE_INTENT", { timeout: 20_000 });
+      68 |   expect(await pseudoStyle(page, ".product-grid", "::after", "animation-name")).toBe("sweep-intent");
+      69 |   expect(await pseudoStyle(page, ".product-card--focused", "::before", "animation-name")).toBe("ring-spin");
+        at /mnt/nvme-hot/ne/UiAdapt-demo-scv/e2e/visual-layer.spec.ts:66:81
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/visual-layer-storefront-li-aa834--keyed-to-the-applied-state-desktop-1440/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/visual-layer-storefront-li-aa834--keyed-to-the-applied-state-desktop-1440/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/visual-layer-storefront-li-aa834--keyed-to-the-applied-state-desktop-1440/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/visual-layer-storefront-li-aa834--keyed-to-the-applied-state-desktop-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [desktop-1440] › e2e/visual-layer.spec.ts:72:1 › cards enter with a stagger and keep equal geometry at rest 
+
+    Error: expect(locator).toHaveCSS(expected) failed
+
+    Locator:  locator('.product-card').first()
+    Expected: "card-in"
+    Received: "none"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCSS" with timeout 5000ms
+      - waiting for locator('.product-card').first()
+        14 × locator resolved to <article class="product-card" data-focused="false" data-product-id="aurora-one" data-product-contract="{"id":"aurora-one","name":"Aurora One","price":329000,"rating":4.8,"reviews":284,"batteryHours":40,"anc":"Hybrid ANC","weightGrams":254,"shipping":"내일 무료배송","inventory":18,"colors":["Graphite","Sand","Cobalt"],"tagline":"깊은 정숙함, 넓게 열린 사운드.","detail":"정교한 공간감과 장시간 청취를 위한 플래그십 오버이어."}">…</article>
+           - unexpected value "none"
+
+
+      72 | test("cards enter with a stagger and keep equal geometry at rest", async ({ page }) => {
+      73 |   const cards = page.locator(".product-card");
+    > 74 |   await expect(cards.nth(0)).toHaveCSS("animation-name", "card-in");
+         |                              ^
+      75 |   await expect(cards.nth(2)).toHaveCSS("animation-delay", "0.18s");
+      76 |   await page.waitForTimeout(900);
+      77 |   const widths = await cards.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().width));
+        at /mnt/nvme-hot/ne/UiAdapt-demo-scv/e2e/visual-layer.spec.ts:74:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/visual-layer-cards-enter-w-64862-keep-equal-geometry-at-rest-desktop-1440/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/visual-layer-cards-enter-w-64862-keep-equal-geometry-at-rest-desktop-1440/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/visual-layer-cards-enter-w-64862-keep-equal-geometry-at-rest-desktop-1440/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/visual-layer-cards-enter-w-64862-keep-equal-geometry-at-rest-desktop-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [desktop-1440] › e2e/visual-layer.spec.ts:83:1 › fine pointer gets a tilting console that returns to rest 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.hero__console').locator('.js-tilt-glare')
+    Expected: 1
+    Received: 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('.hero__console').locator('.js-tilt-glare')
+        14 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      83 | test("fine pointer gets a tilting console that returns to rest", async ({ page }) => {
+      84 |   const consoleBox = page.locator(".hero__console");
+    > 85 |   await expect(consoleBox.locator(".js-tilt-glare")).toHaveCount(1);
+         |                                                      ^
+      86 |   const rest = await consoleBox.boundingBox();
+      87 |   const box = rest!;
+      88 |   await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2);
+        at /mnt/nvme-hot/ne/UiAdapt-demo-scv/e2e/visual-layer.spec.ts:85:54
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/visual-layer-fine-pointer--2e2b7-onsole-that-returns-to-rest-desktop-1440/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/visual-layer-fine-pointer--2e2b7-onsole-that-returns-to-rest-desktop-1440/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/visual-layer-fine-pointer--2e2b7-onsole-that-returns-to-rest-desktop-1440/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/visual-layer-fine-pointer--2e2b7-onsole-that-returns-to-rest-desktop-1440/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5 failed
+    [desktop-1440] › e2e/visual-layer.spec.ts:42:1 › console draws the 27s progress line while running and pauses with the replay 
+    [desktop-1440] › e2e/visual-layer.spec.ts:54:1 › causal arrows pulse only while the replay runs 
+    [desktop-1440] › e2e/visual-layer.spec.ts:62:1 › storefront light sweep is keyed to the applied state 
+    [desktop-1440] › e2e/visual-layer.spec.ts:72:1 › cards enter with a stagger and keep equal geometry at rest 
+    [desktop-1440] › e2e/visual-layer.spec.ts:83:1 › fine pointer gets a tilting console that returns to rest 
+  4 passed (1.2m)

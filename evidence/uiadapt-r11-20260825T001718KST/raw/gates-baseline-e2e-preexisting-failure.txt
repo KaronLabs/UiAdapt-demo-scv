@@ -1,0 +1,13 @@
+  1) [desktop-1440] › e2e/storefront.spec.ts:242:1 › PURCHASE_INTENT keeps all desktop product cards equal width 
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1
+    Received:    2.248748779296875
+
+      250 |     cards.map((card) => (card as HTMLElement).getBoundingClientRect().width),
+      251 |   );
+    > 252 |   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+          |                                                     ^
+      253 | });
+      254 |

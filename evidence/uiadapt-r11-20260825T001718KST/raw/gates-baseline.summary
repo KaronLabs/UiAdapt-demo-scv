@@ -1,0 +1,12 @@
+PASS  npm run lint
+PASS  npm test
+PASS  npm run test:api
+PASS  npm run test:gateway
+PASS  npm run test:deployment
+PASS  npm run verify:build-bases
+PASS  npm run build
+PASS  npm run build:nwg
+FAIL  npm run test:e2e
+PASS  npm audit --omit=dev --audit-level=high
+PASS  git diff --check
+DONE 2026-08-24T14:40:50+00:00

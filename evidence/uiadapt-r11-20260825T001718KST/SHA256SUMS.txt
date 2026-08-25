@@ -1,0 +1,17 @@
+dd295e6039bba58241648462fa5f50d210f3fc8a08b95b67b17706885802e322  ./README.md
+d33f60ad386ee91e60b33857f7fd0124099ab59f3a40ca3e1c8fd899d6e7973a  ./raw/gates-after.log
+3c80ec7acbb5efcdd7a90cfda4c8e4826d8ea1104597eebffef5c4abe178b9a9  ./raw/gates-after.summary
+c297c15875b2afbc93b4870256af3f109059beb741ab38d0f7c20990da584850  ./raw/gates-baseline-e2e-preexisting-failure.txt
+905cd548bb546903bc980e94dd65d1628adf5a08dc64db3db85792f76bed1106  ./raw/gates-baseline.summary
+f0553f4a283e8974d2a6550d6311fe3d561ff3eb8282ae31842767b2c764d872  ./raw/visual-layer-red.log
+d3540788df10644231698bc0dbbd41036c212828065e734db64436a3daabb030  ./screenshots/desktop-1440-compare.png
+32ed16648ed67803857305059fe026c09389f1844f4ce40d48144a1e3bae9484  ./screenshots/desktop-1440-explore.png
+ff473ba60fd6885ad6d9416f3d26bec015ec5fd00332200da2d563690edf035d  ./screenshots/desktop-1440-purchase-intent.png
+c9521051c63edb5210f8feb4a91d2a833e4cbc39f6fcbd1c4b135f52feddc716  ./screenshots/desktop-1440-r11-console-tilt.png
+055f3bdfc679fb1275be53e3b9e1382c5011b54ecce99ca99e48056ffb231f4c  ./screenshots/desktop-1440-r11-intent-fullpage.png
+b13c553baf4de12b6c6fe8eafccb60b383ddf6eeaf3da84588e504fe410751d9  ./screenshots/laptop-1024-compare.png
+d4e73c190f10a530c694f5e850449e0a8915c9a6b40f7b1925e5299b324f06b8  ./screenshots/laptop-1024-explore.png
+b7575e627779b804e1539333597b83b0daaf2f90ad61a6927cbcddf2bb118b2c  ./screenshots/laptop-1024-purchase-intent.png
+a8b65bac1c19f388aab6f768caf72d0fc1283e5d101f08ad989eaead6dd6cb21  ./screenshots/mobile-390-compare.png
+730d93cf148a7f5533553726e7fdd1a172733c68e33c930f2e13f00da9313c5d  ./screenshots/mobile-390-explore.png
+fa93c83769158add97aa1ff2203de8ea71f0049ba94692b8c8cb7b79d4925093  ./screenshots/mobile-390-purchase-intent.png
