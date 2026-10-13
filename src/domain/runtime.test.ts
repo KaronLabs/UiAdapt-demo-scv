@@ -28,6 +28,19 @@ describe("canonical product contract", () => {
 });
 
 describe("deterministic evidence and state policy", () => {
+  it("preserves disabled telemetry through reset and replay while enabled status resets to healthy", () => {
+    const initial = createInitialRuntime(true, "session-1", "DISABLED");
+    expect(initial.telemetryStatus).toBe("DISABLED");
+    const reset = runtimeReducer(initial, { type: "RESET", sessionId: "session-2" });
+    const replay = runtimeReducer(reset, { type: "RESET_FOR_REPLAY", sessionId: "session-3" });
+    expect(reset.telemetryStatus).toBe("DISABLED");
+    expect(replay.telemetryStatus).toBe("DISABLED");
+
+    const degraded = runtimeReducer(createInitialRuntime(), { type: "SET_TELEMETRY_STATUS", status: "DEGRADED" });
+    expect(runtimeReducer(degraded, { type: "RESET" }).telemetryStatus).toBe("HEALTHY");
+    expect(runtimeReducer(degraded, { type: "RESET_FOR_REPLAY" }).telemetryStatus).toBe("HEALTHY");
+  });
+
   it("keeps product interaction diagnostics separate from distribution evidence", () => {
     const features = deriveFeatures(REPLAY_EVENTS.slice(0, 4));
     expect(features.windowSize).toBe(4);

@@ -29,20 +29,23 @@ function wait(delayMs: number): Promise<void> {
 
 export class TelemetryClient {
   private readonly fetchImpl: TelemetryFetch;
+  private readonly disabled: boolean;
   private readonly queue: Request[] = [];
   private readonly listeners = new Set<StatusListener>();
   private processing = false;
   private disposed = false;
-  private status: TelemetryStatus = "HEALTHY";
+  private status: TelemetryStatus;
   private idleResolvers: Array<() => void> = [];
   private pendingSession: Request | null = null;
 
-  public constructor(fetchImpl: TelemetryFetch = defaultFetch) {
+  public constructor(fetchImpl: TelemetryFetch = defaultFetch, options?: { disabled?: boolean }) {
     this.fetchImpl = fetchImpl;
+    this.disabled = options?.disabled === true;
+    this.status = this.disabled ? "DISABLED" : "HEALTHY";
   }
 
   public startSession(session: TelemetrySession): boolean {
-    if (this.disposed) return false;
+    if (this.disposed || this.disabled) return false;
     const request = { path: "/api/uiadapt/sessions", body: session };
     if (this.queue.length >= TELEMETRY_QUEUE_LIMIT) {
       this.pendingSession = request;
@@ -53,6 +56,7 @@ export class TelemetryClient {
   }
 
   public enqueueTrajectory(frame: TelemetryFrame): boolean {
+    if (this.disabled) return false;
     if (this.pendingSession?.body.sessionId === frame.sessionId) return false;
     return this.enqueue({ path: "/api/uiadapt/trajectory", body: frame });
   }
@@ -78,7 +82,7 @@ export class TelemetryClient {
   }
 
   private enqueue(request: Request): boolean {
-    if (this.disposed) return false;
+    if (this.disposed || this.disabled) return false;
     if (this.queue.length >= TELEMETRY_QUEUE_LIMIT) {
       this.setStatus("OVERFLOW");
       return false;
@@ -142,6 +146,6 @@ export class TelemetryClient {
   }
 }
 
-export function createTelemetryClient(fetchImpl?: TelemetryFetch): TelemetryClient {
-  return new TelemetryClient(fetchImpl);
+export function createTelemetryClient(fetchImpl?: TelemetryFetch, options?: { disabled?: boolean }): TelemetryClient {
+  return new TelemetryClient(fetchImpl, options);
 }

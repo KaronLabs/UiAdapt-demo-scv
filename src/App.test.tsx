@@ -8,6 +8,24 @@ describe("adaptive storefront UI contract", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("shows DISABLED on first render and sends no telemetry through replay and reset in static mode", () => {
+    vi.stubEnv("VITE_UIADAPT_TELEMETRY_MODE", "disabled");
+    const fetchImpl = vi.fn(async () => ({ ok: true, status: 200 }));
+    vi.stubGlobal("fetch", fetchImpl);
+    render(<App />);
+
+    const status = () => screen.getAllByText("Telemetry").at(-1)?.nextElementSibling;
+    expect(status()).toHaveTextContent("DISABLED");
+    fireEvent.click(screen.getByTestId("live-demo-cta"));
+    act(() => vi.advanceTimersByTime(19_000));
+    expect(screen.getByTestId("event-count")).toHaveTextContent("38");
+    expect(status()).toHaveTextContent("DISABLED");
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(status()).toHaveTextContent("DISABLED");
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it("renders the canonical products and keeps diagnostics collapsed", () => {

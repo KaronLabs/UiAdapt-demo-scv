@@ -34,6 +34,9 @@
     "vanilla-tilt": "1.8.1",
     "wanted-sans": "1.0.3"
   },
+  "overrides": {
+    "compression": "1.8.2"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",

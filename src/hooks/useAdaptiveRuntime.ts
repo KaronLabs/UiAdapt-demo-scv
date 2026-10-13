@@ -56,11 +56,13 @@ function sessionPayload(sessionId: string, source: TelemetrySession["source"], a
 
 export function useAdaptiveRuntime() {
   const [initialSessionId] = useState(createSessionId);
-  const [telemetry] = useState(() => createTelemetryClient());
+  const [telemetry] = useState(() => createTelemetryClient(undefined, {
+    disabled: import.meta.env.VITE_UIADAPT_TELEMETRY_MODE === "disabled",
+  }));
   const [state, dispatch] = useReducer(
     runtimeReducer,
     undefined,
-    () => createInitialRuntime(true, initialSessionId),
+    () => createInitialRuntime(true, initialSessionId, telemetry.getStatus()),
   );
   const stateRef = useRef(state);
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());

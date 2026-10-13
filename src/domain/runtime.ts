@@ -24,7 +24,11 @@ function emptyFeatures(): FeatureSnapshot {
   };
 }
 
-export function createInitialRuntime(adaptiveEnabled = true, sessionId = "session-0"): RuntimeSnapshot {
+export function createInitialRuntime(
+  adaptiveEnabled = true,
+  sessionId = "session-0",
+  telemetryStatus: TelemetryStatus = "HEALTHY",
+): RuntimeSnapshot {
   const policy = derivePolicy("EXPLORE", adaptiveEnabled, null);
   return {
     sessionId,
@@ -45,7 +49,7 @@ export function createInitialRuntime(adaptiveEnabled = true, sessionId = "sessio
     candidatePersistence: 0,
     lastTransition: null,
     transitions: [],
-    telemetryStatus: "HEALTHY",
+    telemetryStatus,
     replayStatus: "IDLE",
     lastRejectedReason: null,
   };
@@ -86,7 +90,11 @@ function resetRuntime(
   sessionId?: string,
 ): RuntimeSnapshot {
   return {
-    ...createInitialRuntime(state.adaptiveEnabled, sessionId ?? `session-${state.sessionEpoch + 1}`),
+    ...createInitialRuntime(
+      state.adaptiveEnabled,
+      sessionId ?? `session-${state.sessionEpoch + 1}`,
+      state.telemetryStatus === "DISABLED" ? "DISABLED" : "HEALTHY",
+    ),
     sessionEpoch: state.sessionEpoch + 1,
     replayStatus,
   };

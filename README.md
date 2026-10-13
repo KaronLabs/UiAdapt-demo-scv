@@ -14,6 +14,7 @@ UIAdapt는 추천 결과를 바꾸는 엔진이 아니라, 관찰된 행동 분�
 - 상태·근거·진단: 로컬 `IBM Plex Mono`
 - 원격 폰트·이미지·analytics 요청: 없음
 - telemetry API: same-origin `/api/uiadapt/*`를 통해 선택적으로 기록하며, API/DB 장애는 화면 판단을 바꾸지 않음
+- 정적 공개 빌드: `VITE_UIADAPT_TELEMETRY_MODE=disabled npm run build:nwg`를 사용하면 Developer View에 `DISABLED`가 표시되고 세션·trajectory 요청을 보내지 않음. 기본 빌드는 기존 telemetry 동작을 유지함
 - 상태 흐름: `EXPLORE → COMPARE → PURCHASE_INTENT`
 - `PURCHASE_INTENT`는 구매 완료가 아니라 결정에 가까운 행동 분포 상태임
 - Adaptive OFF: detected state는 계산하되 presentation은 EXPLORE로 유지

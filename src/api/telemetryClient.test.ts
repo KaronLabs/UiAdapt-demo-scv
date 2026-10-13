@@ -50,6 +50,25 @@ function okResponse(): Promise<{ ok: true; status: 200 }> {
 afterEach(() => vi.useRealTimers());
 
 describe("bounded telemetry client", () => {
+  it("keeps disabled telemetry idle without accepting or sending payloads", async () => {
+    const fetchImpl = vi.fn(async () => ({ ok: true, status: 200 }));
+    const client = createTelemetryClient(fetchImpl, { disabled: true });
+    const statuses: string[] = [];
+    client.subscribe((status) => statuses.push(status));
+
+    expect(client.getStatus()).toBe("DISABLED");
+    expect(client.startSession(session())).toBe(false);
+    expect(client.enqueueTrajectory(frame(1))).toBe(false);
+    expect(client.startSession(session(RESET_SESSION_ID))).toBe(false);
+    expect(client.enqueueTrajectory(frame(2, RESET_SESSION_ID))).toBe(false);
+    await client.whenIdle();
+
+    expect(client.getStatus()).toBe("DISABLED");
+    expect(statuses).toEqual([]);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    client.dispose();
+  });
+
   it("serializes session and trajectory frames in FIFO order", async () => {
     const bodies: unknown[] = [];
     const fetchImpl = vi.fn(async (_input: string, init?: { body?: string }) => {

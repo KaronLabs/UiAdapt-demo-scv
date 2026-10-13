@@ -92,7 +92,7 @@ export interface PresentationPolicy {
   focusedProductId: ProductId | null;
 }
 
-export type TelemetryStatus = "HEALTHY" | "DEGRADED" | "OVERFLOW";
+export type TelemetryStatus = "HEALTHY" | "DEGRADED" | "OVERFLOW" | "DISABLED";
 
 export interface TelemetrySession {
   sessionId: string;
